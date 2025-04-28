@@ -1,171 +1,217 @@
 'use client';
 
-import { db, storage } from '@/lib/firebase';
-import { addDoc, collection } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useState } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
-const tiposImovel: { [key: string]: string[] } = {
-  Comprar: ['Apartamento', 'Casa', 'Terreno', 'Sobrado'],
-  Alugar: ['Apartamento', 'Casa', 'Sala Comercial'],
-  Rural: ['Chácara', 'Sítio', 'Fazenda'],
-};
-
-const schema = z.object({
-  tipoNegocio: z.enum(['Comprar', 'Alugar', 'Rural']),
-  tipoImovel: z.string().min(1, 'Selecione o tipo de imóvel.'),
-  endereco: z.string().min(1, 'Endereço é obrigatório.'),
-  valor: z.coerce.number().min(0, 'Valor inválido.'),
-  metragem: z.coerce.number().min(1, 'Metragem inválida.'),
-  descricao: z.string().min(10, 'Descrição precisa ter pelo menos 10 caracteres.'),
-  whatsapp: z.string().min(10, 'Número de WhatsApp inválido.'),
-  mensagemWhatsapp: z.string().min(1, 'Mensagem para WhatsApp é obrigatória.'),
-  imagens: z.any(),
-});
-
-type FormData = z.infer<typeof schema>;
-
-export default function CadastroImovelPage() {
-  const [uploading, setUploading] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      tipoNegocio: 'Comprar',
-    },
+export default function CadastrarImovel() {
+  const [formulario, setFormulario] = useState({
+    titulo: '',
+    endereco: '',
+    valor: '',
+    metragem: '',
+    descricao: '',
+    tipoImovel: '',
+    tipoNegocio: '',
+    whatsapp: '',
+    mensagemWhatsapp: '',
+    imagens: [''],
+    patrocinador: '',
   });
 
-  const tipoNegocio = watch('tipoNegocio');
+  const [carregando, setCarregando] = useState(false);
+  const router = useRouter();
 
-  const onSubmit = async (data: FormData) => {
+  const adicionarImagem = () => {
+    setFormulario({
+      ...formulario,
+      imagens: [...formulario.imagens, ''],
+    });
+  };
+
+  const alterarImagem = (index: number, valor: string) => {
+    const novasImagens = [...formulario.imagens];
+    novasImagens[index] = valor;
+    setFormulario({ ...formulario, imagens: novasImagens });
+  };
+
+  const enviarFormulario = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCarregando(true);
+
     try {
-      setUploading(true);
-
-      const files = (data.imagens as FileList) || [];
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const storageRef = ref(storage, `imoveis/${file.name}`);
-        await uploadBytes(storageRef, file);
-        return getDownloadURL(storageRef);
-      });
-
-      const imagensUrls = await Promise.all(uploadPromises);
-
       await addDoc(collection(db, 'imoveis'), {
-        ...data,
-        valor: Number(data.valor),
-        metragem: Number(data.metragem),
-        imagens: imagensUrls,
+        ...formulario,
+        valor: Number(formulario.valor),
+        metragem: Number(formulario.metragem),
+        dataCadastro: new Date(),
       });
 
       alert('Imóvel cadastrado com sucesso!');
-      reset();
+      router.push('/imoveis');
     } catch (error) {
       console.error('Erro ao cadastrar imóvel:', error);
       alert('Erro ao cadastrar imóvel. Tente novamente.');
     } finally {
-      setUploading(false);
+      setCarregando(false);
     }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormulario({ ...formulario, [e.target.name]: e.target.value });
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8">Cadastrar Imóvel</h1>
+      <h1 className="text-3xl font-bold mb-6">Cadastrar Imóvel</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={enviarFormulario} className="space-y-6">
 
-        {/* Tipo de Negócio */}
-        <div>
-          <label className="block mb-1 font-semibold">Tipo de Negócio</label>
-          <select {...register('tipoNegocio')} className="w-full p-2 border rounded">
-            <option value="Comprar">Comprar</option>
-            <option value="Alugar">Alugar</option>
-            <option value="Rural">Rural</option>
-          </select>
-        </div>
-
-        {/* Tipo de Imóvel */}
-        <div>
-          <label className="block mb-1 font-semibold">Tipo de Imóvel</label>
-          <select {...register('tipoImovel')} className="w-full p-2 border rounded">
-            <option value="">Selecione</option>
-            {tiposImovel[tipoNegocio]?.map((tipo) => (
-              <option key={tipo} value={tipo}>
-                {tipo}
-              </option>
-            ))}
-          </select>
-          {errors.tipoImovel && <p className="text-red-500">{errors.tipoImovel.message}</p>}
-        </div>
+        {/* Título */}
+        <input
+          type="text"
+          name="titulo"
+          placeholder="Título do imóvel"
+          value={formulario.titulo}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
 
         {/* Endereço */}
-        <div>
-          <label className="block mb-1 font-semibold">Endereço</label>
-          <input type="text" {...register('endereco')} className="w-full p-2 border rounded" />
-          {errors.endereco && <p className="text-red-500">{errors.endereco.message}</p>}
-        </div>
+        <input
+          type="text"
+          name="endereco"
+          placeholder="Endereço"
+          value={formulario.endereco}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
 
         {/* Valor */}
-        <div>
-          <label className="block mb-1 font-semibold">Valor (R$)</label>
-          <input type="number" {...register('valor')} className="w-full p-2 border rounded" />
-          {errors.valor && <p className="text-red-500">{errors.valor.message}</p>}
-        </div>
+        <input
+          type="number"
+          name="valor"
+          placeholder="Valor (ex: 350000)"
+          value={formulario.valor}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
 
         {/* Metragem */}
-        <div>
-          <label className="block mb-1 font-semibold">Metragem (m²)</label>
-          <input type="number" {...register('metragem')} className="w-full p-2 border rounded" />
-          {errors.metragem && <p className="text-red-500">{errors.metragem.message}</p>}
-        </div>
+        <input
+          type="number"
+          name="metragem"
+          placeholder="Área (m²)"
+          value={formulario.metragem}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
+
+        {/* Tipo de Imóvel */}
+        <select
+          name="tipoImovel"
+          value={formulario.tipoImovel}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        >
+          <option value="">Selecione o tipo de imóvel</option>
+          <option value="Casa">Casa</option>
+          <option value="Apartamento">Apartamento</option>
+          <option value="Chácara">Chácara</option>
+          <option value="Terreno">Terreno</option>
+        </select>
+
+        {/* Tipo de Negócio */}
+        <select
+          name="tipoNegocio"
+          value={formulario.tipoNegocio}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        >
+          <option value="">Selecione o tipo de negócio</option>
+          <option value="Comprar">Comprar</option>
+          <option value="Alugar">Alugar</option>
+          <option value="Rural">Rural</option>
+        </select>
 
         {/* Descrição */}
-        <div>
-          <label className="block mb-1 font-semibold">Descrição</label>
-          <textarea {...register('descricao')} className="w-full p-2 border rounded" rows={5} />
-          {errors.descricao && <p className="text-red-500">{errors.descricao.message}</p>}
+        <textarea
+          name="descricao"
+          placeholder="Descrição do imóvel"
+          value={formulario.descricao}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          rows={4}
+          required
+        />
+
+        {/* Whatsapp */}
+        <input
+          type="text"
+          name="whatsapp"
+          placeholder="Whatsapp (somente números com DDD)"
+          value={formulario.whatsapp}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
+
+        {/* Mensagem Whatsapp */}
+        <input
+          type="text"
+          name="mensagemWhatsapp"
+          placeholder="Mensagem padrão para Whatsapp"
+          value={formulario.mensagemWhatsapp}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+
+        {/* Imagens */}
+        <div className="space-y-2">
+          {formulario.imagens.map((img, index) => (
+            <input
+              key={index}
+              type="text"
+              placeholder={`URL da imagem ${index + 1}`}
+              value={img}
+              onChange={(e) => alterarImagem(index, e.target.value)}
+              className="w-full p-2 border rounded"
+              required
+            />
+          ))}
+          <button
+            type="button"
+            onClick={adicionarImagem}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Adicionar mais imagem
+          </button>
         </div>
 
-        {/* WhatsApp */}
-        <div>
-          <label className="block mb-1 font-semibold">WhatsApp (somente números)</label>
-          <input type="text" {...register('whatsapp')} className="w-full p-2 border rounded" />
-          {errors.whatsapp && <p className="text-red-500">{errors.whatsapp.message}</p>}
-        </div>
+        {/* Patrocinador (opcional) */}
+        <input
+          type="text"
+          name="patrocinador"
+          placeholder="Nome do patrocinador (opcional)"
+          value={formulario.patrocinador}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
 
-        {/* Mensagem WhatsApp */}
-        <div>
-          <label className="block mb-1 font-semibold">Mensagem para WhatsApp</label>
-          <input type="text" {...register('mensagemWhatsapp')} className="w-full p-2 border rounded" />
-          {errors.mensagemWhatsapp && <p className="text-red-500">{errors.mensagemWhatsapp.message}</p>}
-        </div>
-
-        {/* Upload de Imagens */}
-        <div>
-          <label className="block mb-1 font-semibold">Imagens (pode selecionar várias)</label>
-          <input
-            type="file"
-            multiple
-            {...register('imagens')}
-            className="w-full p-2 border rounded"
-          />
-        </div>
-
-        {/* Botão */}
+        {/* Botão de Enviar */}
         <button
           type="submit"
-          disabled={uploading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded"
+          disabled={carregando}
+          className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition"
         >
-          {uploading ? 'Cadastrando...' : 'Cadastrar Imóvel'}
+          {carregando ? 'Cadastrando...' : 'Cadastrar Imóvel'}
         </button>
       </form>
     </div>
