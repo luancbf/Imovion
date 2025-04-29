@@ -1,105 +1,84 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import Link from 'next/link';
+import CardImovel from '@/components/CardImovel';
+import FiltrosExpansiveis from '@/components/FiltrosExpansiveis';
 
-type Imovel = {
+interface Imovel {
   id: string;
   titulo: string;
   endereco: string;
   valor: number;
   metragem: number;
   descricao: string;
-  tipoNegocio: string;
   tipoImovel: string;
+  tipoNegocio: string;
+  whatsapp: string;
+  mensagemWhatsapp: string;
   imagens: string[];
-};
+  patrocinador?: string;
+}
 
-export default function ImoveisPage() {
-  const searchParams = useSearchParams();
+export default function Imoveis() {
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const tipoNegocio = searchParams.get('tipoNegocio');
-  const cidade = searchParams.get('cidade');
-  const tipoImovel = searchParams.get('tipoImovel');
-  const precoMaximo = searchParams.get('precoMaximo');
-  const localizacao = searchParams.get('localizacao');
-  const areaMinima = searchParams.get('areaMinima');
+  const [filtro, setFiltro] = useState<string>('');
 
   useEffect(() => {
     const buscarImoveis = async () => {
       try {
         const ref = collection(db, 'imoveis');
-        const filtros = [];
 
-        if (tipoNegocio) filtros.push(where('tipoNegocio', '==', tipoNegocio));
-        if (cidade) filtros.push(where('endereco', '>=', cidade));
-        if (tipoImovel) filtros.push(where('tipoImovel', '==', tipoImovel));
-        if (precoMaximo) filtros.push(where('valor', '<=', Number(precoMaximo)));
-        if (localizacao) filtros.push(where('endereco', '>=', localizacao));
-        if (areaMinima) filtros.push(where('metragem', '>=', Number(areaMinima)));
+        const q = filtro
+          ? query(ref, where('tipoNegocio', '==', filtro))
+          : ref;
 
-        const q = filtros.length > 0 ? query(ref, ...filtros) : ref;
+        const querySnapshot = await getDocs(q);
+        const listaImoveis: Imovel[] = [];
 
-        const snapshot = await getDocs(q);
-        const lista: Imovel[] = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Imovel));
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          listaImoveis.push({
+            id: doc.id,
+            titulo: data.titulo,
+            endereco: data.endereco,
+            valor: data.valor,
+            metragem: data.metragem,
+            descricao: data.descricao,
+            tipoImovel: data.tipoImovel,
+            tipoNegocio: data.tipoNegocio,
+            whatsapp: data.whatsapp,
+            mensagemWhatsapp: data.mensagemWhatsapp,
+            imagens: data.imagens || [],
+            patrocinador: data.patrocinador || '',
+          });
+        });
 
-        setImoveis(lista);
-      } catch (err) {
-        console.error('Erro ao buscar imóveis:', err);
-      } finally {
-        setLoading(false);
+        setImoveis(listaImoveis);
+      } catch (error) {
+        console.error('Erro ao buscar imóveis:', error);
       }
     };
 
     buscarImoveis();
-  }, [tipoNegocio, cidade, tipoImovel, precoMaximo, localizacao, areaMinima]);
+  }, [filtro]);
 
-  if (loading) {
-    return <div className="p-10 text-center text-xl">Carregando imóveis...</div>;
-  }
+  const handleFiltroChange = (novoFiltro: string) => {
+    setFiltro(novoFiltro);
+  };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-center">Imóveis disponíveis</h1>
+    <div className="max-w-7xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Imóveis</h1>
 
-      {imoveis.length === 0 ? (
-        <p className="text-center text-gray-600">Nenhum imóvel encontrado com esses filtros.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-          {imoveis.map(imovel => (
-            <Link href={`/imovel/${imovel.id}`} key={imovel.id} className="group">
-              <div className="border rounded-lg overflow-hidden shadow hover:shadow-lg transition">
-                <div className="w-full h-52 overflow-hidden">
-                  <img
-                    src={imovel.imagens?.[0] || '/sem-imagem.jpg'}
-                    alt={imovel.titulo}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="p-4 flex flex-col gap-2">
-                  <h2 className="text-lg font-bold">{imovel.titulo}</h2>
-                  <p className="text-gray-500 text-sm">{imovel.endereco}</p>
-                  <p className="text-blue-600 font-semibold text-lg">
-                    {`R$ ${imovel.valor.toLocaleString()}`}
-                  </p>
-                  <p className="text-sm text-gray-600">{imovel.tipoImovel} - {imovel.metragem} m²</p>
-                  <button className="mt-2 bg-green-500 text-white py-1 rounded hover:bg-green-600">
-                    Falar no WhatsApp
-                  </button>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <FiltrosExpansiveis onFiltroChange={handleFiltroChange} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+        {imoveis.map((imovel) => (
+          <CardImovel key={imovel.id} imovel={imovel} />
+        ))}
+      </div>
     </div>
   );
 }
