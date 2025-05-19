@@ -14,7 +14,7 @@ const patrocinadores = [
 
 export default function Patrocinios() {
   return (
-    <div className="grid grid-cols-3 gap-6 mt-20 w-full max-w-5xl mx-auto">
+    <div className="grid grid-cols-3 gap-6 mt-20 w-full max-w-3xl mx-auto">
       {patrocinadores.map((patrocinador) => (
         <Link
           key={patrocinador.id}

@@ -1,219 +1,195 @@
 'use client';
 
-import { useState } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import ImovelCard from '@/components/ImovelCard';
+import { db, auth } from '@/lib/firebase';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import useAuthGuard from '@/hooks/useAuthGuard';
+import FormularioImovel from '@/components/FormularioImovel';
+import FiltroCadastroImoveis from '@/components/FiltroCadastroImoveis';
+
+interface Imovel {
+  id?: string;
+  cidade: string;
+  bairro: string;
+  enderecoDetalhado: string;
+  valor: number;
+  metragem: number;
+  descricao: string;
+  tipoImovel: string;
+  tipoNegocio: string;
+  setorNegocio?: string;
+  whatsapp: string;
+  patrocinador?: string;
+  imagens: string[];
+  dataCadastro?: Date;
+}
+
+const opcoesTipoImovel: Record<string, string[]> = {
+  'Residencial-Venda': ['Casa', 'Casa em Condomínio Fechado', 'Apartamento', 'Terreno', 'Sobrado', 'Cobertura', 'Outros'],
+  'Residencial-Aluguel': ['Casa', 'Casa em Condomínio Fechado', 'Apartamento', 'Kitnet', 'Flat', 'Loft', 'Quitinete', 'Estúdio', 'Outros'],
+  'Comercial-Venda': ['Ponto Comercial', 'Sala', 'Salão', 'Prédio', 'Terreno', 'Galpão', 'Box Comercial', 'Outros'],
+  'Comercial-Aluguel': ['Ponto Comercial', 'Sala', 'Salão', 'Prédio', 'Terreno', 'Galpão', 'Box Comercial', 'Outros'],
+  'Rural-Venda': ['Chácara', 'Sítio', 'Fazenda', 'Terreno', 'Barracão', 'Pousada', 'Outros'],
+  'Rural-Aluguel': ['Chácara', 'Sítio', 'Fazenda', 'Terreno', 'Barracão', 'Pousada', 'Outros']
+};
+
+const cidadesComBairros: Record<string, string[]> = {
+  Cuiabá: ['Centro', 'Coxipó', 'CPA', 'Santa Rosa', 'Jardim Itália'],
+  Várzea_Grande: ['Centro Sul', 'Cristo Rei', 'Jardim Glória', 'Mapim'],
+  Rondonópolis: ['Centro', 'Vila Aurora', 'Jardim Atlântico', 'Parque Universitário'],
+  Sinop: ['Centro', 'Menino Jesus', 'Boa Esperança', 'Jardim Primavera'],
+  Sorriso: ['Centro', 'São Domingos', 'Jardim Aurora'],
+  Tangará_da_Serra: ['Centro', 'Jardim dos Ipês', 'Vila Alta'],
+  Lucas_do_Rio_Verde: ['Centro', 'Menino Deus', 'Jardim das Palmeiras'],
+  Barra_do_Garças: ['Centro', 'Novo Horizonte', 'Jardim Pitaluga'],
+};
 
 export default function CadastrarImovel() {
-  const [formulario, setFormulario] = useState({
-    titulo: '',
-    endereco: '',
-    valor: '',
-    metragem: '',
-    descricao: '',
-    tipoImovel: '',
-    tipoNegocio: '',
-    whatsapp: '',
-    mensagemWhatsapp: '',
-    imagens: [''],
-    patrocinador: '',
-  });
-
-  const [carregando, setCarregando] = useState(false);
+  useAuthGuard();
+  
   const router = useRouter();
+  const [imoveis, setImoveis] = useState<Imovel[]>([]);
+  const [imoveisFiltrados, setImoveisFiltrados] = useState<Imovel[]>([]);
+  const [patrocinadores, setPatrocinadores] = useState<{ id: string; nome: string }[]>([]);
+  const [filtros, setFiltros] = useState({
+    tipoNegocio: '',
+    setorNegocio: '',
+    patrocinador: ''
+  });
+  const [carregando, setCarregando] = useState(false);
 
-  const adicionarImagem = () => {
-    setFormulario({
-      ...formulario,
-      imagens: [...formulario.imagens, ''],
-    });
-  };
+  useEffect(() => {
+    carregarImoveis();
+    carregarPatrocinadores();
+  }, []);
 
-  const alterarImagem = (index: number, valor: string) => {
-    const novasImagens = [...formulario.imagens];
-    novasImagens[index] = valor;
-    setFormulario({ ...formulario, imagens: novasImagens });
-  };
+  useEffect(() => {
+    filtrarImoveis();
+  }, [filtros, imoveis]);
 
-  const enviarFormulario = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const carregarImoveis = async () => {
     setCarregando(true);
-
     try {
-      await addDoc(collection(db, 'imoveis'), {
-        ...formulario,
-        valor: Number(formulario.valor),
-        metragem: Number(formulario.metragem),
-        dataCadastro: new Date(),
-      });
-
-      alert('Imóvel cadastrado com sucesso!');
-      router.push('/imoveis');
-    } catch (error) {
-      console.error('Erro ao cadastrar imóvel:', error);
-      alert('Erro ao cadastrar imóvel. Tente novamente.');
+      const snapshot = await getDocs(collection(db, 'imoveis'));
+      const imoveisData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Imovel[];
+      setImoveis(imoveisData);
+      setImoveisFiltrados(imoveisData);
     } finally {
       setCarregando(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormulario({ ...formulario, [e.target.name]: e.target.value });
+  const carregarPatrocinadores = async () => {
+    const snapshot = await getDocs(collection(db, 'patrocinadores'));
+    const lista = snapshot.docs.map(doc => ({
+      id: doc.id,
+      nome: doc.data().nome,
+    }));
+    setPatrocinadores(lista);
+  };
+
+  const filtrarImoveis = () => {
+    let resultado = [...imoveis];
+
+    if (filtros.tipoNegocio) {
+      resultado = resultado.filter(imovel => 
+        imovel.tipoNegocio === filtros.tipoNegocio
+      );
+    }
+
+    if (filtros.setorNegocio) {
+      resultado = resultado.filter(imovel => 
+        imovel.setorNegocio === filtros.setorNegocio
+      );
+    }
+
+    if (filtros.patrocinador) {
+      resultado = resultado.filter(imovel => 
+        imovel.patrocinador === filtros.patrocinador
+      );
+    }
+
+    setImoveisFiltrados(resultado);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir este imóvel?')) {
+      await deleteDoc(doc(db, 'imoveis', id));
+      setImoveis(imoveis.filter(imovel => imovel.id !== id));
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Cadastrar Imóvel</h1>
-
-      <form onSubmit={enviarFormulario} className="space-y-6">
-
-        {/* Título */}
-        <input
-          type="text"
-          name="titulo"
-          placeholder="Título do imóvel"
-          value={formulario.titulo}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
-        />
-
-        {/* Endereço */}
-        <input
-          type="text"
-          name="endereco"
-          placeholder="Endereço"
-          value={formulario.endereco}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
-        />
-
-        {/* Valor */}
-        <input
-          type="number"
-          name="valor"
-          placeholder="Valor (ex: 350000)"
-          value={formulario.valor}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
-        />
-
-        {/* Metragem */}
-        <input
-          type="number"
-          name="metragem"
-          placeholder="Área (m²)"
-          value={formulario.metragem}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
-        />
-
-        {/* Tipo de Imóvel */}
-        <select
-          name="tipoImovel"
-          value={formulario.tipoImovel}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
-        >
-          <option value="">Selecione o tipo de imóvel</option>
-          <option value="Casa">Casa</option>
-          <option value="Apartamento">Apartamento</option>
-          <option value="Chácara">Chácara</option>
-          <option value="Terreno">Terreno</option>
-        </select>
-
-        {/* Tipo de Negócio */}
-        <select
-          name="tipoNegocio"
-          value={formulario.tipoNegocio}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
-        >
-          <option value="">Selecione o tipo de negócio</option>
-          <option value="Comprar">Comprar</option>
-          <option value="Alugar">Alugar</option>
-          <option value="Rural">Rural</option>
-        </select>
-
-        {/* Descrição */}
-        <textarea
-          name="descricao"
-          placeholder="Descrição do imóvel"
-          value={formulario.descricao}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          rows={4}
-          required
-        />
-
-        {/* Whatsapp */}
-        <input
-          type="text"
-          name="whatsapp"
-          placeholder="Whatsapp (somente números com DDD)"
-          value={formulario.whatsapp}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          required
-        />
-
-        {/* Mensagem Whatsapp */}
-        <input
-          type="text"
-          name="mensagemWhatsapp"
-          placeholder="Mensagem padrão para Whatsapp"
-          value={formulario.mensagemWhatsapp}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-        />
-
-        {/* Imagens */}
-        <div className="space-y-2">
-          {formulario.imagens.map((img, index) => (
-            <input
-              key={index}
-              type="text"
-              placeholder={`URL da imagem ${index + 1}`}
-              value={img}
-              onChange={(e) => alterarImagem(index, e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-            />
-          ))}
-          <button
-            type="button"
-            onClick={adicionarImagem}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Adicionar mais imagem
-          </button>
-        </div>
-
-        {/* Patrocinador (opcional) */}
-        <input
-          type="text"
-          name="patrocinador"
-          placeholder="Nome do patrocinador (opcional)"
-          value={formulario.patrocinador}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-        />
-
-        {/* Botão de Enviar */}
+    <div className="max-w-5xl mx-auto p-4 md:p-20 bg-gray-700">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl md:text-5xl font-bold mb-5 text-white">Cadastrar Imóvel</h1>
         <button
-          type="submit"
-          disabled={carregando}
-          className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition"
+          onClick={() => {
+            signOut(auth);
+            localStorage.removeItem('logado');
+            router.push('/login');
+          }}
+          className="bg-red-700 text-white px-4 py-2 md:px-8 md:py-3 mb-5 rounded cursor-pointer hover:bg-red-400"
         >
-          {carregando ? 'Cadastrando...' : 'Cadastrar Imóvel'}
+          Sair
         </button>
-      </form>
+      </div>
+
+      <FormularioImovel 
+        patrocinadores={patrocinadores}
+        cidadesComBairros={cidadesComBairros}
+        opcoesTipoImovel={opcoesTipoImovel}
+        onSuccess={carregarImoveis}
+      />
+
+      <h2 className="text-xl font-bold mt-10 mb-4 text-white">
+        Imóveis Cadastrados {filtros.tipoNegocio || filtros.setorNegocio || filtros.patrocinador ? `(${imoveisFiltrados.length})` : `(${imoveis.length})`}
+      </h2>
+        
+      <FiltroCadastroImoveis 
+        patrocinadores={patrocinadores}
+        onFiltroChange={setFiltros}
+      />
+      
+      {carregando ? (
+        <div className="text-center text-white">Carregando imóveis...</div>
+      ) : (
+        <>
+          {imoveisFiltrados.length === 0 && (filtros.tipoNegocio || filtros.setorNegocio || filtros.patrocinador) ? (
+            <div className="text-center text-white bg-gray-600 p-4 rounded-lg">
+              Nenhum imóvel encontrado com os filtros selecionados.
+              <button 
+                onClick={() => setFiltros({
+                  tipoNegocio: '',
+                  setorNegocio: '',
+                  patrocinador: ''
+                })}
+                className="ml-2 text-blue-300 hover:text-blue-400"
+              >
+                Limpar filtros
+              </button>
+            </div>
+          ) : (
+            <ul className="grid md:grid-cols-2 gap-6 mt-6">
+              {(filtros.tipoNegocio || filtros.setorNegocio || filtros.patrocinador ? imoveisFiltrados : imoveis).map((imovel) => (
+                <li key={imovel.id}>
+                  <ImovelCard
+                    imovel={imovel}
+                    onDelete={handleDelete}
+                    onEdit={(id) => router.push(`/editar-imovel/${id}`)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
     </div>
   );
 }
