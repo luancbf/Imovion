@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 
 const slides = [
@@ -23,9 +24,9 @@ export default function Slider() {
     timeoutRef.current = setTimeout(() => {
       setCurrent((prev) => (prev === length - 1 ? 0 : prev + 1));
     }, 7000);
-
+  
     return () => resetTimeout();
-  }, [current]);
+  }, [current, length]);
 
   const goToSlide = (index: number) => setCurrent(index);
   const prevSlide = () => setCurrent(current === 0 ? length - 1 : current - 1);
@@ -39,11 +40,13 @@ export default function Slider() {
       >
         {slides.map((slide, idx) => (
           <Link key={idx} href={slide.href} className="w-full flex-shrink-0">
-            <img
+            <Image
               src={slide.src}
               alt={`slide-${idx}`}
-              loading="lazy"
+              width={1200}
+              height={400}
               className="w-full object-cover h-[300px] md:h-[400px]"
+              priority={idx === 0}
             />
           </Link>
         ))}

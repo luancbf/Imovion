@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const patrocinadores = [
   { id: "patrocinador1", imagem: "/patrocinio.png" },
@@ -21,10 +22,13 @@ export default function Patrocinios() {
           href={`/patrocinadores/${patrocinador.id}`}
           className="hover:blur-[3px] transition-all duration-300"
         >
-          <img
+          <Image
             src={patrocinador.imagem}
             alt={`Patrocinador ${patrocinador.id}`}
+            width={300}
+            height={180}
             className="w-full object-cover rounded-lg shadow-md"
+            priority
           />
         </Link>
       ))}

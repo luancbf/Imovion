@@ -9,6 +9,7 @@ import { FiEdit2, FiTrash2, FiUpload, FiX, FiArrowLeft } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import useAuthGuard from '@/hooks/useAuthGuard';
 import { getAuth } from 'firebase/auth';
+import Image from 'next/image';
 
 interface Patrocinador {
   id: string;
@@ -238,9 +239,11 @@ export default function CadastrarPatrocinador() {
         {preview && (
           <div className="mt-4">
             <p className="text-white mb-2">Pré-visualização:</p>
-            <img
+            <Image
               src={preview}
               alt="Preview"
+              width={128}
+              height={128}
               className="w-32 h-32 object-contain rounded border-2 border-gray-500"
             />
           </div>
@@ -303,9 +306,11 @@ export default function CadastrarPatrocinador() {
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <img
+                    <Image
                       src={p.imagem}
                       alt={p.nome}
+                      width={64}
+                      height={64}
                       className="w-16 h-16 rounded-full object-cover border-2 border-gray-500"
                     />
                     <div>

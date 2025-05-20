@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import ImovelCard from '@/components/ImovelCard';
+import { useEffect, useState, useCallback } from 'react';
+import ImovelCard from '@/components/ImovelCardCadastro';
 import { db, auth } from '@/lib/firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -66,10 +66,6 @@ export default function CadastrarImovel() {
     carregarPatrocinadores();
   }, []);
 
-  useEffect(() => {
-    filtrarImoveis();
-  }, [filtros, imoveis]);
-
   const carregarImoveis = async () => {
     setCarregando(true);
     try {
@@ -94,7 +90,7 @@ export default function CadastrarImovel() {
     setPatrocinadores(lista);
   };
 
-  const filtrarImoveis = () => {
+  const filtrarImoveis = useCallback(() => {
     let resultado = [...imoveis];
 
     if (filtros.tipoNegocio) {
@@ -116,7 +112,11 @@ export default function CadastrarImovel() {
     }
 
     setImoveisFiltrados(resultado);
-  };
+  }, [imoveis, filtros]);
+
+  useEffect(() => {
+    filtrarImoveis();
+  }, [filtrarImoveis]);
 
   const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este imóvel?')) {

@@ -4,6 +4,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useState, useEffect } from "react";
 import type { Timestamp } from "firebase/firestore";
+import Image from "next/image";
 
 interface Imovel {
   id?: string;
@@ -50,12 +51,14 @@ function ImovelCardPatrocinador({ imovel }: { imovel: Imovel }) {
       <div className="relative h-48 bg-gray-200">
         {imovel.imagens?.length > 0 ? (
           <>
-            <img
+            <Image
               src={imovel.imagens[swiperIndex]}
               alt={`Imóvel ${imovel.tipoImovel} em ${imovel.cidade} - Foto ${swiperIndex + 1}`}
+              width={400}
+              height={192}
               className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
+              unoptimized
+              priority={swiperIndex === 0}
             />
             {imovel.imagens.length > 1 && (
               <>
