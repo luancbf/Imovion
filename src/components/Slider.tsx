@@ -16,7 +16,10 @@ export default function Slider() {
   const length = slides.length;
 
   const resetTimeout = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -24,7 +27,7 @@ export default function Slider() {
     timeoutRef.current = setTimeout(() => {
       setCurrent((prev) => (prev === length - 1 ? 0 : prev + 1));
     }, 7000);
-  
+
     return () => resetTimeout();
   }, [current, length]);
 
@@ -42,7 +45,7 @@ export default function Slider() {
           <Link key={idx} href={slide.href} className="w-full flex-shrink-0">
             <Image
               src={slide.src}
-              alt={`slide-${idx}`}
+              alt={`Banner do patrocinador ${idx + 1}`}
               width={1200}
               height={400}
               className="w-full object-cover h-[300px] md:h-[400px]"
@@ -55,12 +58,14 @@ export default function Slider() {
       {/* Botões de navegação */}
       <button
         onClick={prevSlide}
+        aria-label="Slide anterior"
         className="absolute top-1/2 left-4 -translate-y-1/2 bg-black text-white px-5 py-2 rounded-2xl z-10 hover:bg-gray-700 cursor-pointer"
       >
         ‹
       </button>
       <button
         onClick={nextSlide}
+        aria-label="Próximo slide"
         className="absolute top-1/2 right-4 -translate-y-1/2 bg-black text-white px-5 py-2 rounded-2xl z-10 hover:bg-gray-700 cursor-pointer"
       >
         ›
@@ -72,9 +77,11 @@ export default function Slider() {
           <button
             key={idx}
             onClick={() => goToSlide(idx)}
+            aria-label={`Ir para o slide ${idx + 1}`}
             className={`w-3 h-3 rounded-full transition-all duration-300 ${
               idx === current ? "bg-white" : "bg-white/50"
             }`}
+            tabIndex={0}
           />
         ))}
       </div>

@@ -21,14 +21,15 @@ export default function Patrocinios() {
           key={patrocinador.id}
           href={`/patrocinadores/${patrocinador.id}`}
           className="hover:blur-[3px] transition-all duration-300"
+          aria-label={`Ver detalhes do ${patrocinador.id}`}
+          title={`Ver detalhes do ${patrocinador.id}`}
         >
           <Image
             src={patrocinador.imagem}
-            alt={`Patrocinador ${patrocinador.id}`}
+            alt={`Logo do ${patrocinador.id}`}
             width={300}
             height={180}
             className="w-full object-cover rounded-lg shadow-md"
-            priority
           />
         </Link>
       ))}

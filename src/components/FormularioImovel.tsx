@@ -29,9 +29,9 @@ interface FormularioImovelProps {
   }>;
 }
 
-export default function FormularioImovel({ 
-  patrocinadores, 
-  cidadesComBairros, 
+export default function FormularioImovel({
+  patrocinadores,
+  cidadesComBairros,
   opcoesTipoImovel,
   onSuccess,
   dadosIniciais
@@ -40,7 +40,7 @@ export default function FormularioImovel({
   const [carregando, setCarregando] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [formulario, setFormulario] = useState({
     cidade: dadosIniciais?.cidade || '',
     bairro: dadosIniciais?.bairro || '',
@@ -55,6 +55,37 @@ export default function FormularioImovel({
     patrocinador: dadosIniciais?.patrocinador || '',
     imagens: [] as File[],
   });
+
+  // Funções utilitárias
+  const formatarParaMoeda = (valor: string) => {
+    const numeros = valor.replace(/\D/g, '');
+    const numeroFloat = (parseInt(numeros) / 100).toFixed(2);
+    return Number(numeroFloat).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const formatarMetragem = (valor: string) => {
+    const numeros = valor.replace(/\D/g, '');
+    return numeros ? `${numeros} m²` : '';
+  };
+
+  const formatarTelefone = (valor: string) => {
+    const numeros = valor.replace(/\D/g, '');
+    if (numeros.length <= 2) return numeros;
+    if (numeros.length <= 6) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+    if (numeros.length <= 10) return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`;
+  };
+
+  // Handlers
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    if (name === 'valor') setFormulario({ ...formulario, valor: formatarParaMoeda(value) });
+    else if (name === 'metragem') setFormulario({ ...formulario, metragem: formatarMetragem(value) });
+    else if (name === 'whatsapp') setFormulario({ ...formulario, whatsapp: formatarTelefone(value) });
+    else setFormulario({ ...formulario, [name]: value });
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
@@ -93,35 +124,6 @@ export default function FormularioImovel({
     return urls;
   };
 
-  const formatarParaMoeda = (valor: string) => {
-    const numeros = valor.replace(/\D/g, '');
-    const numeroFloat = (parseInt(numeros) / 100).toFixed(2);
-    return Number(numeroFloat).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-
-  const formatarMetragem = (valor: string) => {
-    const numeros = valor.replace(/\D/g, '');
-    return numeros ? `${numeros} m²` : '';
-  };
-
-  const formatarTelefone = (valor: string) => {
-    const numeros = valor.replace(/\D/g, '');
-    if (numeros.length <= 2) return numeros;
-    if (numeros.length <= 6) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
-    if (numeros.length <= 10) return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
-    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`;
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    if (name === 'valor') setFormulario({ ...formulario, valor: formatarParaMoeda(value) });
-    else if (name === 'metragem') setFormulario({ ...formulario, metragem: formatarMetragem(value) });
-    else if (name === 'whatsapp') setFormulario({ ...formulario, whatsapp: formatarTelefone(value) });
-    else setFormulario({ ...formulario, [name]: value });
-  };
-
   const enviarFormulario = async (e: React.FormEvent) => {
     e.preventDefault();
     setCarregando(true);
@@ -129,7 +131,7 @@ export default function FormularioImovel({
       if (formulario.imagens.length === 0 && !dadosIniciais?.imagens?.length) {
         throw new Error('Por favor, adicione pelo menos uma imagem');
       }
-      const urlsImagens = formulario.imagens.length > 0 
+      const urlsImagens = formulario.imagens.length > 0
         ? await uploadImagens(formulario.imagens)
         : dadosIniciais?.imagens || [];
       const dadosImovel = {
@@ -175,41 +177,53 @@ export default function FormularioImovel({
 
   const triggerFileInput = () => fileInputRef.current?.click();
 
+  // Classes para inputs e botões (UX/UI e contraste)
+  const inputClass =
+    "w-full p-2 border border-gray-400 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition";
+  const selectClass =
+    "w-full p-2 border border-gray-400 rounded-lg bg-white text-black cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition";
+  const buttonYellow =
+    "flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg transition-colors font-semibold cursor-pointer";
+  const buttonGreen =
+    "flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors font-semibold cursor-pointer disabled:bg-gray-400";
+
   return (
     <form onSubmit={enviarFormulario} className="space-y-4">
-      <select
-        name="tipoNegocio"
-        value={formulario.tipoNegocio}
-        onChange={handleChange}
-        className="w-full p-2 bg-gray-500 text-white border rounded cursor-pointer"
-        required
-      >
-        <option value="">Setor de negociação</option>
-        <option value="Residencial">Residencial</option>
-        <option value="Comercial">Comercial</option>
-        <option value="Rural">Rural</option>
-      </select>
-
-      {formulario.tipoNegocio && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <select
-          name="setorNegocio"
-          value={formulario.setorNegocio}
+          name="tipoNegocio"
+          value={formulario.tipoNegocio}
           onChange={handleChange}
-          className="w-full p-2 bg-gray-500 text-white border rounded cursor-pointer"
+          className={selectClass}
           required
         >
-          <option value="">Tipo de negócio</option>
-          <option value="Aluguel">Aluguel</option>
-          <option value="Venda">Venda</option>
+          <option value="">Setor de negociação</option>
+          <option value="Residencial">Residencial</option>
+          <option value="Comercial">Comercial</option>
+          <option value="Rural">Rural</option>
         </select>
-      )}
+
+        {formulario.tipoNegocio && (
+          <select
+            name="setorNegocio"
+            value={formulario.setorNegocio}
+            onChange={handleChange}
+            className={selectClass}
+            required
+          >
+            <option value="">Tipo de negócio</option>
+            <option value="Aluguel">Aluguel</option>
+            <option value="Venda">Venda</option>
+          </select>
+        )}
+      </div>
 
       {formulario.tipoNegocio && formulario.setorNegocio && (
         <select
           name="tipoImovel"
           value={formulario.tipoImovel}
           onChange={handleChange}
-          className="w-full p-2 bg-gray-500 text-white border rounded cursor-pointer"
+          className={selectClass}
           required
         >
           <option value="">Tipo de imóvel</option>
@@ -221,11 +235,12 @@ export default function FormularioImovel({
         </select>
       )}
 
+      {/* Upload de imagens */}
       <div
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
         onClick={triggerFileInput}
-        className="border-dashed border-2 p-4 rounded text-center text-gray-600 bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors"
+        className="border-dashed border-2 p-4 rounded-lg text-center text-gray-600 bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors"
       >
         <p>Arraste e solte imagens aqui ou clique para selecionar</p>
         <input
@@ -237,7 +252,7 @@ export default function FormularioImovel({
           ref={fileInputRef}
           required={!dadosIniciais?.imagens?.length && formulario.imagens.length === 0}
         />
-        <div className="flex flex-wrap gap-2 mt-4">
+        <div className="flex flex-wrap gap-2 mt-4 justify-center">
           {previews.map((preview, index) => (
             <div key={index} className="relative w-24 h-24">
               <Image
@@ -252,7 +267,8 @@ export default function FormularioImovel({
                   e.stopPropagation();
                   removeImagem(index);
                 }}
-                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-pointer"
+                aria-label="Remover imagem"
               >
                 ×
               </button>
@@ -265,88 +281,92 @@ export default function FormularioImovel({
           </p>
         ) : null}
       </div>
-      
-      <input 
-        name="valor" 
-        placeholder="Preço" 
-        value={formulario.valor} 
-        onChange={handleChange} 
-        className="w-full p-2 border rounded" 
-        required 
-      />
-      
-      <select 
-        name="cidade" 
-        value={formulario.cidade} 
-        onChange={handleChange} 
-        className="w-full p-2 bg-gray-500 text-white border rounded cursor-pointer" 
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input
+          name="valor"
+          placeholder="Preço"
+          value={formulario.valor}
+          onChange={handleChange}
+          className={inputClass}
+          required
+        />
+
+        <input
+          name="metragem"
+          placeholder="Metragem (m²)"
+          value={formulario.metragem}
+          onChange={handleChange}
+          className={inputClass}
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <select
+          name="cidade"
+          value={formulario.cidade}
+          onChange={handleChange}
+          className={selectClass}
+          required
+        >
+          <option value="">Selecione a cidade</option>
+          {Object.keys(cidadesComBairros).map((cidade) => (
+            <option key={cidade} value={cidade}>
+              {cidade.replace(/_/g, ' ')}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="bairro"
+          value={formulario.bairro}
+          onChange={handleChange}
+          className={selectClass}
+          required
+        >
+          <option value="">Selecione o bairro</option>
+          {(cidadesComBairros[formulario.cidade] ?? []).map((bairro) => (
+            <option key={bairro} value={bairro}>
+              {bairro}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <input
+        name="enderecoDetalhado"
+        placeholder="Endereço (rua, número, complemento...)"
+        value={formulario.enderecoDetalhado}
+        onChange={handleChange}
+        className={inputClass}
         required
-      >
-        <option value="">Selecione a cidade</option>
-        {Object.keys(cidadesComBairros).map((cidade) => (
-          <option key={cidade} value={cidade}>
-            {cidade.replace(/_/g, ' ')}
-          </option>
-        ))}
-      </select>
+      />
 
-      <select 
-        name="bairro" 
-        value={formulario.bairro} 
-        onChange={handleChange} 
-        className="w-full p-2 bg-gray-500 text-white border rounded cursor-pointer" 
+      <textarea
+        name="descricao"
+        placeholder="Descrição"
+        value={formulario.descricao}
+        onChange={handleChange}
+        className={inputClass}
+        rows={4}
         required
-      >
-        <option value="">Selecione o bairro</option>
-        {(cidadesComBairros[formulario.cidade] ?? []).map((bairro) => (
-          <option key={bairro} value={bairro}>
-            {bairro}
-          </option>
-        ))}
-      </select>
-
-      <input 
-        name="enderecoDetalhado" 
-        placeholder="Endereço (rua, número, complemento...)" 
-        value={formulario.enderecoDetalhado} 
-        onChange={handleChange} 
-        className="w-full p-2 border rounded" 
-        required 
       />
 
-      <input 
-        name="metragem" 
-        placeholder="Metragem (m²)" 
-        value={formulario.metragem} 
-        onChange={handleChange} 
-        className="w-full p-2 border rounded" 
-        required 
-      />
-
-      <textarea 
-        name="descricao" 
-        placeholder="Descrição" 
-        value={formulario.descricao} 
-        onChange={handleChange} 
-        className="w-full p-2 border rounded" 
-        rows={4} 
-        required 
-      />
-      
-      <input 
-        name="whatsapp" 
-        placeholder="WhatsApp (com DDD)" 
-        value={formulario.whatsapp} 
-        onChange={handleChange} 
-        className="w-full p-2 border rounded" 
-        required 
+      <input
+        name="whatsapp"
+        placeholder="WhatsApp (com DDD)"
+        value={formulario.whatsapp}
+        onChange={handleChange}
+        className={inputClass}
+        required
       />
 
       <select
         name="patrocinador"
         value={formulario.patrocinador}
         onChange={handleChange}
-        className="w-full p-2 bg-gray-500 text-white border rounded"
+        className={selectClass}
         disabled={patrocinadores.length === 0}
       >
         <option value="">
@@ -361,19 +381,19 @@ export default function FormularioImovel({
         ))}
       </select>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col md:flex-row gap-4">
         <button
           type="button"
           onClick={() => router.push('/cadastrar-patrocinador')}
-          className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded transition-colors"
+          className={buttonYellow}
         >
           Gerenciar Patrocinadores
         </button>
-        
-        <button 
-          type="submit" 
-          disabled={carregando} 
-          className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded transition-colors disabled:bg-gray-400"
+
+        <button
+          type="submit"
+          disabled={carregando}
+          className={buttonGreen}
         >
           {carregando ? 'Salvando...' : 'Salvar Imóvel'}
         </button>

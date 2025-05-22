@@ -1,21 +1,22 @@
-'use client';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function useAuthGuard() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const logado = localStorage.getItem('logado');
-    if (logado !== 'true') {
-      router.push('/login');
-    }
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.push("/login");
+      } else {
+        setChecking(false);
+      }
+    });
+    return () => unsubscribe();
   }, [router]);
 
-  return <>{children}</>;
+  return checking;
 }

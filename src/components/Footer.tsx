@@ -14,9 +14,20 @@ export default function Footer() {
           <h3 className="text-lg font-semibold mb-2">Contato</h3>
           <ul className="space-y-1 text-sm text-gray-700">
             <li>Telefone: (99) 99999-9999</li>
-            <li>Email: contato@seusite.com</li>
             <li>
-              <a href="https://wa.me/5599999999999" target="_blank" className="hover:underline">
+              Email:{" "}
+              <a href="mailto:contato@seusite.com" className="hover:underline">
+                contato@seusite.com
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://wa.me/5599999999999"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+                aria-label="Fale conosco no WhatsApp"
+              >
                 Fale no WhatsApp
               </a>
             </li>
