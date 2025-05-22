@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 
 const slides = [
-  { src: "/banner-1.png", href: "/patrocinadores/patrocinador-1" },
+  { src: "/banner-1.png", href: "/patrocinadores/thiago-kaiser" },
   { src: "/banner-2.png", href: "/patrocinadores/patrocinador-2" },
   { src: "/banner-3.png", href: "/patrocinadores/patrocinador-3" },
 ];

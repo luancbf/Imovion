@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 const patrocinadores = [
-  { id: "patrocinador1", imagem: "/patrocinio.png" },
+  { id: "thiago-kaiser", imagem: "/patrocinio.png" },
   { id: "patrocinador2", imagem: "/patrocinio.png" },
   { id: "patrocinador3", imagem: "/patrocinio.png" },
   { id: "patrocinador4", imagem: "/patrocinio.png" },
@@ -15,7 +15,7 @@ const patrocinadores = [
 
 export default function Patrocinios() {
   return (
-    <div className="grid grid-cols-3 gap-6 mt-20 w-full max-w-3xl mx-auto">
+    <div className="grid grid-cols-3 gap-6 w-full max-w-3xl mx-auto">
       {patrocinadores.map((patrocinador) => (
         <Link
           key={patrocinador.id}

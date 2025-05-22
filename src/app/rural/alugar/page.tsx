@@ -6,22 +6,7 @@ import { db } from "@/lib/firebase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ImovelCard from "@/components/ImovelCard";
-
-interface Imovel {
-  id: string;
-  cidade: string;
-  bairro: string;
-  enderecoDetalhado: string;
-  valor: number;
-  metragem: number;
-  descricao: string;
-  tipoImovel: string;
-  tipoNegocio: string;
-  setorNegocio?: string;
-  whatsapp: string;
-  patrocinador?: string;
-  imagens: string[];
-}
+import type { Imovel } from "@/types/Imovel";
 
 export default function RuralAlugarPage() {
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
@@ -47,24 +32,46 @@ export default function RuralAlugarPage() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-blue-100 to-white">
       <Header />
-      <main className="flex-1">
-        <div className="max-w-6xl mx-auto px-4 py-10">
-          <h1 className="text-3xl font-bold mb-8 text-center text-yellow-800">
-            Imóveis Rurais para Alugar
-          </h1>
+      <main className="flex-1 flex flex-col items-center py-10 px-2">
+        <div className="w-full max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h1
+              className="text-4xl md:text-5xl font-extrabold text-blue-700 mb-4 drop-shadow"
+              style={{ userSelect: "none" }}
+            >
+              Imóveis Rurais para Alugar
+            </h1>
+            <p
+              className="text-lg md:text-xl text-blue-900"
+              style={{ userSelect: "none" }}
+            >
+              Encontre propriedades rurais ideais para locação, lazer ou produção. Veja as melhores oportunidades disponíveis!
+            </p>
+          </div>
           {carregando ? (
-            <div className="text-center text-gray-600">Carregando imóveis...</div>
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+              <span className="text-blue-700 font-semibold">Carregando imóveis...</span>
+            </div>
           ) : imoveis.length === 0 ? (
-            <div className="text-center text-gray-500">Nenhum imóvel rural para aluguel encontrado.</div>
+            <div className="text-center text-blue-700 bg-blue-100 border border-blue-200 p-6 rounded-xl shadow mt-10">
+              Nenhum imóvel rural para aluguel encontrado.
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {imoveis.map((imovel) => (
                 <ImovelCard key={imovel.id} imovel={imovel} />
               ))}
             </div>
           )}
+          <p
+            className="text-xs text-gray-500 text-center mt-10 select-none"
+            style={{ userSelect: "none" }}
+          >
+            *Todos os imóveis anunciados passam por aprovação antes da publicação.
+          </p>
         </div>
       </main>
       <Footer />

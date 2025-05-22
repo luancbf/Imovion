@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import Image from "next/image";
 import type { Imovel } from "@/types/Imovel";
 
+// Função utilitária para formatar datas
 function formatarData(data?: Date | Timestamp | string): string {
   if (!data) return 'Data não informada';
   try {
@@ -27,6 +28,7 @@ function formatarData(data?: Date | Timestamp | string): string {
   }
 }
 
+// Card de imóvel para patrocinador
 function ImovelCardPatrocinador({ imovel }: { imovel: Imovel }) {
   const [swiperIndex, setSwiperIndex] = useState(0);
 
@@ -124,9 +126,9 @@ export default function PatrocinadorPage() {
   const [carregando, setCarregando] = useState(true);
 
   // Banner e nome do patrocinador
-  const patrocinadorSlug = "thiago-kaiser";
-  const patrocinadorNome = "Thiago Kaiser";
-  const patrocinadorBanner = "/patrocinadores/thiago-kaiser/banner.jpg"; // Altere para o caminho da imagem do patrocinador
+  const patrocinadorSlug = "luan-capistrano";
+  const patrocinadorNome = "Luan Capistrano";
+  const patrocinadorBanner = "/patrocinadores/luan-capistrano/banner.jpg"; // Altere para o caminho da imagem do patrocinador
 
   useEffect(() => {
     async function fetchImoveis() {

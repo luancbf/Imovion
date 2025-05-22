@@ -1,5 +1,5 @@
 export interface Imovel {
-  id?: string;
+  id: string;
   cidade: string;
   bairro: string;
   enderecoDetalhado: string;
