@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/home/Header";
+import Footer from "@/components/home/Footer";
 
 export default function Anunciar() {
   return (
-    <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-blue-100 to-white">
+    <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-blue-200 to-white">
       <Header />
       <section className="flex-1 flex flex-col justify-center items-center py-10 px-2">
         <div className="w-full max-w-4xl mx-auto">

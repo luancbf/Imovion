@@ -1,36 +1,26 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
 import { useEffect, useState, use } from 'react';
-import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import Image from 'next/image';
+import Header from '@/components/home/Header';
+import Footer from '@/components/home/Footer';
+import type { Imovel } from '@/types/Imovel';
 
-type Imovel = {
-  id: string;
-  cidade: string;
-  bairro: string;
-  enderecoDetalhado: string;
-  valor: number;
-  metragem: number;
-  descricao: string;
-  tipoNegocio: string;
-  tipoImovel: string;
-  imagens: string[];
-  whatsapp: string;
-  patrocinador?: string;
-  setorNegocio?: string;
-};
+// Components
+import VoltarButton from '@/components/imovel/VoltarButton';
+import PatrocinadorBadge from '@/components/imovel/PatrocinadorBadge';
+import ImovelCarousel from '@/components/imovel/ImovelCarousel';
+import ImovelDetalhes from '@/components/imovel/ImovelDetalhes';
+import ImoveisPatrocinadorList from '@/components/imovel/ImoveisPatrocinadorList';
+import ImovelModal from '@/components/imovel/ImovelModal';
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
 export default function ImovelPage({ params }: Props) {
-  // Sempre use o hook use para desembrulhar params
   const { id: rawId } = use(params);
   const id =
     typeof rawId === 'string'
@@ -40,6 +30,9 @@ export default function ImovelPage({ params }: Props) {
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [loading, setLoading] = useState(true);
   const [imagemAtual, setImagemAtual] = useState(0);
+  const [imoveisPatrocinador, setImoveisPatrocinador] = useState<Imovel[]>([]);
+  const [modalAberto, setModalAberto] = useState(false);
+  const [modalImagemIndex, setModalImagemIndex] = useState(0);
 
   useEffect(() => {
     const buscarImovel = async () => {
@@ -71,8 +64,35 @@ export default function ImovelPage({ params }: Props) {
     buscarImovel();
   }, [id]);
 
-  const formatarValor = (valor: number) =>
-    valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  // Buscar outros imóveis do mesmo patrocinador (caso exista)
+  useEffect(() => {
+    const buscarImoveisPatrocinador = async (patrocinador: string, imovelId: string) => {
+      const q = query(
+        collection(db, "imoveis"),
+        where("patrocinador", "==", patrocinador),
+        limit(6)
+      );
+      const snap = await getDocs(q);
+      const outros = snap.docs
+        .filter(doc => doc.id !== imovelId)
+        .map(doc => ({ id: doc.id, ...doc.data() } as Imovel));
+      setImoveisPatrocinador(outros);
+    };
+
+    if (imovel && imovel.patrocinador) {
+      buscarImoveisPatrocinador(imovel.patrocinador, imovel.id);
+    } else {
+      setImoveisPatrocinador([]);
+    }
+  }, [imovel]);
+
+  // Modal carrossel
+  const abrirModal = (index: number) => {
+    setModalImagemIndex(index);
+    setModalAberto(true);
+  };
+
+  const fecharModal = () => setModalAberto(false);
 
   const proximaImagem = () => {
     if (imovel && imovel.imagens.length > 0) {
@@ -86,9 +106,28 @@ export default function ImovelPage({ params }: Props) {
     }
   };
 
+  const proximaImagemModal = () => {
+    if (imovel && imovel.imagens.length > 0) {
+      setModalImagemIndex((prev) => (prev + 1) % imovel.imagens.length);
+    }
+  };
+
+  const imagemAnteriorModal = () => {
+    if (imovel && imovel.imagens.length > 0) {
+      setModalImagemIndex((prev) => (prev - 1 + imovel.imagens.length) % imovel.imagens.length);
+    }
+  };
+
+  // Fecha modal ao clicar fora da imagem
+  const handleModalBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      fecharModal();
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[70vh]">
+      <div className="flex items-center justify-center h-[70vh] bg-white">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -96,17 +135,12 @@ export default function ImovelPage({ params }: Props) {
 
   if (!imovel) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-white">
         <Header />
         <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Imóvel não encontrado</h2>
-            <Link
-              href="/"
-              className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-            >
-              Voltar para a página inicial
-            </Link>
+          <div className="text-center bg-white rounded-2xl shadow-lg p-10 border border-blue-100">
+            <h2 className="text-2xl font-bold mb-4 text-blue-700">Imóvel não encontrado</h2>
+            <VoltarButton />
           </div>
         </main>
         <Footer />
@@ -117,141 +151,75 @@ export default function ImovelPage({ params }: Props) {
   // Sanitize WhatsApp number for the link
   const whatsappNumber = imovel.whatsapp.replace(/\D/g, '').slice(0, 13);
   const whatsappLink = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(
-    `Olá! Tenho interesse no imóvel ${imovel.tipoImovel} localizado em ${imovel.bairro}, ${imovel.cidade}.`
+    `Olá! Tenho interesse no imóvel ${imovel.tipoImovel} localizado em ${(imovel.cidade || '').replace(/_/g, ' ')}, ${(imovel.bairro || '').replace(/_/g, ' ')}.`
   )}`;
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen w-full flex flex-col bg-white relative">
       <Header />
-      <main className="flex-1">
-        <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+      <main className="flex-1 flex flex-col items-center py-10 px-2 relative z-10">
+        <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-blue-100 p-4 sm:p-8">
           {/* Botão de Voltar */}
-          <Link
-            href="/"
-            className="mb-6 inline-block bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded transition"
-          >
-            ← Voltar
-          </Link>
-
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">{imovel.tipoImovel}</h1>
-          <div className="mb-4 text-gray-600 text-base sm:text-lg">
-            {imovel.bairro}, {imovel.cidade}
+          <div className="mb-8 flex">
+            <VoltarButton />
           </div>
+
+          {/* Nome do patrocinador */}
+          {imovel.patrocinador && (
+            <PatrocinadorBadge patrocinador={imovel.patrocinador} />
+          )}
 
           {/* Carrossel de Imagens */}
-          <div className="relative mb-4 group">
-            {imovel.imagens && imovel.imagens.length > 0 ? (
-              <>
-                <Image
-                  src={imovel.imagens[imagemAtual]}
-                  alt={`Imagem ${imagemAtual + 1}`}
-                  width={800}
-                  height={320}
-                  className="w-full h-56 sm:h-80 object-cover rounded transition-transform duration-500 group-hover:scale-105"
-                />
-
-                {imovel.imagens.length > 1 && (
-                  <>
-                    <button
-                      onClick={imagemAnterior}
-                      className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75"
-                      aria-label="Imagem anterior"
-                      type="button"
-                    >
-                      ‹
-                    </button>
-                    <button
-                      onClick={proximaImagem}
-                      className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75"
-                      aria-label="Próxima imagem"
-                      type="button"
-                    >
-                      ›
-                    </button>
-                  </>
-                )}
-              </>
-            ) : (
-              <Image
-                src="/sem-imagem.jpg"
-                alt="Sem imagem"
-                width={800}
-                height={320}
-                className="w-full h-56 sm:h-80 object-cover rounded"
-                priority
-              />
-            )}
-          </div>
-
-          {/* Miniaturas */}
-          {imovel.imagens && imovel.imagens.length > 1 && (
-            <div className="flex flex-wrap justify-center gap-2 mb-4">
-              {imovel.imagens.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setImagemAtual(index)}
-                  className={`w-12 h-12 sm:w-16 sm:h-16 rounded overflow-hidden border-2 transition ${
-                    imagemAtual === index ? 'border-blue-500' : 'border-transparent'
-                  }`}
-                  aria-label={`Selecionar imagem ${index + 1}`}
-                  type="button"
-                >
-                  <Image
-                    src={img}
-                    alt={`Miniatura ${index + 1}`}
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover hover:opacity-80"
-                    unoptimized
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Indicadores (bolinhas) */}
-          {imovel.imagens && imovel.imagens.length > 1 && (
-            <div className="flex justify-center items-center gap-2 mb-8">
-              {imovel.imagens.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setImagemAtual(index)}
-                  className={`w-3 h-3 rounded-full cursor-pointer border-none p-0 ${
-                    imagemAtual === index ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
-                  aria-label={`Ir para imagem ${index + 1}`}
-                  type="button"
-                ></button>
-              ))}
-            </div>
-          )}
+          <ImovelCarousel
+            imagens={imovel.imagens}
+            imagemAtual={imagemAtual}
+            setImagemAtual={setImagemAtual}
+            abrirModal={abrirModal}
+            proximaImagem={proximaImagem}
+            imagemAnterior={imagemAnterior}
+          />
 
           {/* Detalhes do imóvel */}
-          <div className="mb-8">
-            <p className="text-lg sm:text-xl text-blue-600 font-bold">
-              {imovel.tipoNegocio === 'Alugar'
-                ? `${formatarValor(imovel.valor)} / mês`
-                : formatarValor(imovel.valor)}
-            </p>
-            <p className="text-gray-700 mt-2 text-base sm:text-lg">
-              {imovel.tipoImovel} - {imovel.metragem} m²
-            </p>
-            <p className="text-gray-700 mt-2 text-base sm:text-lg">
-              <span className="font-medium">Endereço:</span> {imovel.enderecoDetalhado}
-            </p>
-            <p className="mt-6 text-gray-800 leading-relaxed text-base sm:text-lg">{imovel.descricao}</p>
-          </div>
+          <ImovelDetalhes
+            tipoNegocio={imovel.tipoNegocio}
+            valor={imovel.valor}
+            cidade={imovel.cidade}
+            bairro={imovel.bairro}
+            tipoImovel={imovel.tipoImovel}
+            metragem={imovel.metragem}
+            enderecoDetalhado={imovel.enderecoDetalhado}
+            descricao={imovel.descricao}
+          />
 
           {/* Botão WhatsApp */}
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block w-full sm:w-auto text-center bg-green-500 text-white px-6 py-3 rounded font-semibold hover:bg-green-600 transition"
-          >
-            Falar no WhatsApp
-          </a>
+          <div className="flex justify-center">
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block w-full sm:w-auto text-center bg-green-500 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:scale-105 hover:bg-green-600 transition-all duration-200 cursor-pointer"
+            >
+              Falar no WhatsApp
+            </a>
+          </div>
         </div>
+
+        {/* Imóveis do mesmo patrocinador */}
+        {imovel?.patrocinador && imoveisPatrocinador.length > 0 && (
+          <ImoveisPatrocinadorList imoveis={imoveisPatrocinador} />
+        )}
+
+        {/* Modal de imagens */}
+        <ImovelModal
+          imagens={imovel.imagens}
+          aberto={modalAberto}
+          imagemIndex={modalImagemIndex}
+          onClose={fecharModal}
+          onAnterior={imagemAnteriorModal}
+          onProxima={proximaImagemModal}
+          setImagemIndex={setModalImagemIndex}
+          handleBackgroundClick={handleModalBackgroundClick}
+        />
       </main>
       <Footer />
     </div>

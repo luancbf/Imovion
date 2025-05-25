@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/home/Header";
+import Footer from "@/components/home/Footer";
 import ImovelCard from "@/components/ImovelCard";
 import type { Imovel } from "@/types/Imovel";
 

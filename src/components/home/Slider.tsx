@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 const slides = [
   { src: "/banner-1.png", href: "/patrocinadores/thiago-kaiser" },
@@ -36,7 +37,7 @@ export default function Slider() {
   const nextSlide = () => setCurrent(current === length - 1 ? 0 : current + 1);
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto overflow-hidden rounded-2xl shadow-lg mt-5 mb-20">
+    <div className="flex items-center relative w-full max-w-90 sm:max-w-2xl h-50 sm:h-75 mx-auto overflow-hidden rounded-2xl shadow-lg">
       <div
         className="flex transition-transform duration-700 ease-in-out"
         style={{ transform: `translateX(-${current * 100}%)` }}
@@ -59,16 +60,16 @@ export default function Slider() {
       <button
         onClick={prevSlide}
         aria-label="Slide anterior"
-        className="absolute top-1/2 left-4 -translate-y-1/2 bg-black text-white px-5 py-2 rounded-2xl z-10 hover:bg-gray-700 cursor-pointer"
+        className="flex items-center justify-center absolute top-1/2 left-3 -translate-y-1/2 text-white px-2 py-1 rounded-2xl z-10 hover:bg-gray-700 cursor-pointer"
       >
-        ‹
+        <FiChevronLeft size={30} />
       </button>
       <button
         onClick={nextSlide}
         aria-label="Próximo slide"
-        className="absolute top-1/2 right-4 -translate-y-1/2 bg-black text-white px-5 py-2 rounded-2xl z-10 hover:bg-gray-700 cursor-pointer"
+        className="flex items-center justify-center absolute top-1/2 right-3 -translate-y-1/2 text-white px-2 py-1 rounded-2xl z-10 hover:bg-gray-700 cursor-pointer"
       >
-        ›
+        <FiChevronRight size={30} />
       </button>
 
       {/* Bullets */}
@@ -78,7 +79,7 @@ export default function Slider() {
             key={idx}
             onClick={() => goToSlide(idx)}
             aria-label={`Ir para o slide ${idx + 1}`}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${
               idx === current ? "bg-white" : "bg-white/50"
             }`}
             tabIndex={0}
