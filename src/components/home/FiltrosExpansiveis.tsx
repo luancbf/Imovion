@@ -126,7 +126,7 @@ export default function FiltrosExpansiveis() {
               Anuncie aqui com a gente e alcance milhares de pessoas!
             </span>
             <button
-              className="w-35 sm:w-45 py-2 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow transition-all duration-150 text-base sm:text-xl cursor-pointer"
+              className="w-35 sm:w-45 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow transition-all duration-150 text-base sm:text-xl cursor-pointer"
               onClick={() => router.push('/anunciar')}
             >
               Anuncie já

@@ -20,7 +20,7 @@ export default function Patrocinios() {
         <Link
           key={patrocinador.id}
           href={`/patrocinadores/${patrocinador.id}`}
-          className="hover:blur-[3px] transition-all duration-300"
+          className="hover:blur-sm transition-all duration-300"
           aria-label={`Ver detalhes do ${patrocinador.id}`}
           title={`Ver detalhes do ${patrocinador.id}`}
         >

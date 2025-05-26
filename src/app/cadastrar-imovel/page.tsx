@@ -6,9 +6,9 @@ import { collection, getDocs, deleteDoc, updateDoc, doc } from 'firebase/firesto
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import useAuthGuard from '@/hooks/useAuthGuard';
-import FormularioImovel from '@/components/FormularioImovel';
-import FiltroCadastroImoveis from '@/components/FiltroCadastroImoveis';
-import ImovelCardCadastro from '@/components/ImovelCardCadastro';
+import FormularioImovel from '@/components/cadastrar-imovel/FormularioImovel';
+import FiltroCadastroImoveis from '@/components/cadastrar-imovel/FiltroCadastroImoveis';
+import ImovelCardCadastro from '@/components/cadastrar-imovel/ImovelCardCadastro';
 import type { Imovel } from '@/types/Imovel';
 
 const opcoesTipoImovel: Record<string, string[]> = {

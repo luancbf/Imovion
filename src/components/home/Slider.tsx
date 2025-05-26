@@ -60,14 +60,14 @@ export default function Slider() {
       <button
         onClick={prevSlide}
         aria-label="Slide anterior"
-        className="flex items-center justify-center absolute top-1/2 left-3 -translate-y-1/2 text-white px-2 py-1 rounded-2xl z-10 hover:bg-gray-700 cursor-pointer"
+        className="flex items-center justify-center absolute top-1/2 left-3 -translate-y-1/2 text-white hover:text-gray-800 px-2 py-1 rounded-2xl z-10  cursor-pointer"
       >
         <FiChevronLeft size={30} />
       </button>
       <button
         onClick={nextSlide}
         aria-label="Próximo slide"
-        className="flex items-center justify-center absolute top-1/2 right-3 -translate-y-1/2 text-white px-2 py-1 rounded-2xl z-10 hover:bg-gray-700 cursor-pointer"
+        className="flex items-center justify-center absolute top-1/2 right-3 -translate-y-1/2 text-white hover:text-gray-800 px-2 py-1 rounded-2xl z-10  cursor-pointer"
       >
         <FiChevronRight size={30} />
       </button>
