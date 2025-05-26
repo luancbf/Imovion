@@ -151,7 +151,7 @@ export default function PatrocinadorPage() {
       <Header />
       {/* Banner do patrocinador */}
       <div className="w-full flex flex-col items-center">
-        <div className="w-full max-w-3xl mx-auto">
+        <div className="w-full max-w-11/12 md:max-w-3xl mx-auto">
           <Image
             src={patrocinadorBanner}
             alt={`Banner do patrocinador ${patrocinadorNome}`}
@@ -161,7 +161,7 @@ export default function PatrocinadorPage() {
             priority
           />
         </div>
-        <h1 className="text-3xl md:text-4xl font-extrabold text-blue-700 mb-8 text-center drop-shadow" style={{ userSelect: "none" }}>
+        <h1 className="font-poppins text-3xl md:text-4xl font-extrabold text-blue-700 mb-8 text-center drop-shadow" style={{ userSelect: "none" }}>
           {patrocinadorNome}
         </h1>
       </div>
@@ -172,7 +172,7 @@ export default function PatrocinadorPage() {
             <span className="text-blue-700 font-semibold">Carregando imóveis...</span>
           </div>
         ) : imoveis.length === 0 ? (
-          <div className="text-center text-blue-700 bg-blue-100 border border-blue-200 p-6 rounded-xl shadow mt-10">
+          <div className="font-inter text-center text-blue-700 bg-blue-100 border border-blue-200 p-6 rounded-xl shadow mt-10">
             Nenhum imóvel cadastrado para este patrocinador.
           </div>
         ) : (
