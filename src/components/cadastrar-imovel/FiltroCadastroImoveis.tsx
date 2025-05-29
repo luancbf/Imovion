@@ -40,7 +40,6 @@ export default function FiltroCadastroImoveis({
     });
   };
 
-  // Classes para inputs e botões (UX/UI e contraste)
   const selectClass =
     "w-full p-2 border border-gray-300 rounded-lg bg-white text-black cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition";
   const buttonClass =
@@ -48,11 +47,11 @@ export default function FiltroCadastroImoveis({
 
   return (
     <div className="bg-white/90 p-4 md:p-8 rounded-2xl shadow flex flex-col gap-4 w-full max-w-6xl mx-auto">
-      <h2 className="text-lg md:text-xl font-bold mb-2 text-blue-900">Filtrar Imóveis</h2>
+      <h2 className="font-poppins text-lg md:text-xl font-bold mb-2 text-blue-900">Filtrar Imóveis</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-blue-900 mb-1">Setor</label>
+          <label className="font-poppins block text-sm font-medium text-blue-900 mb-1">Setor</label>
           <select
             name="tipoNegocio"
             value={filtrosLocais.tipoNegocio}
@@ -67,7 +66,7 @@ export default function FiltroCadastroImoveis({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-blue-900 mb-1">Tipo de Negócio</label>
+          <label className="font-poppins block text-sm font-medium text-blue-900 mb-1">Tipo de Negócio</label>
           <select
             name="setorNegocio"
             value={filtrosLocais.setorNegocio}
@@ -81,7 +80,7 @@ export default function FiltroCadastroImoveis({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-blue-900 mb-1">Patrocinador</label>
+          <label className="font-poppins block text-sm font-medium text-blue-900 mb-1">Patrocinador</label>
           <select
             name="patrocinador"
             value={filtrosLocais.patrocinador}

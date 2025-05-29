@@ -7,29 +7,71 @@ import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
 import ImovelCard from "@/components/ImovelCard";
 import type { Imovel } from "@/types/Imovel";
+import { FiltroImovel, filtrarImoveisFrontend } from "@/components/FiltroImoveis";
+import { FiFilter } from "react-icons/fi";
+import cidadesComBairros from "@/constants/cidadesComBairros";
+
+// Tipos de imóvel para comercial/aluguel
+const opcoesTipoImovel: Record<string, string[]> = {
+  'Comercial-Aluguel': [
+    'Ponto Comercial', 'Sala', 'Salão', 'Prédio', 'Terreno', 'Galpão', 'Box Comercial', 'Outros'
+  ]
+};
+
+// Itens quantitativos para filtro comercial
+const ITENS_COMERCIAL = [
+  { chave: "banheiros", label: "Banheiros" },
+  { chave: "garagens", label: "Vagas de Garagem" },
+  { chave: "metragem", label: "Metragem mínima (m²)" },
+];
 
 export default function ComercialAlugarPage() {
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
+  const [imoveisFiltrados, setImoveisFiltrados] = useState<Imovel[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [filtros, setFiltros] = useState<Record<string, string>>({
+    tipoImovel: "",
+    cidade: "",
+    bairro: "",
+    banheiros: "",
+    garagens: "",
+    metragem: "",
+  });
+  const [mostrarFiltro, setMostrarFiltro] = useState(false);
 
   useEffect(() => {
     async function fetchImoveis() {
       setCarregando(true);
-      const q = query(
-        collection(db, "imoveis"),
-        where("tipoNegocio", "==", "Comercial"),
-        where("setorNegocio", "==", "Aluguel")
-      );
+
+      const filtrosQuery = [
+        where("setor", "==", "Comercial"),
+        where("tipoNegocio", "==", "Aluguel"),
+      ];
+
+      if (filtros.tipoImovel)
+        filtrosQuery.push(where("tipoImovel", "==", filtros.tipoImovel));
+      if (filtros.cidade)
+        filtrosQuery.push(where("cidade", "==", filtros.cidade));
+      if (filtros.bairro)
+        filtrosQuery.push(where("bairro", "==", filtros.bairro));
+
+      const q = query(collection(db, "imoveis"), ...filtrosQuery);
       const snapshot = await getDocs(q);
-      const lista: Imovel[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Imovel[];
+      const lista: Imovel[] = snapshot.docs.map((doc) => {
+        const data = doc.data() as Omit<Imovel, "id">;
+        return { id: doc.id, ...data };
+      });
       setImoveis(lista);
       setCarregando(false);
     }
     fetchImoveis();
-  }, []);
+  }, [filtros.tipoImovel, filtros.cidade, filtros.bairro]);
+
+  useEffect(() => {
+    setImoveisFiltrados(
+      filtrarImoveisFrontend(imoveis, filtros, ITENS_COMERCIAL)
+    );
+  }, [imoveis, filtros]);
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-blue-100 to-white">
@@ -50,18 +92,47 @@ export default function ComercialAlugarPage() {
               Encontre o espaço comercial perfeito para o seu negócio. Veja as melhores opções disponíveis para locação!
             </p>
           </div>
+          {/* Botão para mostrar/ocultar filtro à esquerda */}
+          <div className="flex justify-start mb-4">
+            <button
+              onClick={() => setMostrarFiltro((v) => !v)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
+            >
+              <FiFilter size={20} />
+              Filtro
+            </button>
+          </div>
+          {/* Filtro de imóveis com transição suave */}
+          <div
+            style={{
+              transition: "max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.4s cubic-bezier(0.4,0,0.2,1)",
+              overflow: "hidden",
+              maxHeight: mostrarFiltro ? 600 : 0,
+              opacity: mostrarFiltro ? 1 : 0,
+            }}
+          >
+            {mostrarFiltro && (
+              <FiltroImovel
+                cidadesComBairros={cidadesComBairros}
+                opcoesTipoImovel={opcoesTipoImovel}
+                setor="Comercial"
+                tipoNegocio="Aluguel"
+                onFiltroChange={setFiltros}
+              />
+            )}
+          </div>
           {carregando ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
               <span className="text-blue-700 font-semibold">Carregando imóveis...</span>
             </div>
-          ) : imoveis.length === 0 ? (
+          ) : imoveisFiltrados.length === 0 ? (
             <div className="text-center text-blue-700 bg-blue-100 border border-blue-200 p-6 rounded-xl shadow mt-10">
               Nenhum imóvel comercial para aluguel encontrado.
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {imoveis.map((imovel) => (
+              {imoveisFiltrados.map((imovel) => (
                 <ImovelCard key={imovel.id} imovel={imovel} />
               ))}
             </div>

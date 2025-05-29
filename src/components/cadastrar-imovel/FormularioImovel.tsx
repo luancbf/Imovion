@@ -5,8 +5,11 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { getAuth } from 'firebase/auth';
+import UploadImages from './formulario/UploadImages';
+import SelectCidadeBairro from './formulario/SelectCidadeBairro';
+import ItensImovel from './formulario/ItensImovel';
+import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from '@/constants/itensImovel';
 
 interface FormularioImovelProps {
   patrocinadores: { id: string; nome: string }[];
@@ -26,6 +29,7 @@ interface FormularioImovelProps {
     whatsapp: string;
     patrocinador: string;
     imagens: string[];
+    itens: Record<string, number>;
   }>;
 }
 
@@ -56,7 +60,19 @@ export default function FormularioImovel({
     imagens: [] as File[],
   });
 
-  // Funções utilitárias
+  const setorSelecionado = formulario.tipoNegocio;
+  const itensDisponiveis = setorSelecionado ? ITENS_POR_SETOR[setorSelecionado] : [];
+  const [itens, setItens] = useState<{ [chave: string]: number }>(
+    () =>
+      dadosIniciais?.itens
+        ? { ...dadosIniciais.itens }
+        : Object.fromEntries(
+            Object.values(ITENS_POR_SETOR)
+              .flat()
+              .map((item) => [item.chave, 0])
+          )
+  );
+
   const formatarParaMoeda = (valor: string) => {
     const numeros = valor.replace(/\D/g, '');
     const numeroFloat = (parseInt(numeros) / 100).toFixed(2);
@@ -76,7 +92,6 @@ export default function FormularioImovel({
     return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`;
   };
 
-  // Handlers
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -148,6 +163,9 @@ export default function FormularioImovel({
         patrocinador: formulario.patrocinador || null,
         imagens: urlsImagens,
         dataCadastro: new Date(),
+        itens: Object.fromEntries(
+          (itensDisponiveis || []).map(item => [item.chave, itens[item.chave] || 0])
+        ),
       };
       await addDoc(collection(db, 'imoveis'), dadosImovel);
       alert('Imóvel cadastrado com sucesso!');
@@ -166,6 +184,11 @@ export default function FormularioImovel({
         imagens: [],
       });
       setPreviews([]);
+      setItens(Object.fromEntries(
+        Object.values(ITENS_POR_SETOR)
+          .flat()
+          .map((item) => [item.chave, 0])
+      ));
       if (typeof onSuccess === 'function') onSuccess();
       router.refresh();
     } catch (error) {
@@ -177,7 +200,6 @@ export default function FormularioImovel({
 
   const triggerFileInput = () => fileInputRef.current?.click();
 
-  // Classes para inputs e botões (UX/UI e contraste)
   const inputClass =
     "w-full p-2 border border-gray-400 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition";
   const selectClass =
@@ -236,51 +258,16 @@ export default function FormularioImovel({
       )}
 
       {/* Upload de imagens */}
-      <div
+      <UploadImages
+        previews={previews}
         onDrop={handleDrop}
-        onDragOver={e => e.preventDefault()}
-        onClick={triggerFileInput}
-        className="border-dashed border-2 p-4 rounded-lg text-center text-gray-600 bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors"
-      >
-        <p>Arraste e solte imagens aqui ou clique para selecionar</p>
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-          ref={fileInputRef}
-          required={!dadosIniciais?.imagens?.length && formulario.imagens.length === 0}
-        />
-        <div className="flex flex-wrap gap-2 mt-4 justify-center">
-          {previews.map((preview, index) => (
-            <div key={index} className="relative w-24 h-24">
-              <Image
-                src={preview}
-                alt={`Preview ${index}`}
-                fill
-                className="object-cover rounded"
-              />
-              <button
-                type="button"
-                onClick={e => {
-                  e.stopPropagation();
-                  removeImagem(index);
-                }}
-                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-pointer"
-                aria-label="Remover imagem"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-        {dadosIniciais?.imagens?.length ? (
-          <p className="text-sm text-gray-500 mt-2">
-            {dadosIniciais.imagens.length} imagem(ns) já cadastrada(s)
-          </p>
-        ) : null}
-      </div>
+        onFileChange={handleFileChange}
+        onRemove={removeImagem}
+        triggerFileInput={triggerFileInput}
+        fileInputRef={fileInputRef}
+        required={!dadosIniciais?.imagens?.length && formulario.imagens.length === 0}
+        imagensExistentes={dadosIniciais?.imagens || []}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <input
@@ -302,37 +289,13 @@ export default function FormularioImovel({
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <select
-          name="cidade"
-          value={formulario.cidade}
-          onChange={handleChange}
-          className={selectClass}
-          required
-        >
-          <option value="">Selecione a cidade</option>
-          {Object.keys(cidadesComBairros).map((cidade) => (
-            <option key={cidade} value={cidade}>
-              {cidade.replace(/_/g, ' ')}
-            </option>
-          ))}
-        </select>
-
-        <select
-          name="bairro"
-          value={formulario.bairro}
-          onChange={handleChange}
-          className={selectClass}
-          required
-        >
-          <option value="">Selecione o bairro</option>
-          {(cidadesComBairros[formulario.cidade] ?? []).map((bairro) => (
-            <option key={bairro} value={bairro}>
-              {bairro}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SelectCidadeBairro
+        cidadesComBairros={cidadesComBairros}
+        cidade={formulario.cidade}
+        bairro={formulario.bairro}
+        onChange={handleChange}
+        selectClass={selectClass}
+      />
 
       <input
         name="enderecoDetalhado"
@@ -380,6 +343,16 @@ export default function FormularioImovel({
           </option>
         ))}
       </select>
+
+      {/* Itens do imóvel */}
+      {setorSelecionado && (
+        <ItensImovel
+          itensDisponiveis={itensDisponiveis}
+          itens={itens}
+          setItens={setItens}
+          ITENS_QUANTITATIVOS={ITENS_QUANTITATIVOS}
+        />
+      )}
 
       <div className="flex flex-col md:flex-row gap-4">
         <button

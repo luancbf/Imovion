@@ -8,7 +8,6 @@ import Header from '@/components/home/Header';
 import Footer from '@/components/home/Footer';
 import type { Imovel } from '@/types/Imovel';
 
-// Components
 import VoltarButton from '@/components/imovel/VoltarButton';
 import PatrocinadorBadge from '@/components/imovel/PatrocinadorBadge';
 import ImovelCarousel from '@/components/imovel/ImovelCarousel';

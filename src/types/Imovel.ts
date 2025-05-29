@@ -13,4 +13,5 @@ export interface Imovel {
   patrocinador?: string;
   imagens: string[];
   dataCadastro?: Date | string;
+  itens?: Record<string, unknown>;
 }
