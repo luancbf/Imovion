@@ -3,20 +3,18 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 
-// Configuração do Firebase com variáveis de ambiente
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyB7MWsEok6i-1NgfjUsIJMaL8sWTcgXJHo",
+  authDomain: "imovion.firebaseapp.com",
+  projectId: "imovion",
+  storageBucket: "imovion.firebasestorage.app",
+  messagingSenderId: "715689732466",
+  appId: "1:715689732466:web:fde74b396735e787d095eb",
+  measurementId: "G-19C0PG6JM4"
 };
 
-// Garante que o Firebase não seja reinicializado em hot reload (Next.js dev mode)
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// Exporta as instâncias
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
