@@ -85,7 +85,7 @@ export default function ResidencialAlugarPage() {
       <Header />
       <main className="flex-1 flex flex-col items-center py-10 px-2">
         <div className="w-full max-w-11/12 mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-5">
             <h1
               className="font-poppins text-3xl md:text-5xl font-extrabold text-blue-700 mb-4 drop-shadow"
               style={{ userSelect: "none" }}
@@ -100,10 +100,10 @@ export default function ResidencialAlugarPage() {
             </p>
           </div>
           {/* Botão para mostrar/ocultar filtro à esquerda */}
-          <div className="flex justify-start mb-4">
+          <div className="flex justify-start mb-2">
             <button
               onClick={() => setMostrarFiltro((v) => !v)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 font-poppins text-white px-4 py-2 rounded font-semibold transition cursor-pointer"
             >
               <FiFilter size={20} />
               Filtro
@@ -129,9 +129,9 @@ export default function ResidencialAlugarPage() {
             )}
           </div>
           {carregando ? (
-            <div className="flex flex-col items-center justify-center py-20">
+            <div className="flex flex-col items-center justify-center py-15">
               <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <span className="text-blue-700 font-semibold">Carregando imóveis...</span>
+              <span className="font-inter text-blue-700 font-semibold">Carregando imóveis...</span>
             </div>
           ) : imoveisFiltrados.length === 0 ? (
             <div className="font-inter text-sm md:text-lg text-center text-blue-700 bg-blue-100 border border-blue-200 p-6 rounded-xl shadow mt-10">

@@ -25,29 +25,32 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
     valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <div className="mb-8 bg-white rounded-2xl shadow-lg p-8 border border-blue-100">
-      <p className="text-2xl text-blue-600 font-extrabold mb-2">
-        {tipoNegocio === 'Alugar'
-          ? `${formatarValor(valor)} / mês`
-          : formatarValor(valor)}
-      </p>
-      {/* Título do imóvel*/}
-      <p className="text-blue-900 text-lg font-semibold mb-2">
-        {(tipoImovel || '').replace(/_/g, ' ')}
-      </p>
-      {/* Cidade e bairro*/}
-      <p className="text-blue-900 text-lg font-semibold mb-2">
-        {(cidade || '').replace(/_/g, ' ')}, {(bairro || '').replace(/_/g, ' ')}
-      </p>
-      <p className="text-blue-900 text-lg font-semibold mb-2">
-        {(tipoImovel || '').replace(/_/g, ' ')} - {metragem} m²
-      </p>
-      <p className="text-gray-700 text-base mb-2">
-        <span className="font-medium">Endereço:</span> {(enderecoDetalhado || '').replace(/_/g, ' ')}
-      </p>
-      <p className="mt-6 text-gray-800 leading-relaxed text-base">
-        {(descricao || '').replace(/_/g, ' ')}
-      </p>
+    <div className="mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+        <div>
+          <h1 className="font-poppins text-2xl sm:text-4xl font-bold text-blue-700 leading-tight mb-2">
+            {tipoNegocio} - {tipoImovel}
+          </h1>
+          <div className="font-inter text-sm sm:text-xl text-gray-600">
+            <span className="font-poppins font-semibold">Local:</span> {cidade}, {bairro}
+          </div>
+          <div className="font-inter text-sm sm:text-xl text-gray-600">
+            <span className="font-poppins font-semibold">Endereço:</span> {enderecoDetalhado}
+          </div>
+          <div className="font-inter text-sm sm:text-xl text-gray-600">
+            <span className="font-poppins font-semibold">Área:</span> {metragem}m²
+          </div>
+        </div>
+        <span className="font-poppins text-3xl sm:text-4xl font-extrabold text-green-700 drop-shadow-lg bg-green-50 px-6 py-2 rounded-2xl border-2 border-green-200 shadow-lg mt-2 sm:mt-0">
+          {formatarValor(valor)}
+          {tipoNegocio === 'Alugar' && <span className="text-lg font-normal text-green-800"> / mês</span>}
+        </span>
+      </div>
+      <div className="mt-3">
+        <p className="text-gray-700 text-sm sm:text-xl mb-4 whitespace-pre-line font-inter">
+          {descricao}
+        </p>
+      </div>
     </div>
   );
 };

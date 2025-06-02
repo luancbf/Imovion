@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 const patrocinadores = [
-  { id: "thiago-kaiser", imagem: "/patrocinio.png" },
+  { id: "l0oLEjljFrMFtFc4Gcjw", imagem: "/patrocinio.png" },
   { id: "patrocinador2", imagem: "/patrocinio.png" },
   { id: "patrocinador3", imagem: "/patrocinio.png" },
   { id: "patrocinador4", imagem: "/patrocinio.png" },
@@ -20,7 +20,7 @@ export default function Patrocinios() {
         <Link
           key={patrocinador.id}
           href={`/patrocinadores/${patrocinador.id}`}
-          className="hover:blur-sm transition-all duration-300"
+          className="hover:blur-xs transition-all duration-300"
           aria-label={`Ver detalhes do ${patrocinador.id}`}
           title={`Ver detalhes do ${patrocinador.id}`}
         >

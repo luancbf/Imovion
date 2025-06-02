@@ -2,12 +2,18 @@
 
 import { useState } from 'react';
 import { FaEdit, FaTrash, FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import type { Timestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditarImovelModal from '@/components/cadastrar-imovel/EditarImovelModal';
 import type { Imovel } from '@/types/Imovel';
+
+// Swiper imports
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 interface ImovelComItens extends Imovel {
   itens?: Record<string, number>;
@@ -103,7 +109,6 @@ export default function ImovelCard({
   opcoesTipoImovel,
   patrocinadores,
 }: ImovelCardProps) {
-  const [imgIndex, setImgIndex] = useState(0);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState<Partial<Imovel>>({ ...imovel });
@@ -126,79 +131,39 @@ export default function ImovelCard({
     return 'Data inválida';
   };
 
-  const formatarTexto = (texto: string) => texto.replace(/_/g, " ");
+  const formatarTexto = (texto: string | undefined) =>
+    typeof texto === 'string' ? texto.replace(/_/g, " ") : '';
 
   const itensDisponiveis = ITENS_POR_SETOR[imovel.tipoNegocio] || [];
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSaveEdit = () => {
-    onEdit(imovel.id!, form);
-    setEditando(false);
-  };
-
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setImgIndex((prev) => (prev === 0 ? imagens.length - 1 : prev - 1));
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setImgIndex((prev) => (prev === imagens.length - 1 ? 0 : prev + 1));
-  };
-
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 flex flex-col">
-      {/* Slider de Imagens */}
+      {/* Slider de Imagens com Swiper */}
       <div className="relative h-45 md:h-64 bg-gray-100 flex items-center justify-center">
         {imagens.length > 0 ? (
-          <>
-            <Image
-              src={imagens[imgIndex]}
-              alt={`Imóvel ${formatarTexto(imovel.tipoImovel)} em ${formatarTexto(imovel.cidade)} - Foto ${imgIndex + 1}`}
-              fill
-              className="object-cover rounded"
-              unoptimized
-              priority
-              style={{ objectFit: 'cover' }}
-            />
-            {imagens.length > 1 && (
-              <>
-                <button
-                  className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center bg-white/80 hover:bg-white text-black rounded-full shadow transition cursor-pointer"
-                  onClick={handlePrev}
-                  aria-label="Imagem anterior"
-                  type="button"
-                  tabIndex={0}
-                  style={{ width: 32, height: 32 }}
-                >
-                  <FiChevronLeft size={22} />
-                </button>
-                <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center bg-white/80 hover:bg-white text-black rounded-full shadow transition cursor-pointer"
-                  onClick={handleNext}
-                  aria-label="Próxima imagem"
-                  type="button"
-                  tabIndex={0}
-                  style={{ width: 32, height: 32 }}
-                >
-                  <FiChevronRight size={22} />
-                </button>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                  {imagens.map((_, i) => (
-                    <span
-                      key={i}
-                      className={`block w-2 h-2 rounded-full ${i === imgIndex ? 'bg-blue-600' : 'bg-gray-300'}`}
-                    />
-                  ))}
+          <Swiper
+            modules={[Navigation, Pagination]}
+            navigation
+            pagination={{ clickable: true }}
+            className="w-full h-full rounded"
+            style={{ height: '100%' }}
+          >
+            {imagens.map((img, i) => (
+              <SwiperSlide key={img}>
+                <div className="relative w-full h-45 md:h-64">
+                  <Image
+                    src={img}
+                    alt={`Imóvel ${formatarTexto(imovel.tipoImovel)} em ${formatarTexto(imovel.cidade)} - Foto ${i + 1}`}
+                    fill
+                    className="object-cover rounded transition-all duration-500"
+                    unoptimized
+                    priority={i === 0}
+                    style={{ objectFit: 'cover' }}
+                  />
                 </div>
-              </>
-            )}
-          </>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         ) : (
           <span className="text-gray-400 text-base">Sem imagens disponíveis</span>
         )}
@@ -215,10 +180,12 @@ export default function ImovelCard({
           </span>
         </div>
         <p className="font-poppins text-green-700 font-bold text-xl md:text-2xl">
-          {imovel.valor.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-          })}
+          {imovel.valor?.toLocaleString
+            ? imovel.valor.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              })
+            : ''}
         </p>
         <div className="font-inter text-sm text-gray-600 space-y-1">
           <p>
@@ -257,8 +224,8 @@ export default function ImovelCard({
               <h4 className="font-semibold text-blue-900 mb-1">Itens do imóvel</h4>
               <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-2">
                 {itensDisponiveis.map((item) => {
-                  const valor = imovel.itens?.[item.chave];
-                  if (valor === undefined || valor === 0) return null;
+                  const valor = (form.itens ?? imovel.itens)?.[item.chave];
+                  if (typeof valor !== 'number' || valor === 0) return null;
                   const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
                   return (
                     <div key={item.chave} className="flex flex-col items-center bg-blue-50 rounded px-2 py-1 min-w-0">
@@ -332,9 +299,12 @@ export default function ImovelCard({
       <EditarImovelModal
         open={editando}
         form={form}
-        onChange={handleChange}
         onClose={() => setEditando(false)}
-        onSave={handleSaveEdit}
+        onSave={(dadosEditados) => {
+          setForm(dadosEditados);
+          onEdit(imovel.id!, dadosEditados);
+          setEditando(false);
+        }}
         cidadesComBairros={cidadesComBairros}
         opcoesTipoImovel={opcoesTipoImovel}
         patrocinadores={patrocinadores}

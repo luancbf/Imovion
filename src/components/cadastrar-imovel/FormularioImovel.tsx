@@ -125,6 +125,23 @@ export default function FormularioImovel({
     setPreviews(previews.filter((_, i) => i !== index));
   };
 
+  // Função para reordenar imagens via drag and drop ou setas
+  const handleReorder = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    setPreviews(prev => {
+      const arr = [...prev];
+      const [removed] = arr.splice(fromIndex, 1);
+      arr.splice(toIndex, 0, removed);
+      return arr;
+    });
+    setFormulario(prev => {
+      const arr = [...prev.imagens];
+      const [removed] = arr.splice(fromIndex, 1);
+      arr.splice(toIndex, 0, removed);
+      return { ...prev, imagens: arr };
+    });
+  };
+
   const uploadImagens = async (imagens: File[]) => {
     const user = getAuth().currentUser;
     if (!user) throw new Error('Usuário não autenticado');
@@ -146,6 +163,8 @@ export default function FormularioImovel({
       if (formulario.imagens.length === 0 && !dadosIniciais?.imagens?.length) {
         throw new Error('Por favor, adicione pelo menos uma imagem');
       }
+      const user = getAuth().currentUser;
+      if (!user) throw new Error('Usuário não autenticado');
       const urlsImagens = formulario.imagens.length > 0
         ? await uploadImagens(formulario.imagens)
         : dadosIniciais?.imagens || [];
@@ -166,6 +185,7 @@ export default function FormularioImovel({
         itens: Object.fromEntries(
           (itensDisponiveis || []).map(item => [item.chave, itens[item.chave] || 0])
         ),
+        ownerId: user.uid, // <-- ESSENCIAL PARA AS REGRAS DO FIRESTORE
       };
       await addDoc(collection(db, 'imoveis'), dadosImovel);
       alert('Imóvel cadastrado com sucesso!');
@@ -263,6 +283,7 @@ export default function FormularioImovel({
         onDrop={handleDrop}
         onFileChange={handleFileChange}
         onRemove={removeImagem}
+        onReorder={handleReorder}
         triggerFileInput={triggerFileInput}
         fileInputRef={fileInputRef}
         required={!dadosIniciais?.imagens?.length && formulario.imagens.length === 0}

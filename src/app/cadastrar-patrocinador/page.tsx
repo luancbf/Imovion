@@ -3,15 +3,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, updateDoc, doc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { storage } from "@/lib/firebase";
 import { FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import useAuthGuard from '@/hooks/useAuthGuard';
 import { useAuth } from '@/hooks/useAuth';
+import Image from "next/image";
 
 interface Patrocinador {
   id: string;
   nome: string;
   slug: string;
+  bannerUrl?: string;
   criadoEm?: Date;
   atualizadoEm?: Date;
   ownerId?: string;
@@ -26,6 +30,8 @@ export default function CadastrarPatrocinador() {
   const [carregando, setCarregando] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
   const gerarSlug = useCallback((texto: string) =>
     texto
@@ -67,6 +73,23 @@ export default function CadastrarPatrocinador() {
     return true;
   };
 
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setBannerFile(file);
+    if (file) {
+      setBannerPreview(URL.createObjectURL(file));
+    } else {
+      setBannerPreview(null);
+    }
+  };
+
+  const uploadBanner = async (patrocinadorId: string) => {
+    if (!bannerFile) return null;
+    const storageRef = ref(storage, `patrocinadores/${patrocinadorId}/banner`);
+    await uploadBytes(storageRef, bannerFile);
+    return await getDownloadURL(storageRef);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validarFormulario()) return;
@@ -82,13 +105,24 @@ export default function CadastrarPatrocinador() {
           : { criadoEm: new Date() })
       };
 
+      let patrocinadorId = editandoId;
       if (editandoId) {
         await updateDoc(doc(db, 'patrocinadores', editandoId), dadosPatrocinador);
       } else {
-        await addDoc(collection(db, 'patrocinadores'), dadosPatrocinador);
+        const docRef = await addDoc(collection(db, 'patrocinadores'), dadosPatrocinador);
+        patrocinadorId = docRef.id;
       }
+
+      // Upload do banner se houver arquivo selecionado
+      if (patrocinadorId && bannerFile) {
+        const bannerUrl = await uploadBanner(patrocinadorId);
+        await updateDoc(doc(db, 'patrocinadores', patrocinadorId), { bannerUrl });
+      }
+
       resetForm();
       await carregarPatrocinadores();
+      setBannerFile(null);
+      setBannerPreview(null);
     } catch (error) {
       alert(error instanceof Error ? error.message : String(error));
     } finally {
@@ -99,6 +133,8 @@ export default function CadastrarPatrocinador() {
   const resetForm = () => {
     setNome('');
     setEditandoId(null);
+    setBannerFile(null);
+    setBannerPreview(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -114,6 +150,7 @@ export default function CadastrarPatrocinador() {
   const handleEdit = (p: Patrocinador) => {
     setNome(p.nome);
     setEditandoId(p.id);
+    setBannerPreview(p.bannerUrl || null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -154,6 +191,29 @@ export default function CadastrarPatrocinador() {
                   className="w-full p-3 bg-white text-black border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
                   required
                 />
+              </div>
+              {/* Sessão de banner */}
+              <div className="col-span-2">
+                <label className="font-poppins block mb-2 font-bold text-blue-900">
+                  Banner do Patrocinador
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerChange}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                {bannerPreview && (
+                  <div className="mt-4">
+                    <Image
+                      src={bannerPreview}
+                      alt="Pré-visualização do banner"
+                      width={320}
+                      height={120}
+                      className="max-h-40 rounded-xl shadow object-cover"
+                    />
+                  </div>
+                )}
               </div>
             </div>
             <div className="mt-8 flex flex-col md:flex-row gap-4">
@@ -224,6 +284,15 @@ export default function CadastrarPatrocinador() {
                   className="border border-blue-200 p-4 rounded-xl bg-white hover:bg-blue-50 transition-colors flex items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-4">
+                    {p.bannerUrl && (
+                      <Image
+                        src={p.bannerUrl}
+                        alt="Banner"
+                        width={80}
+                        height={48}
+                        className="w-20 h-12 object-cover rounded shadow"
+                      />
+                    )}
                     <div>
                       <h3 className="font-poppins text-blue-900 font-bold">{p.nome}</h3>
                       <p className="text-gray-500 text-sm">

@@ -81,9 +81,9 @@ export default function ResidencialComprarPage() {
       <Header />
       <main className="flex-1 flex flex-col items-center py-10 px-2">
         <div className="w-full max-w-6xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-5">
             <h1
-              className="font-poppins text-4xl md:text-5xl font-extrabold text-blue-700 mb-4 drop-shadow"
+              className="font-poppins text-3xl md:text-5xl font-extrabold text-blue-700 mb-4 drop-shadow"
               style={{ userSelect: "none" }}
             >
               Imóveis Residenciais para Comprar
@@ -96,10 +96,10 @@ export default function ResidencialComprarPage() {
             </p>
           </div>
           {/* Botão para mostrar/ocultar filtro à esquerda */}
-          <div className="flex justify-start mb-4">
+          <div className="flex justify-start mb-2">
             <button
               onClick={() => setMostrarFiltro((v) => !v)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 font-poppins text-white px-4 py-2 rounded font-semibold transition cursor-pointer"
             >
               <FiFilter size={20} />
               Filtro

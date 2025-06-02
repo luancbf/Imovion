@@ -12,6 +12,33 @@
   font-family: var(--font-inter), sans-serif;
 }
 
+.swiper-button-next,
+.swiper-button-prev {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  color: #2563eb;
+  text-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);
+  transition: color 0.2s;
+}
+.swiper-button-next:after,
+.swiper-button-prev:after {
+  font-size: 30px !important;
+  font-weight: bold;
+}
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  color: #60a5fa;
+}
+.swiper-pagination-bullet {
+  background: #d1d5db !important;
+  opacity: 1 !important;
+}
+.swiper-pagination-bullet-active {
+  background: #1b1b1b !important;
+}
+
 body {
   background: var(--background);
 }

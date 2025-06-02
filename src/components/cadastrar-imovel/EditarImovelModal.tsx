@@ -1,138 +1,76 @@
+import { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import type { Imovel } from '@/types/Imovel';
-import { useRef } from 'react';
+import ItensImovel from './formulario/ItensImovel';
+import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from '@/constants/itensImovel';
 
 interface EditarImovelModalProps {
   open: boolean;
   form: Partial<Imovel>;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (form: Partial<Imovel>) => void;
   cidadesComBairros: Record<string, string[]>;
   opcoesTipoImovel: Record<string, string[]>;
   patrocinadores: { id: string; nome: string }[];
 }
 
-function formatCurrency(value: string) {
-  const onlyNums = value.replace(/\D/g, '');
-  const num = Number(onlyNums) / 100;
-  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-function formatPhone(value: string) {
-  const onlyNums = value.replace(/\D/g, '');
-  if (onlyNums.length <= 2) return onlyNums;
-  if (onlyNums.length <= 7)
-    return `(${onlyNums.slice(0, 2)}) ${onlyNums.slice(2)}`;
-  if (onlyNums.length <= 11)
-    return `(${onlyNums.slice(0, 2)}) ${onlyNums.slice(2, 7)}-${onlyNums.slice(7)}`;
-  return `(${onlyNums.slice(0, 2)}) ${onlyNums.slice(2, 7)}-${onlyNums.slice(7, 11)}`;
-}
-
-function formatM2(value: string) {
-  const onlyNums = value.replace(/\D/g, '');
-  return onlyNums ? `${Number(onlyNums)} m²` : '';
+function ensureItensAreNumbers(obj: unknown): Record<string, number> {
+  if (!obj || typeof obj !== 'object') return {};
+  const result: Record<string, number> = {};
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    result[k] = typeof v === 'number' ? v : Number(v) || 0;
+  }
+  return result;
 }
 
 export default function EditarImovelModal({
   open,
   form,
-  onChange,
   onClose,
   onSave,
   cidadesComBairros,
   opcoesTipoImovel,
   patrocinadores,
 }: EditarImovelModalProps) {
-    const valorRef = useRef<HTMLInputElement>(null);
-    const metragemRef = useRef<HTMLInputElement>(null);
-    const whatsappRef = useRef<HTMLInputElement>(null);
+  const [localForm, setLocalForm] = useState<Partial<Imovel>>(form);
 
-  if (!open) return null;
+  useEffect(() => {
+    setLocalForm(form);
+  }, [form, open]);
 
-  const inputClass =
-    "w-full p-2 border border-gray-400 rounded-lg bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition";
-  const selectClass =
-    "w-full p-2 border border-gray-400 rounded-lg bg-white text-black cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition";
-  const buttonYellow =
-    "flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg transition-colors font-semibold cursor-pointer";
-  const buttonGreen =
-    "flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors font-semibold cursor-pointer disabled:bg-gray-400";
-
-  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/\D/g, '');
-    let formatted = '';
-    if (rawValue) {
-      formatted = formatCurrency(rawValue);
-    }
-    onChange({
-      ...e,
-      target: {
-        ...e.target,
-        name: 'valor',
-        value: formatted.replace(/\D/g, '') ? Number(rawValue) / 100 : '',
-      }
-    } as React.ChangeEvent<HTMLInputElement>);
-    if (valorRef.current) valorRef.current.value = formatted;
-  };
-
-  const handleMetragemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/\D/g, '');
-    let formatted = '';
-    if (rawValue) {
-      formatted = formatM2(rawValue);
-    }
-    onChange({
-      ...e,
-      target: {
-        ...e.target,
-        name: 'metragem',
-        value: rawValue ? Number(rawValue) : '',
-      }
-    } as React.ChangeEvent<HTMLInputElement>);
-    if (metragemRef.current) metragemRef.current.value = formatted;
-  };
-
-  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/\D/g, '');
-    let formatted = '';
-    if (rawValue) {
-      formatted = formatPhone(rawValue);
-    }
-    onChange({
-      ...e,
-      target: {
-        ...e.target,
-        name: 'whatsapp',
-        value: rawValue,
-      }
-    } as React.ChangeEvent<HTMLInputElement>);
-    if (whatsappRef.current) whatsappRef.current.value = formatted;
+  const handleField = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setLocalForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave();
+    onSave(localForm);
   };
+
+  if (!open) return null;
+
+  const setorSelecionado = localForm.tipoNegocio as keyof typeof ITENS_POR_SETOR;
+  const itensDisponiveis = setorSelecionado ? ITENS_POR_SETOR[setorSelecionado] : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-lg mx-2 relative"
+        className="bg-white rounded-2xl shadow-lg p-4 md:p-8 w-full max-w-3xl mx-2 relative overflow-y-auto max-h-[95vh]"
       >
         <button className="absolute top-3 right-3" onClick={onClose} type="button">
           <FaTimes size={22} />
         </button>
-        <h2 className="text-2xl font-bold text-blue-800 mb-6 text-center">Editar Imóvel</h2>
+        <h2 className="text-2xl font-bold text-blue-800 mb-6 text-center font-poppins">Editar Imóvel</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-blue-900 mb-1">Setor de negociação</label>
+            <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Setor de negociação</label>
             <select
               name="tipoNegocio"
-              value={form.tipoNegocio || ''}
-              onChange={onChange}
-              className={selectClass}
+              value={localForm.tipoNegocio ?? ''}
+              onChange={handleField}
+              className="w-full p-2 border border-gray-400 rounded-lg font-poppins cursor-pointer"
               required
             >
               <option value="">Selecione</option>
@@ -142,12 +80,12 @@ export default function EditarImovelModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-blue-900 mb-1">Tipo de negócio</label>
+            <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Tipo de negócio</label>
             <select
               name="setorNegocio"
-              value={form.setorNegocio || ''}
-              onChange={onChange}
-              className={selectClass}
+              value={localForm.setorNegocio ?? ''}
+              onChange={handleField}
+              className="w-full p-2 border border-gray-400 rounded-lg font-poppins cursor-pointer"
               required
             >
               <option value="">Selecione</option>
@@ -156,18 +94,18 @@ export default function EditarImovelModal({
             </select>
           </div>
         </div>
-        {form.tipoNegocio && form.setorNegocio && (
+        {localForm.tipoNegocio && localForm.setorNegocio && (
           <div className="mt-4">
-            <label className="block text-sm font-semibold text-blue-900 mb-1">Tipo de imóvel</label>
+            <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Tipo de imóvel</label>
             <select
               name="tipoImovel"
-              value={form.tipoImovel || ''}
-              onChange={onChange}
-              className={selectClass}
+              value={localForm.tipoImovel ?? ''}
+              onChange={handleField}
+              className="w-full p-2 border border-gray-400 rounded-lg font-poppins cursor-pointer"
               required
             >
               <option value="">Selecione</option>
-              {(opcoesTipoImovel[`${form.tipoNegocio}-${form.setorNegocio}`] || []).map((opcao) => (
+              {(opcoesTipoImovel[`${localForm.tipoNegocio}-${localForm.setorNegocio}`] || []).map((opcao) => (
                 <option key={opcao} value={opcao}>
                   {opcao}
                 </option>
@@ -177,27 +115,25 @@ export default function EditarImovelModal({
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           <div>
-            <label className="block text-sm font-semibold text-blue-900 mb-1">Preço</label>
+            <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Preço</label>
             <input
-              ref={valorRef}
               name="valor"
-              placeholder="Ex: R$ 500.000,00"
-              defaultValue={form.valor ? formatCurrency(String(Number(form.valor) * 100)) : ''}
-              onChange={handleValorChange}
-              className={inputClass}
+              placeholder="Ex: 500000"
+              value={localForm.valor !== undefined && localForm.valor !== null ? String(localForm.valor) : ""}
+              onChange={handleField}
+              className="w-full p-2 border border-gray-400 rounded-lg font-poppins"
               required
               inputMode="numeric"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-blue-900 mb-1">Metragem</label>
+            <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Metragem</label>
             <input
-              ref={metragemRef}
               name="metragem"
-              placeholder="Ex: 120 m²"
-              defaultValue={form.metragem ? formatM2(String(form.metragem)) : ''}
-              onChange={handleMetragemChange}
-              className={inputClass}
+              placeholder="Ex: 120"
+              value={localForm.metragem !== undefined && localForm.metragem !== null ? String(localForm.metragem) : ""}
+              onChange={handleField}
+              className="w-full p-2 border border-gray-400 rounded-lg font-poppins"
               required
               inputMode="numeric"
             />
@@ -205,12 +141,12 @@ export default function EditarImovelModal({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           <div>
-            <label className="block text-sm font-semibold text-blue-900 mb-1">Cidade</label>
+            <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Cidade</label>
             <select
               name="cidade"
-              value={form.cidade || ''}
-              onChange={onChange}
-              className={selectClass}
+              value={localForm.cidade ?? ''}
+              onChange={handleField}
+              className="w-full p-2 border border-gray-400 rounded-lg font-poppins cursor-pointer"
               required
             >
               <option value="">Selecione</option>
@@ -222,16 +158,16 @@ export default function EditarImovelModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-blue-900 mb-1">Bairro</label>
+            <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Bairro</label>
             <select
               name="bairro"
-              value={form.bairro || ''}
-              onChange={onChange}
-              className={selectClass}
+              value={localForm.bairro ?? ''}
+              onChange={handleField}
+              className="w-full p-2 border border-gray-400 rounded-lg font-poppins cursor-pointer"
               required
             >
               <option value="">Selecione</option>
-              {(cidadesComBairros[form.cidade || ''] ?? []).map((bairro) => (
+              {(cidadesComBairros[localForm.cidade ?? ''] ?? []).map((bairro) => (
                 <option key={bairro} value={bairro}>
                   {bairro}
                 </option>
@@ -240,49 +176,48 @@ export default function EditarImovelModal({
           </div>
         </div>
         <div className="mt-4">
-          <label className="block text-sm font-semibold text-blue-900 mb-1">Endereço detalhado</label>
+          <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Endereço detalhado</label>
           <input
             name="enderecoDetalhado"
             placeholder="Ex: Rua das Flores, 123, apto 45"
-            value={form.enderecoDetalhado || ''}
-            onChange={onChange}
-            className={inputClass}
+            value={localForm.enderecoDetalhado ?? ''}
+            onChange={handleField}
+            className="w-full p-2 border border-gray-400 rounded-lg font-poppins"
             required
           />
         </div>
         <div className="mt-4">
-          <label className="block text-sm font-semibold text-blue-900 mb-1">Descrição</label>
+          <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Descrição</label>
           <textarea
             name="descricao"
             placeholder="Descrição do imóvel"
-            value={form.descricao || ''}
-            onChange={onChange}
-            className={inputClass}
+            value={localForm.descricao ?? ''}
+            onChange={handleField}
+            className="w-full p-2 border border-gray-400 rounded-lg font-poppins"
             rows={4}
             required
           />
         </div>
         <div className="mt-4">
-          <label className="block text-sm font-semibold text-blue-900 mb-1">WhatsApp</label>
+          <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">WhatsApp</label>
           <input
-            ref={whatsappRef}
             name="whatsapp"
             placeholder="(99) 99999-9999"
-            defaultValue={form.whatsapp ? formatPhone(String(form.whatsapp)) : ''}
-            onChange={handleWhatsappChange}
-            className={inputClass}
+            value={localForm.whatsapp ?? ''}
+            onChange={handleField}
+            className="w-full p-2 border border-gray-400 rounded-lg font-poppins"
             required
             inputMode="tel"
             maxLength={15}
           />
         </div>
         <div className="mt-4">
-          <label className="block text-sm font-semibold text-blue-900 mb-1">Patrocinador</label>
+          <label className="block text-sm font-semibold text-blue-900 mb-1 font-poppins">Patrocinador</label>
           <select
             name="patrocinador"
-            value={form.patrocinador || ''}
-            onChange={onChange}
-            className={selectClass}
+            value={localForm.patrocinador ?? ''}
+            onChange={handleField}
+            className="w-full p-2 border border-gray-400 rounded-lg font-poppins cursor-pointer"
             disabled={patrocinadores.length === 0}
           >
             <option value="">
@@ -297,17 +232,47 @@ export default function EditarImovelModal({
             ))}
           </select>
         </div>
+
+        {/* Itens do imóvel */}
+        {setorSelecionado && (
+          <div className="mt-8">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="block text-base font-semibold text-blue-900 font-poppins">
+                Itens do imóvel
+              </span>
+              <span className="text-xs text-gray-500 font-poppins">(preencha o que for relevante)</span>
+            </div>
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+              <ItensImovel
+                itensDisponiveis={itensDisponiveis}
+                itens={ensureItensAreNumbers(localForm.itens)}
+                setItens={(novo) =>
+                  setLocalForm((prev) => {
+                    const prevItens = ensureItensAreNumbers(prev.itens);
+                    return {
+                      ...prev,
+                      itens: typeof novo === "function" ? novo(prevItens) : novo,
+                    };
+                  })
+                }
+                ITENS_QUANTITATIVOS={ITENS_QUANTITATIVOS}
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row gap-4 mt-8">
           <button
             type="button"
             onClick={onClose}
-            className={buttonYellow}
+            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg transition-colors font-semibold cursor-pointer font-poppins"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className={buttonGreen}
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors font-semibold cursor-pointer disabled:bg-gray-400 font-poppins"
           >
             Salvar Alterações
           </button>
