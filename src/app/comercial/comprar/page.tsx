@@ -44,8 +44,8 @@ export default function ComercialComprarPage() {
       setCarregando(true);
 
       const filtrosQuery = [
-        where("setor", "==", "Comercial"),
-        where("tipoNegocio", "==", "Venda"),
+        where("tipoNegocio", "==", "Comercial"),
+        where("setorNegocio", "==", "Venda"),
       ];
 
       if (filtros.tipoImovel)

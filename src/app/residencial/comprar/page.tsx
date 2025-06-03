@@ -46,8 +46,8 @@ export default function ResidencialComprarPage() {
       setCarregando(true);
 
       const filtrosQuery = [
-        where("setor", "==", "Residencial"),
-        where("tipoNegocio", "==", "Venda"),
+        where("tipoNegocio", "==", "Residencial"),
+        where("setorNegocio", "==", "Venda"),
       ];
 
       if (filtros.tipoImovel)

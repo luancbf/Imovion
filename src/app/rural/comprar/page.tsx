@@ -43,8 +43,8 @@ export default function RuralComprarPage() {
     async function fetchImoveis() {
       setCarregando(true);
       const filtrosQuery = [
-        where("setor", "==", "Rural"),
-        where("tipoNegocio", "==", "Venda"),
+        where("tipoNegocio", "==", "Rural"),
+        where("setorNegocio", "==", "Venda"),
       ];
 
       if (filtros.tipoImovel)

@@ -11,7 +11,7 @@ import { FiltroImovel, filtrarImoveisFrontend } from "@/components/FiltroImoveis
 import { FiFilter } from "react-icons/fi";
 import cidadesComBairros from "@/constants/cidadesComBairros";
 
-// Tipos de imóvel para residencial/aluguel
+
 const opcoesTipoImovel: Record<string, string[]> = {
   'Residencial-Aluguel': [
     'Casa', 'Casa em Condomínio Fechado', 'Apartamento', 'Kitnet', 'Flat', 'Loft', 'Quitinete', 'Estúdio', 'Outros'
@@ -49,8 +49,8 @@ export default function ResidencialAlugarPage() {
 
       // Só filtros principais na query!
       const filtrosQuery = [
-        where("setor", "==", "Residencial"),
-        where("tipoNegocio", "==", "Aluguel"),
+        where("tipoNegocio", "==", "Residencial"),
+        where("setorNegocio", "==", "Aluguel"),
       ];
 
       if (filtros.tipoImovel)

@@ -27,7 +27,7 @@ export default function PatrocinadorPage() {
         const data = docSnap.data();
         setPatrocinador({
           nome: data.nome || patrocinadorId,
-          banner: data.bannerUrl || "/patrocinadores/default-banner.jpg", // <-- ajuste aqui
+          banner: data.bannerUrl || "/patrocinadores/default-banner.jpg",
         });
       } else {
         setPatrocinador({
@@ -86,7 +86,7 @@ export default function PatrocinadorPage() {
             Nenhum imóvel cadastrado para este patrocinador.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {imoveis.map((imovel) => (
               <ImovelCard key={imovel.id} imovel={imovel} contexto="patrocinador" />
             ))}

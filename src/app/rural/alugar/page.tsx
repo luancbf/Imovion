@@ -44,8 +44,8 @@ export default function RuralAlugarPage() {
       setCarregando(true);
 
       const filtrosQuery = [
-        where("setor", "==", "Rural"),
-        where("tipoNegocio", "==", "Aluguel"),
+        where("tipoNegocio", "==", "Rural"),
+        where("setorNegocio", "==", "Aluguel"),
       ];
 
       if (filtros.tipoImovel)

@@ -21,31 +21,32 @@ export default function Slider() {
   const swiperRef = useRef<SwiperType | null>(null);
 
   return (
-    <div className="flex items-center justify-center relative w-full max-w-90 sm:max-w-2xl h-50 sm:h-75 mx-auto overflow-hidden rounded-2xl shadow-lg">
+    <div className="w-[90vw] sm:w-[80vw] md:max-w-3xl mx-auto h-45 sm:h-75 lg:h-90 relative overflow-hidden rounded-2xl shadow-lg flex items-center justify-center">
       <Swiper
         modules={[Navigation, Pagination, Autoplay]}
         onSwiper={swiper => (swiperRef.current = swiper)}
         autoplay={{ delay: 7000, disableOnInteraction: false }}
         loop
         pagination={{ clickable: true, el: ".custom-swiper-pagination" }}
-        style={{ minHeight: "300px" }}
+        className="w-full h-full"
       >
         {slides.map((slide, idx) => (
           <SwiperSlide key={idx}>
-            <div className="flex items-center justify-center">
-              <Link href={slide.href} className="flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center">
+              <Link href={slide.href}>
                 <Image
                   src={slide.src}
                   alt={`Banner do patrocinador ${idx + 1}`}
-                  width={1200}
-                  height={400}
+                  fill
+                  className="object-cover"
                   priority={idx === 0}
+                  sizes="(max-width: 768px) 100vw, 900px"
                 />
               </Link>
             </div>
           </SwiperSlide>
         ))}
-        <div className="custom-swiper-pagination absolute bottom-8 w-full flex justify-center gap-2 z-10" />
+        <div className="custom-swiper-pagination absolute bottom-4 w-full flex justify-center gap-2 z-10" />
       </Swiper>
 
       {/* Botões de navegação */}

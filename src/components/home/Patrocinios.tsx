@@ -3,14 +3,14 @@ import Image from "next/image";
 
 const patrocinadores = [
   { id: "l0oLEjljFrMFtFc4Gcjw", imagem: "/patrocinio.png" },
-  { id: "patrocinador2", imagem: "/patrocinio.png" },
-  { id: "patrocinador3", imagem: "/patrocinio.png" },
-  { id: "patrocinador4", imagem: "/patrocinio.png" },
-  { id: "patrocinador5", imagem: "/patrocinio.png" },
-  { id: "patrocinador6", imagem: "/patrocinio.png" },
-  { id: "patrocinador7", imagem: "/patrocinio.png" },
-  { id: "patrocinador8", imagem: "/patrocinio.png" },
-  { id: "patrocinador9", imagem: "/patrocinio.png" },
+  { id: "", imagem: "/patrocinio.png" },
+  { id: "", imagem: "/patrocinio.png" },
+  { id: "", imagem: "/patrocinio.png" },
+  { id: "", imagem: "/patrocinio.png" },
+  { id: "", imagem: "/patrocinio.png" },
+  { id: "", imagem: "/patrocinio.png" },
+  { id: "", imagem: "/patrocinio.png" },
+  { id: "", imagem: "/patrocinio.png" },
 ];
 
 export default function Patrocinios() {
@@ -20,7 +20,6 @@ export default function Patrocinios() {
         <Link
           key={patrocinador.id}
           href={`/patrocinadores/${patrocinador.id}`}
-          className="hover:blur-xs transition-all duration-300"
           aria-label={`Ver detalhes do ${patrocinador.id}`}
           title={`Ver detalhes do ${patrocinador.id}`}
         >
