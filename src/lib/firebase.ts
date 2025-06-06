@@ -4,13 +4,13 @@ import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB7MWsEok6i-1NgfjUsIJMaL8sWTcgXJHo",
-  authDomain: "imovion.firebaseapp.com",
-  projectId: "imovion",
-  storageBucket: "imovion.firebasestorage.app",
-  messagingSenderId: "715689732466",
-  appId: "1:715689732466:web:fde74b396735e787d095eb",
-  measurementId: "G-19C0PG6JM4"
+  apiKey: "AIzaSyCo6FaIW1J_3sR0TzlRsk5f6e4wQVHQcuE",
+  authDomain: "imovion-mt.firebaseapp.com",
+  projectId: "imovion-mt",
+  storageBucket: "imovion-mt.firebasestorage.app",
+  messagingSenderId: "846996702846",
+  appId: "1:846996702846:web:c6be716bdeee0e7cf83a2f",
+  measurementId: "G-Z52XQ13ERH"
 };
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
