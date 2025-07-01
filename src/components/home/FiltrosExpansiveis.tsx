@@ -23,15 +23,15 @@ export default function FiltrosExpansiveis() {
   }, [aberto]);
 
   const botaoPrincipalClasse =
-    "h-15 sm:h-20 min-w-40 sm:min-w-80 max-w-40 sm:max-w-90 text-white font-poppins font-bold text-lg sm:text-2xl shadow rounded transition-all duration-200 text-center flex items-center justify-center cursor-pointer hover:brightness-110";
+    "h-15 sm:h-20 w-70 text-white font-poppins font-bold text-lg sm:text-2xl shadow rounded transition-all duration-200 text-center flex items-center justify-center cursor-pointer hover:brightness-110";
 
   const botaoSecundarioClasse =
     "flex-1 px-1 py-1 sm:py-2 rounded transition-all duration-150 shadow font-poppins font-semibold text-base sm:text-xl cursor-pointer";
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 justify-items-center" ref={containerRef}>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 justify-items-center" ref={containerRef}>
       {/* Residencial */}
-      <div className="flex flex-col items-center w-full max-w-40 sm:max-w-90">
+      <div className="flex flex-col items-center w-full">
         <button
           className={`${botaoPrincipalClasse} bg-gradient-to-r from-blue-500 to-blue-700`}
           onClick={() => setAberto(aberto === "residencial" ? null : "residencial")}
@@ -58,7 +58,7 @@ export default function FiltrosExpansiveis() {
       </div>
 
       {/* Comercial */}
-      <div className="flex flex-col items-center w-full max-w-40 sm:max-w-90">
+      <div className="flex flex-col items-center w-full">
         <button
           className={`${botaoPrincipalClasse} bg-gradient-to-r from-green-500 to-green-700`}
           onClick={() => setAberto(aberto === "comercial" ? null : "comercial")}
@@ -85,7 +85,7 @@ export default function FiltrosExpansiveis() {
       </div>
 
       {/* Rural */}
-      <div className="flex flex-col items-center w-full max-w-40 sm:max-w-90">
+      <div className="flex flex-col items-center w-full">
         <button
           className={`${botaoPrincipalClasse} bg-gradient-to-r from-yellow-600 to-yellow-800`}
           onClick={() => setAberto(aberto === "rural" ? null : "rural")}
@@ -112,7 +112,7 @@ export default function FiltrosExpansiveis() {
       </div>
 
       {/* Anunciar */}
-      <div className="flex flex-col items-center w-full max-w-40 sm:max-w-80 col-span-1">
+      <div className="flex flex-col items-center w-full max-w-40 sm:max-w-70 col-span-1">
         <button
           className={`${botaoPrincipalClasse} bg-gradient-to-r from-gray-500 to-gray-700`}
           onClick={() => setAberto(aberto === "anunciar" ? null : "anunciar")}

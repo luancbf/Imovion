@@ -1,33 +1,49 @@
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { createBrowserClient } from "@supabase/ssr";
 import type { Imovel } from "@/types/Imovel";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 export async function buscarImoveis(
   filtros: Record<string, string>,
   setor: string,
   tipoNegocio: string
 ): Promise<Imovel[]> {
-  let q = query(collection(db, "imoveis"));
+  let query = supabase
+    .from("imoveis")
+    .select("*")
+    .eq("setorNegocio", setor)
+    .eq("tipoNegocio", tipoNegocio);
 
-  // Setor e tipoNegocio já vêm fixos da página
-  q = query(q, where("setor", "==", setor));
-  q = query(q, where("tipoNegocio", "==", tipoNegocio));
-
-  // Demais filtros opcionais
   if (filtros.cidade) {
-    q = query(q, where("cidade", "==", filtros.cidade));
+    query = query.eq("cidade", filtros.cidade);
   }
   if (filtros.bairro) {
-    q = query(q, where("bairro", "==", filtros.bairro));
+    query = query.eq("bairro", filtros.bairro);
   }
 
-  // NÃO filtre por itens aqui!
+  // Filtros quantitativos (exemplo: quartos, banheiros, metragem, etc)
+  Object.entries(filtros).forEach(([chave, valor]) => {
+    if (
+      ["quartos", "suites", "banheiros", "garagens", "metragem", "salas", "hectares", "casasFuncionarios", "galpoes"].includes(chave) &&
+      valor &&
+      !isNaN(Number(valor))
+    ) {
+      query = query.gte(`itens->>${chave}`, Number(valor));
+    }
+  });
 
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Erro ao buscar imóveis:", error.message);
+    return [];
+  }
+
+  return (
+    data?.map((data: Imovel) => ({
+      id: data.id,
       cidade: data.cidade ?? "",
       bairro: data.bairro ?? "",
       enderecoDetalhado: data.enderecoDetalhado ?? "",
@@ -42,6 +58,6 @@ export async function buscarImoveis(
       imagens: data.imagens ?? [],
       dataCadastro: data.dataCadastro ?? "",
       itens: data.itens ?? {},
-    } as Imovel;
-  });
+    })) ?? []
+  );
 }

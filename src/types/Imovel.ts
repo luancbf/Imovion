@@ -14,4 +14,6 @@ export interface Imovel {
   imagens: string[];
   dataCadastro?: Date | string;
   itens?: Record<string, unknown>;
+  latitude?: number | null;
+  longitude?: number | null;
 }

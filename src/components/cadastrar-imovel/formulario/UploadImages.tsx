@@ -26,7 +26,6 @@ export default function UploadImages({
 }: UploadImagesProps) {
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
 
-  // Drag and drop handlers
   const handleDragStart = (index: number) => setDraggedIndex(index);
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -39,7 +38,6 @@ export default function UploadImages({
     setDraggedIndex(null);
   };
 
-  // Seta handlers
   const moveLeft = (index: number) => {
     if (index > 0) onReorder(index, index - 1);
   };
@@ -93,7 +91,6 @@ export default function UploadImages({
               className="object-cover rounded-lg"
               style={{ zIndex: 1 }}
             />
-            {/* Botão Remover */}
             <button
               type="button"
               onClick={e => {
@@ -106,7 +103,6 @@ export default function UploadImages({
             >
               ×
             </button>
-            {/* Setas de ordenação */}
             <div className="absolute bottom-1 left-1 right-1 flex justify-between items-center opacity-80 group-hover:opacity-100 transition-opacity z-10">
               <button
                 type="button"
@@ -114,7 +110,7 @@ export default function UploadImages({
                   e.stopPropagation();
                   moveLeft(index);
                 }}
-                className={`bg-white border border-gray-300 rounded-full w-7 h-7 flex items-center justify-center shadow hover:bg-blue-100 transition disabled:opacity-30`}
+                className="bg-white border border-gray-300 rounded-full w-7 h-7 flex items-center justify-center shadow hover:bg-blue-100 transition disabled:opacity-30"
                 disabled={index === 0}
                 aria-label="Mover para a esquerda"
                 tabIndex={-1}
@@ -127,7 +123,7 @@ export default function UploadImages({
                   e.stopPropagation();
                   moveRight(index);
                 }}
-                className={`bg-white border border-gray-300 rounded-full w-7 h-7 flex items-center justify-center shadow hover:bg-blue-100 transition disabled:opacity-30`}
+                className="bg-white border border-gray-300 rounded-full w-7 h-7 flex items-center justify-center shadow hover:bg-blue-100 transition disabled:opacity-30"
                 disabled={index === previews.length - 1}
                 aria-label="Mover para a direita"
                 tabIndex={-1}

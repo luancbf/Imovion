@@ -1,82 +1,90 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import useAuthGuard from '@/hooks/useAuthGuard';
+import { useState } from "react";
+import { createBrowserClient } from "@supabase/ssr";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
   const router = useRouter();
-  useAuthGuard();
 
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [erro, setErro] = useState('');
-  const [loading, setLoading] = useState(false);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        router.push('/cadastrar-imovel');
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
-
-  const handleLogin = async (e: React.FormEvent) => {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setErro('');
-    setLoading(true);
-
-    try {
-      await signInWithEmailAndPassword(auth, email, senha);
-      router.push('/cadastrar-imovel');
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        if (error.message.includes('auth/invalid-credential')) {
-          setErro('Email ou senha inválidos.');
-        } else {
-          setErro('Erro ao fazer login. Tente novamente.');
-        }
-      } else {
-        setErro('Erro inesperado ao fazer login.');
-      }
-    } finally {
-      setLoading(false);
+    setCarregando(true);
+    setErro("");
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
+    
+    setCarregando(false);
+    
+    if (error || !data.user) {
+      setErro("E-mail ou senha inválidos.");
+      return;
     }
-  };
+
+    // Todo usuário autenticado tem acesso ao admin
+    router.push("/admin");
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-400">
-      <div className="bg-white p-12 rounded shadow-md w-full max-w-md">
-        <h2 className="text-4xl font-bold mb-8 text-center text-black">Login</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-200">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center">
+        <div className="mb-6 flex flex-col items-center">
+          <Image
+              src="/imovion.png"
+              alt="Imovion Logo"
+              width={1000}
+              height={1000}
+              className="w-80 mb-5 object-cover"
+            />
+          <h1 className="font-poppins text-2xl font-extrabold text-blue-700 mb-1">Login</h1>
+          <span className="font-inter text-gray-500 text-sm">Acesse sua conta para gerenciar seus imóveis</span>
+        </div>
+        <form onSubmit={handleLogin} className="font-inter w-full flex flex-col gap-4">
           <input
             type="email"
-            placeholder="Email"
+            placeholder="E-mail"
+            className="border border-blue-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-400 outline-none transition"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 border rounded text-black"
+            onChange={e => setEmail(e.target.value)}
             required
+            autoFocus
           />
           <input
             type="password"
             placeholder="Senha"
+            className="border border-blue-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-400 outline-none transition"
             value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            className="w-full p-2 border rounded text-black"
+            onChange={e => setSenha(e.target.value)}
             required
           />
+          {erro && <div className="text-red-600 text-sm text-center">{erro}</div>}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
-            disabled={loading}
+            className="font-poppins bg-blue-700 hover:bg-blue-800 text-white rounded-lg py-3 font-semibold transition"
+            disabled={carregando}
           >
-            {loading ? 'Entrando...' : 'Entrar'}
+            {carregando ? "Entrando..." : "Entrar"}
           </button>
-          {erro && <p className="text-red-500 text-center">{erro}</p>}
         </form>
+        <div className="font-inter mt-6 text-center text-sm text-gray-600">
+          Não tem uma conta?{" "}
+          <Link href="/signup" className="text-blue-700 font-semibold hover:underline">
+            Criar conta
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -33,7 +33,7 @@ export default function ImovelCarousel({
           style={{ height: '100%' }}
         >
           {imagens.map((img, i) => (
-            <SwiperSlide key={img}>
+            <SwiperSlide key={img + i}>
               <div
                 className={`relative w-full ${altura} cursor-pointer`}
                 onClick={() => onImageClick && onImageClick(i)}

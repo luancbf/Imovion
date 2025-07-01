@@ -23,13 +23,12 @@ export default function SelectCidadeBairro({
         required
       >
         <option value="">Selecione a cidade</option>
-        {Object.keys(cidadesComBairros).map((cidade) => (
-          <option key={cidade} value={cidade}>
-            {cidade.replace(/_/g, ' ')}
+        {Object.keys(cidadesComBairros).map((c) => (
+          <option key={c} value={c}>
+            {c.replace(/_/g, ' ')}
           </option>
         ))}
       </select>
-
       <select
         name="bairro"
         value={bairro}
@@ -38,9 +37,9 @@ export default function SelectCidadeBairro({
         required
       >
         <option value="">Selecione o bairro</option>
-        {(cidadesComBairros[cidade] ?? []).map((bairro) => (
-          <option key={bairro} value={bairro}>
-            {bairro}
+        {(cidadesComBairros[cidade] ?? []).map((b) => (
+          <option key={b} value={b}>
+            {b}
           </option>
         ))}
       </select>

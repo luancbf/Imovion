@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { FiFilter, FiX, FiSearch } from 'react-icons/fi';
 
 interface FiltroCadastroImoveisProps {
   patrocinadores: { id: string; nome: string }[];
@@ -15,99 +16,198 @@ export default function FiltroCadastroImoveis({
   patrocinadores,
   onFiltroChange
 }: FiltroCadastroImoveisProps) {
-  const [filtrosLocais, setFiltrosLocais] = useState({
+  const [filtros, setFiltros] = useState({
     tipoNegocio: '',
     setorNegocio: '',
     patrocinador: ''
   });
 
   useEffect(() => {
-    onFiltroChange(filtrosLocais);
-  }, [filtrosLocais, onFiltroChange]);
+    onFiltroChange(filtros);
+  }, [filtros, onFiltroChange]);
 
-  const handleFiltroChange = (name: string, value: string) => {
-    setFiltrosLocais(prev => ({
+  const handleFiltroChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFiltros(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
   const limparFiltros = () => {
-    setFiltrosLocais({
+    setFiltros({
       tipoNegocio: '',
       setorNegocio: '',
       patrocinador: ''
     });
   };
 
-  const selectClass =
-    "w-full p-2 border border-gray-300 rounded-lg bg-white text-black cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition";
-  const buttonClass =
-    "bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg transition-colors font-semibold cursor-pointer";
+  const hasActiveFilters = filtros.tipoNegocio || filtros.setorNegocio || filtros.patrocinador;
 
   return (
-    <div className="bg-white/90 p-4 md:p-8 rounded-2xl shadow flex flex-col gap-4 w-full max-w-6xl mx-auto">
-      <h2 className="font-poppins text-lg md:text-xl font-bold mb-2 text-blue-900">Filtrar Imóveis</h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <label className="font-poppins block text-sm font-medium text-blue-900 mb-1">Setor</label>
-          <select
-            name="tipoNegocio"
-            value={filtrosLocais.tipoNegocio}
-            onChange={(e) => handleFiltroChange('tipoNegocio', e.target.value)}
-            className={selectClass}
-          >
-            <option value="">Todos os setores</option>
-            <option value="Residencial">Residencial</option>
-            <option value="Comercial">Comercial</option>
-            <option value="Rural">Rural</option>
-          </select>
+    <section className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-blue-100">
+      {/* Header da Seção */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-blue-100 rounded-2xl">
+            <FiFilter className="text-blue-600" size={24} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-blue-900">
+              🔍 Filtros de Busca
+            </h2>
+            <p className="text-blue-600 text-sm">
+              Refine sua busca por imóveis
+            </p>
+          </div>
         </div>
 
-        <div>
-          <label className="font-poppins block text-sm font-medium text-blue-900 mb-1">Tipo de Negócio</label>
-          <select
-            name="setorNegocio"
-            value={filtrosLocais.setorNegocio}
-            onChange={(e) => handleFiltroChange('setorNegocio', e.target.value)}
-            className={selectClass}
-          >
-            <option value="">Todos os tipos</option>
-            <option value="Venda">Venda</option>
-            <option value="Aluguel">Aluguel</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="font-poppins block text-sm font-medium text-blue-900 mb-1">Patrocinador</label>
-          <select
-            name="patrocinador"
-            value={filtrosLocais.patrocinador}
-            onChange={(e) => handleFiltroChange('patrocinador', e.target.value)}
-            className={selectClass}
-            disabled={patrocinadores.length === 0}
-          >
-            <option value="">Todos os patrocinadores</option>
-            {patrocinadores.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Badge de Filtros Ativos */}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-xl">
+            <FiSearch size={16} />
+            <span className="text-sm font-medium">
+              {Object.values(filtros).filter(v => v).length} filtro(s) ativo(s)
+            </span>
+          </div>
+        )}
       </div>
 
-      <div className="flex justify-end mt-4">
-        <button
-          type="button"
-          onClick={limparFiltros}
-          className={buttonClass}
-          aria-label="Limpar todos os filtros"
-        >
-          Limpar Filtros
-        </button>
+      {/* Formulário de Filtros */}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Filtro Setor */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
+              Setor do Imóvel
+            </label>
+            <select
+              name="tipoNegocio"
+              value={filtros.tipoNegocio}
+              onChange={handleFiltroChange}
+              className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
+            >
+              <option value="">🏢 Todos os setores</option>
+              <option value="Residencial">🏠 Residencial</option>
+              <option value="Comercial">🏪 Comercial</option>
+              <option value="Rural">🌾 Rural</option>
+            </select>
+          </div>
+
+          {/* Filtro Tipo de Negócio */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
+              Tipo de Negócio
+            </label>
+            <select
+              name="setorNegocio"
+              value={filtros.setorNegocio}
+              onChange={handleFiltroChange}
+              className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
+            >
+              <option value="">💼 Todos os tipos</option>
+              <option value="Venda">💰 Venda</option>
+              <option value="Aluguel">🏠 Aluguel</option>
+            </select>
+          </div>
+
+          {/* Filtro Patrocinador */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-blue-900">
+              Patrocinador
+            </label>
+            <select
+              name="patrocinador"
+              value={filtros.patrocinador}
+              onChange={handleFiltroChange}
+              disabled={patrocinadores.length === 0}
+              className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">🏢 Todos os patrocinadores</option>
+              {patrocinadores.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nome}
+                </option>
+              ))}
+            </select>
+            {patrocinadores.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                Nenhum patrocinador encontrado
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Seção de Ações */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-blue-100">
+          {/* Informações dos Filtros */}
+          <div className="flex items-center gap-4 text-sm text-gray-600">
+            {hasActiveFilters ? (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span>Filtros aplicados com sucesso</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <span>Mostrando todos os imóveis</span>
+              </div>
+            )}
+          </div>
+
+          {/* Botão Limpar */}
+          <button
+            type="button"
+            onClick={limparFiltros}
+            disabled={!hasActiveFilters}
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+            aria-label="Limpar todos os filtros"
+          >
+            <FiX size={18} />
+            <span>Limpar Filtros</span>
+          </button>
+        </div>
+
+        {/* Estatísticas dos Filtros (se tiver filtros ativos) */}
+        {hasActiveFilters && (
+          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
+            <h4 className="text-sm font-semibold text-blue-900 mb-3">
+              📊 Filtros Aplicados:
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {filtros.tipoNegocio && (
+                <div className="bg-white rounded-lg p-3 border border-blue-100">
+                  <div className="text-xs text-blue-600 font-medium">Setor</div>
+                  <div className="text-sm font-semibold text-blue-900 flex items-center gap-1">
+                    {filtros.tipoNegocio === 'Residencial' ? '🏠' : 
+                     filtros.tipoNegocio === 'Comercial' ? '🏪' : '🌾'}
+                    {filtros.tipoNegocio}
+                  </div>
+                </div>
+              )}
+              
+              {filtros.setorNegocio && (
+                <div className="bg-white rounded-lg p-3 border border-blue-100">
+                  <div className="text-xs text-blue-600 font-medium">Tipo</div>
+                  <div className="text-sm font-semibold text-blue-900 flex items-center gap-1">
+                    {filtros.setorNegocio === 'Venda' ? '💰' : '🏠'}
+                    {filtros.setorNegocio}
+                  </div>
+                </div>
+              )}
+              
+              {filtros.patrocinador && (
+                <div className="bg-white rounded-lg p-3 border border-blue-100">
+                  <div className="text-xs text-blue-600 font-medium">Patrocinador</div>
+                  <div className="text-sm font-semibold text-blue-900 flex items-center gap-1">
+                    🏢 {patrocinadores.find(p => p.id === filtros.patrocinador)?.nome || 'N/A'}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </section>
   );
 }

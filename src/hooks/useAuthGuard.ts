@@ -1,25 +1,34 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { onAuthStateChanged } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 export default function useAuthGuard() {
-  const router = useRouter()
-  const [carregando, setCarregando] = useState(true)
+  const router = useRouter();
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (usuario) => {
-      if (!usuario) {
-        router.replace('/login')
-      } else {
-        setCarregando(false)
+    let ignore = false;
+    async function checkSession() {
+      const { data } = await supabase.auth.getSession();
+      if (!ignore) {
+        if (!data.session) {
+          router.replace('/login');
+        } else {
+          setCarregando(false);
+        }
       }
-    })
+    }
+    checkSession();
+    return () => {
+      ignore = true;
+    };
+  }, [router]);
 
-    return () => unsubscribe()
-  }, [router])
-
-  return carregando
+  return carregando;
 }

@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { FiList, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { FaPlus, FaMinus } from "react-icons/fa";
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
-import type { Imovel } from "@/types/Imovel"; // Use o tipo global
 
 interface FiltroImovelProps {
   cidadesComBairros: Record<string, string[]>;
@@ -12,34 +11,6 @@ interface FiltroImovelProps {
   setor: 'Residencial' | 'Comercial' | 'Rural';
   tipoNegocio: string;
   onFiltroChange: (filtros: Record<string, string>) => void;
-}
-
-// Função exportada para uso externo
-export function filtrarImoveisFrontend(
-  imoveis: Imovel[],
-  filtros: Record<string, string>,
-  itensDisponiveis: { chave: string; label: string }[]
-): Imovel[] {
-  return imoveis.filter(imovel => {
-    for (const item of itensDisponiveis) {
-      if (ITENS_QUANTITATIVOS.includes(item.chave)) {
-        if (
-          filtros[item.chave] &&
-          Number((imovel.itens?.[item.chave] as number) || 0) < Number(filtros[item.chave])
-        ) {
-          return false;
-        }
-      } else {
-        if (
-          filtros[item.chave] &&
-          !imovel.itens?.[item.chave]
-        ) {
-          return false;
-        }
-      }
-    }
-    return true;
-  });
 }
 
 export function FiltroImovel({
@@ -207,11 +178,12 @@ export function FiltroImovel({
                     className="flex flex-col items-center bg-white rounded shadow px-2 py-2 min-w-0"
                   >
                     <label
-                      className="text-blue-900 font-inter text-xs sm:text-sm mb-1 text-center truncate w-full"
+                      className="text-blue-900 font-inter text-xs sm:text-sm mb-1 text-center truncate w-full flex items-center justify-center gap-1"
                       htmlFor={item.chave}
-                      title={item.label}
+                      title={item.nome}
                     >
-                      {item.label}
+                      <span className="text-sm">{item.icone}</span>
+                      <span className="truncate">{item.nome}</span>
                     </label>
                     {isQuant ? (
                       <div className="flex items-center gap-2 w-full justify-center">

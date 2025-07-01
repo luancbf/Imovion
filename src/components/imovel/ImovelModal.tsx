@@ -14,8 +14,6 @@ interface ImovelModalProps {
   aberto: boolean;
   imagemIndex: number;
   onClose: () => void;
-  onAnterior: () => void;
-  onProxima: () => void;
   setImagemIndex: (index: number) => void;
   handleBackgroundClick: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
@@ -61,7 +59,7 @@ const ImovelModal: React.FC<ImovelModalProps> = ({
           onSwiper={swiper => (swiperRef.current = swiper)}
         >
           {imagens.map((img, i) => (
-            <SwiperSlide key={img}>
+            <SwiperSlide key={img + i}>
               <div className="flex items-center justify-center w-full h-[60vh] sm:h-[70vh]">
                 <Image
                   src={img}
@@ -84,27 +82,26 @@ const ImovelModal: React.FC<ImovelModalProps> = ({
             </SwiperSlide>
           ))}
         </Swiper>
-        {/* Miniaturas no modal */}
         {imagens.length > 1 && (
           <div className="flex flex-wrap justify-center gap-2 mt-6">
-            {imagens.map((img, index) => (
+            {imagens.map((img, i) => (
               <button
-                key={index}
+                key={img + i}
                 onClick={() => {
-                  setImagemIndex(index);
+                  setImagemIndex(i);
                   if (swiperRef.current) {
-                    swiperRef.current.slideTo(index);
+                    swiperRef.current.slideTo(i);
                   }
                 }}
                 className={`w-12 h-12 sm:w-16 sm:h-16 rounded overflow-hidden border-2 transition ${
-                  imagemIndex === index ? 'border-blue-500' : 'border-transparent'
+                  imagemIndex === i ? 'border-blue-500' : 'border-transparent'
                 } cursor-pointer`}
-                aria-label={`Selecionar imagem ${index + 1}`}
+                aria-label={`Selecionar imagem ${i + 1}`}
                 type="button"
               >
                 <Image
                   src={img}
-                  alt={`Miniatura modal ${index + 1}`}
+                  alt={`Miniatura modal ${i + 1}`}
                   width={64}
                   height={64}
                   className="w-full h-full object-cover hover:opacity-80"

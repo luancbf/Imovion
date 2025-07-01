@@ -1,14 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { FaEdit, FaTrash, FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import type { Timestamp } from 'firebase/firestore';
+import { FiEdit2, FiTrash2, FiEye, FiChevronDown, FiChevronUp, FiImage, FiMapPin, FiHome, FiCalendar } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditarImovelModal from '@/components/cadastrar-imovel/EditarImovelModal';
 import type { Imovel } from '@/types/Imovel';
-
-// Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -22,10 +19,11 @@ interface ImovelComItens extends Imovel {
 interface ImovelCardProps {
   imovel: ImovelComItens;
   onDelete: (id: string) => void;
-  onEdit: (id: string, dados: Partial<Imovel>) => void | Promise<void>
+  onEdit: (id: string, dados: Partial<Imovel>) => void | Promise<void>;
   cidadesComBairros: Record<string, string[]>;
   opcoesTipoImovel: Record<string, string[]>;
   patrocinadores: { id: string; nome: string }[];
+  viewMode?: 'grid' | 'list';
 }
 
 const ITENS_POR_SETOR: Record<string, { chave: string; label: string }[]> = {
@@ -101,6 +99,36 @@ const ITENS_QUANTITATIVOS = [
   "quartos", "suites", "banheiros", "garagens", "cozinhas", "closets", "hectares", "casasFuncionarios", "galpoes", "salas"
 ];
 
+function formatarData(data?: Date | string): string {
+  if (!data) return 'Data não informada';
+  const dateObj = typeof data === 'string' ? new Date(data) : data;
+  if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
+    return dateObj.toLocaleDateString('pt-BR');
+  }
+  return 'Data inválida';
+}
+
+function formatarTexto(texto: string | undefined) {
+  return typeof texto === 'string' ? texto.replace(/_/g, " ") : '';
+}
+
+function getTipoIcon(tipoNegocio: string | undefined): string {
+  switch(tipoNegocio) {
+    case 'Residencial': return '🏠';
+    case 'Comercial': return '🏪';
+    case 'Rural': return '🌾';
+    default: return '🏢';
+  }
+}
+
+function getSetorIcon(setorNegocio: string | undefined): string {
+  switch(setorNegocio) {
+    case 'Venda': return '💰';
+    case 'Aluguel': return '🏠';
+    default: return '💼';
+  }
+}
+
 export default function ImovelCard({
   imovel,
   onDelete,
@@ -108,6 +136,7 @@ export default function ImovelCard({
   cidadesComBairros,
   opcoesTipoImovel,
   patrocinadores,
+  viewMode = 'grid'
 }: ImovelCardProps) {
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [editando, setEditando] = useState(false);
@@ -115,126 +144,282 @@ export default function ImovelCard({
   const [exibirMais, setExibirMais] = useState(false);
 
   const imagens = imovel.imagens || [];
+  const itensDisponiveis = ITENS_POR_SETOR[imovel.tipoNegocio || ''] || [];
+  const patrocinadorNome = patrocinadores.find(p => p.id === imovel.patrocinador)?.nome || 'N/A';
 
-  const formatarData = (data?: Date | Timestamp | string): string => {
-    if (!data) return 'Data não informada';
-    if (typeof data === 'object' && 'toDate' in data) {
-      return data.toDate().toLocaleDateString('pt-BR');
-    }
-    if (data instanceof Date) {
-      return data.toLocaleDateString('pt-BR');
-    }
-    const dateObj = new Date(data);
-    if (!isNaN(dateObj.getTime())) {
-      return dateObj.toLocaleDateString('pt-BR');
-    }
-    return 'Data inválida';
+  const handleConfirmarExclusao = () => {
+    onDelete(imovel.id!);
+    setConfirmandoExclusao(false);
   };
 
-  const formatarTexto = (texto: string | undefined) =>
-    typeof texto === 'string' ? texto.replace(/_/g, " ") : '';
+  // Layout para visualização em lista
+  if (viewMode === 'list') {
+    return (
+      <div className="group bg-gradient-to-br from-blue-50 to-white p-6 rounded-2xl border border-blue-200 hover:shadow-xl hover:border-blue-300 transition-all duration-300">
+        <div className="flex gap-6">
+          {/* Imagem Principal */}
+          <div className="relative flex-shrink-0">
+            {imagens.length > 0 ? (
+              <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-blue-100 group-hover:border-blue-200 transition-colors">
+                <Image
+                  src={imagens[0]}
+                  alt={`${formatarTexto(imovel.tipoImovel)} em ${formatarTexto(imovel.cidade)}`}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+                {imagens.length > 1 && (
+                  <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                    +{imagens.length - 1}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="w-32 h-24 bg-blue-100 rounded-xl flex items-center justify-center border-2 border-blue-200">
+                <FiImage className="text-blue-400" size={24} />
+              </div>
+            )}
+          </div>
 
-  const itensDisponiveis = ITENS_POR_SETOR[imovel.tipoNegocio] || [];
+          {/* Informações Principais */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1">
+                <h3 className="font-bold text-blue-900 text-lg mb-1 group-hover:text-blue-700 transition-colors">
+                  {getTipoIcon(imovel.tipoNegocio)} {formatarTexto(imovel.tipoImovel)}
+                </h3>
+                <div className="flex items-center gap-2 text-sm text-blue-600 mb-2">
+                  <span className="bg-blue-100 px-2 py-1 rounded-full">
+                    {getSetorIcon(imovel.setorNegocio)} {imovel.setorNegocio || 'N/A'}
+                  </span>
+                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
+                    {imovel.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right text-sm text-gray-500">
+                <div className="flex items-center gap-1">
+                  <FiCalendar size={14} />
+                  {formatarData(imovel.dataCadastro)}
+                </div>
+              </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+              <div className="flex items-center gap-1">
+                <FiMapPin size={14} />
+                <span>{formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <FiHome size={14} />
+                <span>{imovel.metragem}m²</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>🏢</span>
+                <span>{patrocinadorNome}</span>
+              </div>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="flex gap-2">
+              <Link
+                href={`/imoveis/${imovel.id}`}
+                className="flex items-center gap-1 p-2 text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200 text-sm"
+                title="Ver página do imóvel"
+              >
+                <FiEye size={16} />
+                <span className="hidden sm:inline">Ver</span>
+              </Link>
+              
+              <button
+                onClick={() => setEditando(true)}
+                className="flex items-center gap-1 p-2 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg transition-all duration-200 text-sm"
+                title="Editar imóvel"
+              >
+                <FiEdit2 size={16} />
+                <span className="hidden sm:inline">Editar</span>
+              </button>
+              
+              <button
+                onClick={() => setConfirmandoExclusao(true)}
+                className="flex items-center gap-1 p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 text-sm"
+                title="Excluir imóvel"
+              >
+                <FiTrash2 size={16} />
+                <span className="hidden sm:inline">Excluir</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Confirmação de Exclusão */}
+        {confirmandoExclusao && (
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-red-700 font-medium">Confirmar exclusão deste imóvel?</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleConfirmarExclusao}
+                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm transition-colors"
+                >
+                  Confirmar
+                </button>
+                <button
+                  onClick={() => setConfirmandoExclusao(false)}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-lg text-sm transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de edição */}
+        <EditarImovelModal
+          open={editando}
+          form={form}
+          onClose={() => setEditando(false)}
+          onSave={(dadosEditados) => {
+            setForm(dadosEditados);
+            onEdit(imovel.id!, dadosEditados);
+            setEditando(false);
+          }}
+          cidadesComBairros={cidadesComBairros}
+          opcoesTipoImovel={opcoesTipoImovel}
+          patrocinadores={patrocinadores}
+        />
+      </div>
+    );
+  }
+
+  // Layout para visualização em grid
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 flex flex-col">
-      {/* Slider de Imagens com Swiper */}
-      <div className="relative h-45 md:h-64 bg-gray-100 flex items-center justify-center">
+    <div className="group bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-200 hover:shadow-xl hover:border-blue-300 transition-all duration-300 overflow-hidden">
+      {/* Slider de Imagens */}
+      <div className="relative h-48 bg-gray-100">
         {imagens.length > 0 ? (
           <Swiper
             modules={[Navigation, Pagination]}
             navigation
             pagination={{ clickable: true }}
-            className="w-full h-full rounded"
+            className="w-full h-full"
             style={{ height: '100%' }}
           >
             {imagens.map((img, i) => (
               <SwiperSlide key={img}>
-                <div className="relative w-full h-45 md:h-64">
+                <div className="relative w-full h-48">
                   <Image
                     src={img}
-                    alt={`Imóvel ${formatarTexto(imovel.tipoImovel)} em ${formatarTexto(imovel.cidade)} - Foto ${i + 1}`}
+                    alt={`${formatarTexto(imovel.tipoImovel)} em ${formatarTexto(imovel.cidade)} - Foto ${i + 1}`}
                     fill
-                    className="object-cover rounded transition-all duration-500"
+                    className="object-cover transition-all duration-500"
                     unoptimized
                     priority={i === 0}
-                    style={{ objectFit: 'cover' }}
                   />
                 </div>
               </SwiperSlide>
             ))}
           </Swiper>
         ) : (
-          <span className="text-gray-400 text-base">Sem imagens disponíveis</span>
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-center">
+              <FiImage className="mx-auto text-gray-400 mb-2" size={32} />
+              <span className="text-gray-400 text-sm">Sem imagens</span>
+            </div>
+          </div>
         )}
-      </div>
 
-      {/* Detalhes do Imóvel */}
-      <div className="p-4 flex-1 flex flex-col gap-2">
-        <div className="flex justify-between items-start">
-          <h3 className="font-poppins text-lg md:text-xl font-bold text-blue-900">
-            {formatarTexto(imovel.tipoNegocio)} - {formatarTexto(imovel.tipoImovel)}
-          </h3>
-          <span className="text-xs text-gray-500">
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex gap-2">
+          <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+            {getTipoIcon(imovel.tipoNegocio)} {imovel.tipoNegocio || 'N/A'}
+          </span>
+          <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+            {getSetorIcon(imovel.setorNegocio)} {imovel.setorNegocio || 'N/A'}
+          </span>
+        </div>
+
+        <div className="absolute top-3 right-3">
+          <span className="bg-black/70 text-white px-2 py-1 rounded-full text-xs">
             {formatarData(imovel.dataCadastro)}
           </span>
         </div>
-        <p className="font-poppins text-green-700 font-bold text-xl md:text-2xl">
-          {imovel.valor?.toLocaleString
-            ? imovel.valor.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })
-            : ''}
-        </p>
-        <div className="font-inter text-sm text-gray-600 space-y-1">
-          <p>
-            <span className="font-poppins font-bold">Local:</span> {formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}
-          </p>
-          <p>
-            <span className="font-poppins font-bold">Endereço:</span> {formatarTexto(imovel.enderecoDetalhado)}
-          </p>
-          <p>
-            <span className="font-poppins font-bold">Área:</span> {imovel.metragem}m²
+      </div>
+
+      {/* Conteúdo do Card */}
+      <div className="p-6 space-y-4">
+        {/* Cabeçalho */}
+        <div>
+          <h3 className="font-bold text-blue-900 text-lg mb-2 group-hover:text-blue-700 transition-colors">
+            {formatarTexto(imovel.tipoImovel)}
+          </h3>
+          <p className="text-green-700 font-bold text-xl">
+            {imovel.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           </p>
         </div>
-        {/* Exibir mais */}
+
+        {/* Informações Básicas */}
+        <div className="space-y-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <FiMapPin size={14} />
+            <span>{formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FiHome size={14} />
+            <span>{imovel.metragem}m² • {formatarTexto(imovel.enderecoDetalhado)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>🏢</span>
+            <span>{patrocinadorNome}</span>
+          </div>
+        </div>
+
+        {/* Toggle Detalhes */}
         <button
-          className="flex items-center gap-1 font-inter text-blue-700 hover:underline text-xs mt-1 cursor-pointer"
-          onClick={() => setExibirMais((v) => !v)}
-          type="button"
+          onClick={() => setExibirMais(!exibirMais)}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
         >
           {exibirMais ? (
             <>
-              Ocultar detalhes <FaChevronUp className="text-xs" />
+              <FiChevronUp size={16} />
+              Ocultar detalhes
             </>
           ) : (
             <>
-              Exibir mais <FaChevronDown className="text-xs" />
+              <FiChevronDown size={16} />
+              Ver detalhes
             </>
           )}
         </button>
-        {/* Conteúdo extra */}
+
+        {/* Detalhes Expandidos */}
         {exibirMais && (
-          <div className="mt-2">
-            <p className="text-gray-700 text-sm mb-2 whitespace-pre-line">
-              {formatarTexto(imovel.descricao)}
-            </p>
+          <div className="space-y-4 pt-4 border-t border-blue-100">
+            {imovel.descricao && (
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">Descrição</h4>
+                <p className="text-gray-700 text-sm whitespace-pre-line">
+                  {formatarTexto(imovel.descricao)}
+                </p>
+              </div>
+            )}
+
             <div>
-              <h4 className="font-semibold text-blue-900 mb-1">Itens do imóvel</h4>
-              <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-2">
+              <h4 className="font-semibold text-blue-900 mb-2">Características</h4>
+              <div className="grid grid-cols-2 gap-2">
                 {itensDisponiveis.map((item) => {
                   const valor = (form.itens ?? imovel.itens)?.[item.chave];
                   if (typeof valor !== 'number' || valor === 0) return null;
                   const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
                   return (
-                    <div key={item.chave} className="flex flex-col items-center bg-blue-50 rounded px-2 py-1 min-w-0">
-                      <span className="text-blue-900 text-xs text-center truncate w-full" title={item.label}>
+                    <div key={item.chave} className="bg-blue-50 rounded-lg p-2 text-center">
+                      <div className="text-blue-900 text-xs font-medium truncate">
                         {item.label}
-                      </span>
-                      <span className="text-sm font-semibold text-blue-700 mt-1">
-                        {isQuant ? valor : "Sim"}
-                      </span>
+                      </div>
+                      <div className="text-blue-700 font-semibold">
+                        {isQuant ? valor : "✓"}
+                      </div>
                     </div>
                   );
                 })}
@@ -242,60 +427,64 @@ export default function ImovelCard({
             </div>
           </div>
         )}
+
         {/* Botões de Ação */}
-        <div className="font-poppins flex flex-wrap gap-2 mt-4">
+        <div className="flex gap-2 pt-4 border-t border-blue-100">
           <Link
             href={`/imoveis/${imovel.id}`}
-            className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white text-sm px-3 py-2 rounded transition-colors cursor-pointer"
-            aria-label="Ver página do imóvel"
+            className="flex-1 flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
+            title="Ver página do imóvel"
           >
-            Ver página
+            <FiEye size={16} />
+            <span>Ver</span>
           </Link>
+          
           <button
             onClick={() => setEditando(true)}
-            className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-2 rounded transition-colors cursor-pointer"
-            aria-label="Editar imóvel"
-            type="button"
+            className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
+            title="Editar imóvel"
           >
-            <FaEdit className="text-xs" />
+            <FiEdit2 size={16} />
             <span>Editar</span>
           </button>
+          
           <button
             onClick={() => setConfirmandoExclusao(true)}
-            className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded transition-colors cursor-pointer"
-            aria-label="Excluir imóvel"
-            type="button"
+            className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
+            title="Excluir imóvel"
           >
-            <FaTrash className="text-xs" />
+            <FiTrash2 size={16} />
             <span>Excluir</span>
           </button>
         </div>
-        {/* Confirmação de exclusão */}
+
+        {/* Confirmação de Exclusão */}
         {confirmandoExclusao && (
-          <div className="mt-4 bg-red-50 border border-red-200 rounded p-3 flex flex-col items-center gap-2">
-            <span className="text-red-700 font-semibold">Tem certeza que deseja excluir este imóvel?</span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  onDelete(imovel.id!);
-                  setConfirmandoExclusao(false);
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded font-semibold transition-colors cursor-pointer"
-              >
-                Confirmar
-              </button>
-              <button
-                onClick={() => setConfirmandoExclusao(false)}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-1 rounded font-semibold transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="text-center">
+              <p className="text-red-700 font-medium mb-3">
+                Tem certeza que deseja excluir este imóvel?
+              </p>
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={handleConfirmarExclusao}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                >
+                  Confirmar
+                </button>
+                <button
+                  onClick={() => setConfirmandoExclusao(false)}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Modal de edição como componente */}
+      {/* Modal de edição */}
       <EditarImovelModal
         open={editando}
         form={form}

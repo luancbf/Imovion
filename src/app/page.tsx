@@ -14,15 +14,11 @@ export default function Home() {
     >
       <Header />
 
-      <section className="w-full pt-5 pb-15">
+      <section className="pb-10">
         <Slider />
       </section>
-
-      <section className="flex justify-center w-full">
-        <FiltrosExpansivos />
-      </section>
-    
-      <section className="w-full pt-15">
+      <FiltrosExpansivos />
+      <section className="w-full pt-10">
         <Patrocinios />
       </section>
 

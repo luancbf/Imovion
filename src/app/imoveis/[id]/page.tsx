@@ -1,26 +1,25 @@
-'use client';
+"use client";
 
-import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs, query, where, limit } from 'firebase/firestore';
-import { notFound } from 'next/navigation';
-import { useEffect, useState, use } from 'react';
-import Header from '@/components/home/Header';
-import Footer from '@/components/home/Footer';
-import type { Imovel } from '@/types/Imovel';
-import VoltarButton from '@/components/imovel/VoltarButton';
-import PatrocinadorBadge from '@/components/imovel/PatrocinadorBadge';
-import ImovelCarousel from '@/components/imovel/ImovelCarousel';
-import ImovelDetalhes from '@/components/imovel/ImovelDetalhes';
-import ImoveisPatrocinadorList from '@/components/imovel/ImoveisPatrocinadorList';
-import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from '@/constants/itensImovel';
-import ImovelModal from '@/components/imovel/ImovelModal';
+import { useEffect, useState } from "react";
+import { useParams, notFound } from "next/navigation";
+import { createBrowserClient } from "@supabase/ssr";
+import Header from "@/components/home/Header";
+import Footer from "@/components/home/Footer";
+import VoltarButton from "@/components/imovel/VoltarButton";
+import PatrocinadorBadge from "@/components/imovel/PatrocinadorBadge";
+import ImovelCarousel from "@/components/imovel/ImovelCarousel";
+import ImovelDetalhes from "@/components/imovel/ImovelDetalhes";
+import ImoveisPatrocinadorList from "@/components/imovel/ImoveisPatrocinadorList";
+import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
+import ImovelModal from "@/components/imovel/ImovelModal";
+import type { Imovel } from "@/types/Imovel";
 
-type Props = {
-  params: Promise<{ id: string }>;
-};
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
-function formatarTexto(texto: string | undefined) {
-  return typeof texto === 'string' ? texto.replace(/_/g, " ") : '';
+function formatarTexto(texto?: string) {
+  return texto ? texto.replace(/_/g, " ") : "";
 }
 
 function negocioFormatado(tipoNegocio?: string) {
@@ -33,19 +32,12 @@ function negocioFormatado(tipoNegocio?: string) {
   return txt.charAt(0).toUpperCase() + txt.slice(1);
 }
 
-export default function ImovelPage({ params }: Props) {
-  const { id: rawId } = use(params);
-  const id =
-    typeof rawId === 'string'
-      ? rawId.replace(/[^a-zA-Z0-9_-]/g, '')
-      : '';
-
+export default function ImovelPage() {
+  const { id } = useParams() as { id: string };
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [loading, setLoading] = useState(true);
   const [imoveisPatrocinador, setImoveisPatrocinador] = useState<Imovel[]>([]);
   const [patrocinadorNome, setPatrocinadorNome] = useState<string | null>(null);
-
-  // Modal de imagens
   const [modalAberto, setModalAberto] = useState(false);
   const [imagemIndex, setImagemIndex] = useState(0);
 
@@ -53,89 +45,52 @@ export default function ImovelPage({ params }: Props) {
     setImagemIndex(index);
     setModalAberto(true);
   };
-
   const fecharModal = () => setModalAberto(false);
-
-  const proximaImagem = () => {
-    if (!imovel?.imagens) return;
-    setImagemIndex((prev) => (prev + 1) % imovel.imagens.length);
-  };
-
-  const imagemAnterior = () => {
-    if (!imovel?.imagens) return;
-    setImagemIndex((prev) => (prev - 1 + imovel.imagens.length) % imovel.imagens.length);
-  };
-
-  // Necessário para fechar o modal ao clicar no fundo escuro
   const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) fecharModal();
   };
 
   useEffect(() => {
-    const buscarImovel = async () => {
-      try {
-        if (!id) {
-          notFound();
-          return;
-        }
-        const ref = doc(db, 'imoveis', id);
-        const snapshot = await getDoc(ref);
-
-        if (!snapshot.exists()) {
-          notFound();
-          return;
-        }
-
-        setImovel({
-          id: snapshot.id,
-          ...snapshot.data(),
-        } as Imovel);
-      } catch (err) {
-        console.error('Erro ao buscar imóvel:', err);
-        notFound();
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    async function buscarImovel() {
+      setLoading(true);
+      if (!id) return notFound();
+      const { data } = await supabase.from("imoveis").select("*").eq("id", id).single();
+      if (!data) return notFound();
+      setImovel(data as Imovel);
+      setLoading(false);
+    }
     buscarImovel();
   }, [id]);
 
   useEffect(() => {
-    const buscarNomePatrocinador = async () => {
+    async function buscarNomePatrocinador() {
       if (imovel?.patrocinador) {
-        const ref = doc(db, 'patrocinadores', imovel.patrocinador);
-        const snapshot = await getDoc(ref);
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          setPatrocinadorNome(data.nome || imovel.patrocinador);
-        } else {
-          setPatrocinadorNome(imovel.patrocinador);
-        }
+        const { data } = await supabase
+          .from("patrocinadores")
+          .select("nome")
+          .eq("id", imovel.patrocinador)
+          .single();
+        setPatrocinadorNome(data?.nome || imovel.patrocinador);
       }
-    };
+    }
     buscarNomePatrocinador();
   }, [imovel?.patrocinador]);
 
   useEffect(() => {
-    const buscarImoveisPatrocinador = async (patrocinador: string, imovelId: string) => {
-      const q = query(
-        collection(db, "imoveis"),
-        where("patrocinador", "==", patrocinador),
-        limit(6)
-      );
-      const snap = await getDocs(q);
-      const outros = snap.docs
-        .filter(doc => doc.id !== imovelId)
-        .map(doc => ({ id: doc.id, ...doc.data() } as Imovel));
-      setImoveisPatrocinador(outros);
-    };
-
-    if (imovel && imovel.patrocinador) {
-      buscarImoveisPatrocinador(imovel.patrocinador, imovel.id);
-    } else {
-      setImoveisPatrocinador([]);
+    async function buscarImoveisPatrocinador() {
+      if (imovel?.patrocinador) {
+        const { data } = await supabase
+          .from("imoveis")
+          .select("*")
+          .eq("patrocinador", imovel.patrocinador)
+          .neq("id", imovel.id)
+          .limit(6);
+        setImoveisPatrocinador((data as Imovel[]) || []);
+      } else {
+        setImoveisPatrocinador([]);
+      }
     }
+    buscarImoveisPatrocinador();
   }, [imovel]);
 
   if (loading) {
@@ -161,13 +116,14 @@ export default function ImovelPage({ params }: Props) {
     );
   }
 
-  // Sanitize WhatsApp number for the link
-  const whatsappNumber = imovel.whatsapp ? imovel.whatsapp.replace(/\D/g, '').slice(0, 13) : '';
+  const whatsappNumber = imovel.whatsapp ? imovel.whatsapp.replace(/\D/g, "").slice(0, 13) : "";
   const whatsappLink = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(
-    `Olá! Tenho interesse no imóvel ${imovel.tipoImovel} localizado em ${(imovel.cidade || '').replace(/_/g, ' ')}, ${(imovel.bairro || '').replace(/_/g, ' ')}.`
+    `Olá! Tenho interesse no imóvel ${imovel.tipoImovel} localizado em ${(imovel.cidade || "").replace(
+      /_/g,
+      " "
+    )}, ${(imovel.bairro || "").replace(/_/g, " ")}.`
   )}`;
 
-  // Itens do imóvel igual aos cards
   const itensDisponiveis = ITENS_POR_SETOR[imovel.tipoNegocio] || [];
   const negocio = negocioFormatado(imovel.tipoNegocio);
 
@@ -176,7 +132,6 @@ export default function ImovelPage({ params }: Props) {
       <Header />
       <main className="flex-1 flex flex-col items-center py-8 px-2 relative z-10">
         <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border border-blue-100 p-4 sm:p-8">
-          {/* Botão de Voltar */}
           <div className="mb-8 flex">
             <VoltarButton />
           </div>
@@ -191,10 +146,7 @@ export default function ImovelPage({ params }: Props) {
 
           {imovel.patrocinador && patrocinadorNome && (
             <div className="mb-6 flex justify-start">
-              <PatrocinadorBadge 
-              patrocinador={imovel.patrocinador}
-              nome={patrocinadorNome}
-              />
+              <PatrocinadorBadge patrocinador={imovel.patrocinador} nome={patrocinadorNome} />
             </div>
           )}
 
@@ -209,7 +161,8 @@ export default function ImovelPage({ params }: Props) {
             descricao={imovel.descricao || ""}
           />
 
-          {/* ITENS DO IMÓVEL */}
+          {/* Removido o mapa de localização */}
+
           <section className="mt-8">
             <h4 className="font-poppins font-semibold text-blue-700 mb-3 text-lg sm:text-3xl text-center">
               Itens do imóvel
@@ -217,7 +170,7 @@ export default function ImovelPage({ params }: Props) {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {itensDisponiveis.map((item) => {
                 const valor = imovel.itens?.[item.chave];
-                if (typeof valor !== 'number' || valor === 0) return null;
+                if (typeof valor !== "number" || valor === 0) return null;
                 const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
                 return (
                   <div
@@ -239,7 +192,6 @@ export default function ImovelPage({ params }: Props) {
             </div>
           </section>
 
-          {/* Botão WhatsApp */}
           <div className="flex justify-center mt-8">
             <a
               href={whatsappLink}
@@ -252,22 +204,18 @@ export default function ImovelPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Modal de imagens */}
         {imovel.imagens && (
           <ImovelModal
             imagens={imovel.imagens}
             aberto={modalAberto}
             imagemIndex={imagemIndex}
             onClose={fecharModal}
-            onAnterior={imagemAnterior}
-            onProxima={proximaImagem}
             setImagemIndex={setImagemIndex}
             handleBackgroundClick={handleBackgroundClick}
           />
         )}
 
-        {/* Imóveis do mesmo patrocinador */}
-        {imovel?.patrocinador && imoveisPatrocinador.length > 0 && (
+        {imovel.patrocinador && imoveisPatrocinador.length > 0 && (
           <ImoveisPatrocinadorList imoveis={imoveisPatrocinador} />
         )}
       </main>
