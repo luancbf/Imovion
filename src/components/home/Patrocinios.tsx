@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -9,6 +10,13 @@ interface PatrocinioConfig {
   image_url: string;
   image_alt: string;
   display_order: number;
+  is_clickable: boolean;
+  patrocinador_id: string | null;
+  patrocinadores?: {
+    id: string;
+    nome: string;
+    slug: string;
+  } | null;
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -25,10 +33,21 @@ export default function Patrocinios() {
         setLoading(true);
         console.log('🔍 [FETCH] Iniciando busca de patrocínios...');
 
-        // UMA ÚNICA QUERY SIMPLES - SEM FALLBACK
         const { data, error } = await supabase
           .from('patrocinio_configs')
-          .select('id, image_url, image_alt, display_order')
+          .select(`
+            id, 
+            image_url, 
+            image_alt, 
+            display_order,
+            is_clickable,
+            patrocinador_id,
+            patrocinadores (
+              id,
+              nome,
+              slug
+            )
+          `)
           .eq('is_active', true)
           .not('image_url', 'is', null)
           .order('display_order', { ascending: true });
@@ -47,19 +66,21 @@ export default function Patrocinios() {
           return;
         }
 
-        // PROCESSAMENTO SIMPLES - SEM LOOPS COMPLEXOS
         const validPatrocinios = data
           .filter(item => item.image_url && typeof item.image_url === 'string' && item.image_url.trim() !== '')
           .map(item => ({
             id: item.id,
             image_url: item.image_url,
             image_alt: item.image_alt || 'Patrocínio',
-            display_order: item.display_order
+            display_order: item.display_order,
+            is_clickable: item.is_clickable || false,
+            patrocinador_id: item.patrocinador_id,
+            patrocinadores: Array.isArray(item.patrocinadores) 
+              ? item.patrocinadores[0] 
+              : item.patrocinadores
           }));
 
         console.log('📊 [FILTERED] Patrocínios válidos:', validPatrocinios.length);
-        console.log('📋 [IDS] IDs únicos:', validPatrocinios.map(p => `${p.id}(${p.display_order})`));
-        
         setPatrocinios(validPatrocinios);
 
       } catch (error) {
@@ -71,17 +92,17 @@ export default function Patrocinios() {
     }
 
     fetchPatrocinios();
-  }, []); // DEPENDÊNCIAS VAZIAS - SEM RE-EXECUÇÃO
+  }, []);
 
   if (loading) {
     return (
-      <section className="py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-wrap justify-center gap-6">
-            {[...Array(4)].map((_, index) => (
+      <section className="py-8 px-6 bg-gradient-to-b from-gray-50 to-white">
+        <div className="mx-auto w-fit">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            {[...Array(6)].map((_, index) => (
               <div 
                 key={`loading-${index}`}
-                className="w-40 h-28 bg-gray-200 rounded-lg shadow-sm animate-pulse"
+                className="w-40 h-40 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl shadow-sm animate-pulse"
               />
             ))}
           </div>
@@ -98,60 +119,82 @@ export default function Patrocinios() {
   console.log('🎨 [RENDER] Renderizando', patrocinios.length, 'patrocínios');
 
   return (
-    <section className="py-12 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Grid de imagens */}
-        <div className="flex flex-wrap justify-center gap-6">
-          {patrocinios.map((patrocinio, index) => (
-            <div 
-              key={`patrocinio-${patrocinio.id}`}
-              className="group relative w-40 h-28 bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100"
-              style={{ 
-                animationDelay: `${index * 100}ms`,
-                animation: 'fadeInUp 0.6s ease-out forwards'
-              }}
-            >
-              <Image
-                src={patrocinio.image_url}
-                alt={patrocinio.image_alt}
-                fill
-                className="object-contain p-3 group-hover:scale-105 transition-transform duration-300"
-                sizes="160px"
-                onError={(e) => {
-                  console.error('❌ [IMAGE ERROR] Erro ao carregar:', patrocinio.image_url);
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
+    <section className="py-12 px-6">
+      <div className="mx-auto w-fit">
+        {/* Grid que se ajusta ao próprio conteúdo */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+          {patrocinios.map((patrocinio, index) => {
+            // ✅ Determinar se é clicável e tem patrocinador
+            const isClickable = patrocinio.is_clickable && 
+                               patrocinio.patrocinadores?.slug;
+            
+            const PatrocinioCard = (
+              <div 
+                className={`w-60 h-60 group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 ${
+                  isClickable ? 'cursor-pointer' : ''
+                }`}
+                style={{ 
+                  animationDelay: `${index * 150}ms`,
                 }}
-                onLoad={() => {
-                  console.log('✅ [IMAGE LOADED]:', patrocinio.image_url);
-                }}
-              />
-              
-              {/* Overlay sutil no hover */}
-              <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300 rounded-lg"></div>
-              
-              {/* Badge de posição */}
-              <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                #{patrocinio.display_order + 1}
+              >
+                {/* Imagem principal */}
+                <Image
+                  src={patrocinio.image_url}
+                  alt={patrocinio.image_alt}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                  onError={(e) => {
+                    console.error('❌ [IMAGE ERROR] Erro ao carregar:', patrocinio.image_url);
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                  onLoad={() => {
+                    console.log('✅ [IMAGE LOADED]:', patrocinio.image_url);
+                  }}
+                />
+                
+                {/* Overlay gradiente no hover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-600/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                
+                {/* Borda animada */}
+                <div className="absolute inset-0 rounded-xl border-2 border-transparent group-hover:border-blue-300 transition-colors duration-500"></div>
+                
+                {/* Efeito de brilho */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                
+                {/* Indicador de clicável */}
+                {isClickable && (
+                  <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    👆 Clique aqui
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+
+            // ✅ Se é clicável e tem slug, envolve com Link
+            if (isClickable && patrocinio.patrocinadores?.slug) {
+              return (
+                <Link 
+                  key={`patrocinio-${patrocinio.id}`}
+                  href={`/patrocinadores/${patrocinio.patrocinadores.slug}`}
+                  className="block"
+                  title={`Ver mais sobre ${patrocinio.patrocinadores.nome}`}
+                >
+                  {PatrocinioCard}
+                </Link>
+              );
+            }
+
+            // ✅ Se não é clicável, retorna apenas o card
+            return (
+              <div key={`patrocinio-${patrocinio.id}`}>
+                {PatrocinioCard}
+              </div>
+            );
+          })}
         </div>
       </div>
-
-      {/* CSS para animação */}
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </section>
   );
 }

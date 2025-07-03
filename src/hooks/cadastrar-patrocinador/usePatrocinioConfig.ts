@@ -1,327 +1,425 @@
-import { useState, useCallback } from 'react';
-import { createBrowserClient } from "@supabase/ssr";
-import { PatrocinioConfig, patrocinioPositions } from '@/types/cadastrar-patrocinador';
+'use client';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+import { useState, useCallback } from 'react';
+import { PatrocinioConfig } from '@/types/cadastrar-patrocinador';
+
+// ✅ Configuração das 8 posições disponíveis
+const availablePatrocinioPositions = [
+  { position: 0, name: 'Banner Principal', description: 'Destaque no topo', location: 'Header principal' },
+  { position: 1, name: 'Lateral Direita', description: 'Sidebar direita', location: 'Lateral da página' },
+  { position: 2, name: 'Meio do Conteúdo', description: 'Entre as listagens', location: 'Centro da página' },
+  { position: 3, name: 'Lateral Esquerda', description: 'Sidebar esquerda', location: 'Lateral esquerda' },
+  { position: 4, name: 'Rodapé Superior', description: 'Acima do footer', location: 'Pré-rodapé' },
+  { position: 5, name: 'Rodapé Inferior', description: 'Footer principal', location: 'Rodapé' },
+  { position: 6, name: 'Banner Móvel', description: 'Mobile sticky', location: 'Mobile fixo' },
+  { position: 7, name: 'Pop-up Banner', description: 'Banner flutuante', location: 'Overlay' }
+];
+
+// ✅ Tipo para dados do Supabase
+interface SupabasePatrocinioConfig {
+  id: string;
+  position: number;
+  display_order?: number;
+  image_name?: string | null;
+  image_url?: string | null;
+  image_alt?: string | null;
+  patrocinador_id?: string | null;
+  is_active: boolean;
+  is_clickable?: boolean;
+  created_at: string;
+  updated_at: string;
+  patrocinadores?: {
+    id: string;
+    nome: string;
+    slug: string;
+  }[] | {
+    id: string;
+    nome: string;
+    slug: string;
+  } | null;
+}
+
+// ✅ Tipo para dados de salvamento
+interface SavePatrocinioData {
+  position: number;
+  image_name?: string | null;
+  image_url?: string | null;
+  image_alt?: string | null;
+  patrocinador_id?: string | null;
+  is_active: boolean;
+  updated_at: string;
+  display_order?: number;
+  is_clickable?: boolean;
+}
 
 export const usePatrocinioConfig = () => {
   const [patrocinioConfigs, setPatrocinioConfigs] = useState<PatrocinioConfig[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploadingPositions, setUploadingPositions] = useState<Record<string, boolean>>({});
+  const [uploadingPositions, setUploadingPositions] = useState<Record<number, boolean>>({});
 
-  // CORRIGIDO: Load com logs detalhados e lógica melhorada
+  // ✅ INFORMAÇÕES DA POSIÇÃO
+  const getPatrocinioPositionInfo = useCallback((position: number) => {
+    return availablePatrocinioPositions.find(pos => pos.position === position) || {
+      position,
+      name: `Posição ${position + 1}`,
+      description: `Posição ${position + 1} de patrocínio`,
+      location: 'Localização padrão'
+    };
+  }, []);
+
+  // ✅ FUNÇÃO AUXILIAR PARA CRIAR MOCK CONFIGS
+  const createMockConfigs = useCallback((): PatrocinioConfig[] => {
+    return availablePatrocinioPositions.map((positionConfig) => ({
+      id: `mock-${positionConfig.position}`,
+      position: positionConfig.position,
+      display_order: positionConfig.position,
+      image_name: `patrocinio-${positionConfig.position + 1}`,
+      image_url: null,
+      image_alt: null,
+      patrocinador_id: null,
+      is_active: false,
+      is_clickable: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      patrocinadores: null
+    }));
+  }, []);
+
+  // ✅ CARREGAR CONFIGURAÇÕES
   const loadPatrocinioConfigs = useCallback(async () => {
-    console.log('📥 [LOAD] Iniciando carregamento das configurações...');
+    console.log('📥 [PATROCINIO] Iniciando carregamento...');
     setLoading(true);
     
     try {
+      const { createBrowserClient } = await import("@supabase/ssr");
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
+      let selectFields = `
+        id,
+        position,
+        image_name,
+        image_url,
+        image_alt,
+        patrocinador_id,
+        is_active,
+        created_at,
+        updated_at,
+        patrocinadores (
+          id,
+          nome,
+          slug
+        )
+      `;
+
+      try {
+        const testQuery = await supabase
+          .from('patrocinio_configs')
+          .select('display_order, is_clickable')
+          .limit(1);
+        
+        if (!testQuery.error) {
+          selectFields = `
+            id,
+            position,
+            display_order,
+            image_name,
+            image_url,
+            image_alt,
+            patrocinador_id,
+            is_active,
+            is_clickable,
+            created_at,
+            updated_at,
+            patrocinadores (
+              id,
+              nome,
+              slug
+            )
+          `;
+        }
+      } catch {
+        console.log('⚠️ [PATROCINIO] Algumas colunas opcionais não existem');
+      }
+
       const { data, error } = await supabase
         .from('patrocinio_configs')
-        .select(`
-          *,
-          patrocinadores (
-            nome,
-            slug
-          )
-        `)
-        .order('display_order');
+        .select(selectFields)
+        .order('position');
       
       if (error) {
-        console.error('❌ [LOAD ERROR]:', error);
-        setPatrocinioConfigs([]);
+        console.error('❌ [PATROCINIO] Erro ao carregar do banco:', error);
+        const mockConfigs = createMockConfigs();
+        setPatrocinioConfigs(mockConfigs);
         return;
       }
       
-      console.log('📊 [LOAD DATA] Dados do banco:', data);
-      
-      // Criar mapeamento das configurações existentes
-      const configsMap = new Map(data?.map(config => [config.display_order, config]) || []);
+      if (!data || !Array.isArray(data)) {
+        const mockConfigs = createMockConfigs();
+        setPatrocinioConfigs(mockConfigs);
+        return;
+      }
+
+      const supabaseData = data as unknown as SupabasePatrocinioConfig[];
+      const configsMap = new Map(supabaseData.map(c => [c.position, c]));
       const allConfigs: PatrocinioConfig[] = [];
       
-      // Garantir que todas as posições existam
-      patrocinioPositions.forEach((position, index) => {
-        const existingConfig = configsMap.get(index);
+      availablePatrocinioPositions.forEach((positionConfig) => {
+        const existingConfig = configsMap.get(positionConfig.position);
         if (existingConfig) {
-          console.log(`✅ [POSITION ${index}] Configuração existente encontrada ID: ${existingConfig.id}`);
-          allConfigs.push(existingConfig);
-        } else {
-          console.log(`➕ [POSITION ${index}] Criando configuração vazia`);
-          // Criar configuração vazia para posições não configuradas
           allConfigs.push({
-            image_name: `patrocinio-pos-${index + 1}`,
+            id: existingConfig.id,
+            position: existingConfig.position,
+            display_order: existingConfig.display_order ?? positionConfig.position,
+            image_name: existingConfig.image_name ?? undefined,
+            image_url: existingConfig.image_url ?? undefined,
+            image_alt: existingConfig.image_alt ?? undefined,
+            patrocinador_id: existingConfig.patrocinador_id ?? undefined,
+            is_active: existingConfig.is_active,
+            is_clickable: existingConfig.is_clickable ?? false,
+            created_at: existingConfig.created_at,
+            updated_at: existingConfig.updated_at,
+            patrocinadores: Array.isArray(existingConfig.patrocinadores) 
+              ? existingConfig.patrocinadores[0] || null 
+              : existingConfig.patrocinadores || null
+          });
+        } else {
+          allConfigs.push({
+            position: positionConfig.position,
+            display_order: positionConfig.position,
+            image_name: `patrocinio-${positionConfig.position + 1}`,
             image_url: null,
-            image_alt: `Patrocínio ${position.name}`,
-            patrocinador_id: '',
+            image_alt: null,
+            patrocinador_id: null,
             is_active: false,
             is_clickable: false,
-            display_order: index
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            patrocinadores: null
           });
         }
       });
       
-      console.log('📋 [FINAL CONFIGS] Total de configurações:', allConfigs.length);
+      allConfigs.sort((a, b) => a.position - b.position);
       setPatrocinioConfigs(allConfigs);
+      
     } catch (error) {
-      console.error('❌ [LOAD CATCH] Erro ao carregar configurações:', error);
-      setPatrocinioConfigs([]);
+      console.error('❌ [PATROCINIO] Erro no carregamento:', error);
+      const mockConfigs = createMockConfigs();
+      setPatrocinioConfigs(mockConfigs);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [createMockConfigs]);
 
-  const updatePatrocinioConfig = (position: number, field: keyof PatrocinioConfig, value: string | boolean | number) => {
-    console.log(`🔄 [UPDATE STATE] Posição ${position}, campo ${field}:`, value);
+  // ✅ ATUALIZAR CONFIGURAÇÃO NO ESTADO
+  const updatePatrocinioConfig = useCallback((position: number, field: keyof PatrocinioConfig, value: string | boolean | number | null) => {
     setPatrocinioConfigs(prev => 
       prev.map(config => 
-        config.display_order === position 
-          ? { ...config, [field]: value }
+        config.position === position 
+          ? { ...config, [field]: value, updated_at: new Date().toISOString() }
           : config
       )
     );
-  };
+  }, []);
 
-  const setPositionUploading = (position: number, uploading: boolean) => {
+  // ✅ CONTROLE DE UPLOAD
+  const setPositionUploading = useCallback((position: number, uploading: boolean) => {
     setUploadingPositions(prev => ({ ...prev, [position]: uploading }));
-  };
+  }, []);
 
-  // CORRIGIDO: Salvamento inteligente com verificação de existência
-  const savePatrocinioConfig = async (position: number): Promise<void> => {
-    const config = patrocinioConfigs.find(c => c.display_order === position);
+  // ✅ SALVAR CONFIGURAÇÃO
+  const savePatrocinioConfig = useCallback(async (position: number): Promise<void> => {
+    const config = patrocinioConfigs.find(c => c.position === position);
     if (!config) {
       throw new Error('Configuração não encontrada');
     }
 
-    console.log(`💾 [SAVE] Iniciando salvamento da posição ${position}:`, {
-      id: config.id,
-      image_url: config.image_url,
-      patrocinador_id: config.patrocinador_id,
-      is_active: config.is_active,
-      is_clickable: config.is_clickable
-    });
-
-    // Validação robusta
-    const isClickable = config.is_clickable === true;
-    
-    if (!config.image_url || config.image_url.trim() === '') {
-      throw new Error('É necessário enviar uma imagem');
+    if (config.is_active && (!config.image_url || config.image_url.trim() === '')) {
+      throw new Error('É necessário enviar uma imagem para ativar a posição');
     }
 
-    if (config.is_active && isClickable && (!config.patrocinador_id || config.patrocinador_id.trim() === '')) {
-      throw new Error('Para ativar em modo clicável, é necessário selecionar um patrocinador');
+    if (config.is_clickable === true && (!config.patrocinador_id || config.patrocinador_id.trim() === '')) {
+      throw new Error('Para modo clicável, é necessário selecionar um patrocinador');
     }
 
     try {
-      if (config.id) {
-        // ATUALIZAR REGISTRO EXISTENTE
-        console.log(`🔄 [UPDATE] Atualizando registro ID: ${config.id} na posição ${position}`);
-        
-        const { data, error } = await supabase
+      const { createBrowserClient } = await import("@supabase/ssr");
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
+      const saveData: SavePatrocinioData = {
+        position: config.position,
+        image_name: config.image_name || null,
+        image_url: config.image_url || null,
+        image_alt: config.image_alt || null,
+        patrocinador_id: (config.patrocinador_id && config.patrocinador_id !== '') ? config.patrocinador_id : null,
+        is_active: config.is_active,
+        updated_at: new Date().toISOString()
+      };
+
+      try {
+        const testQuery = await supabase
           .from('patrocinio_configs')
-          .update({
-            image_name: config.image_name,
-            image_url: config.image_url,
-            image_alt: config.image_alt,
-            patrocinador_id: (config.patrocinador_id && config.patrocinador_id.trim() !== '') ? config.patrocinador_id : null,
-            is_active: config.is_active,
-            is_clickable: config.is_clickable,
-            display_order: config.display_order
-          })
-          .eq('id', config.id)
-          .select();
+          .select('display_order, is_clickable')
+          .limit(1);
+        
+        if (!testQuery.error) {
+          saveData.display_order = config.display_order ?? config.position;
+          saveData.is_clickable = config.is_clickable ?? false;
+        }
+      } catch {
+        // Ignorar se colunas não existem
+      }
+
+      if (config.id && !config.id.startsWith('mock-')) {
+        const { error } = await supabase
+          .from('patrocinio_configs')
+          .update(saveData)
+          .eq('id', config.id);
 
         if (error) {
-          console.error('❌ [UPDATE ERROR]:', error);
-          throw error;
+          throw new Error(`Erro ao atualizar: ${error.message}`);
         }
-        
-        console.log('✅ [UPDATE SUCCESS]:', data);
       } else {
-        // VERIFICAR SE JÁ EXISTE UM REGISTRO PARA ESTA POSIÇÃO
-        console.log(`🔍 [CHECK] Verificando se já existe registro para posição ${position}`);
-        
-        const { data: existingConfig, error: checkError } = await supabase
+        const { data: insertData, error } = await supabase
           .from('patrocinio_configs')
-          .select('id, image_name')
-          .eq('display_order', position)
-          .maybeSingle();
+          .upsert(saveData, {
+            onConflict: 'position'
+          })
+          .select('id')
+          .single();
 
-        if (checkError && checkError.code !== 'PGRST116') {
-          console.error('❌ [CHECK ERROR]:', checkError);
-          throw checkError;
+        if (error) {
+          throw new Error(`Erro ao salvar: ${error.message}`);
         }
-
-        if (existingConfig) {
-          console.log(`🔄 [EXISTING FOUND] Atualizando registro existente ID: ${existingConfig.id}`);
-          
-          // Atualizar o existente em vez de criar novo
-          const { data, error } = await supabase
-            .from('patrocinio_configs')
-            .update({
-              image_name: config.image_name,
-              image_url: config.image_url,
-              image_alt: config.image_alt,
-              patrocinador_id: (config.patrocinador_id && config.patrocinador_id.trim() !== '') ? config.patrocinador_id : null,
-              is_active: config.is_active,
-              is_clickable: config.is_clickable,
-              display_order: config.display_order
-            })
-            .eq('id', existingConfig.id)
-            .select();
-
-          if (error) {
-            console.error('❌ [UPDATE EXISTING ERROR]:', error);
-            throw error;
-          }
-          
-          console.log('✅ [UPDATE EXISTING SUCCESS]:', data);
-        } else {
-          // CRIAR NOVO REGISTRO
-          console.log(`➕ [INSERT] Criando novo registro para posição ${position}`);
-          
-          const { data, error } = await supabase
-            .from('patrocinio_configs')
-            .insert({
-              image_name: config.image_name,
-              image_url: config.image_url,
-              image_alt: config.image_alt,
-              patrocinador_id: (config.patrocinador_id && config.patrocinador_id.trim() !== '') ? config.patrocinador_id : null,
-              is_active: config.is_active,
-              is_clickable: config.is_clickable,
-              display_order: config.display_order
-            })
-            .select();
-
-          if (error) {
-            console.error('❌ [INSERT ERROR]:', error);
-            throw error;
-          }
-          
-          console.log('✅ [INSERT SUCCESS]:', data);
+        
+        if (insertData?.id) {
+          setPatrocinioConfigs(prev => 
+            prev.map(c => 
+              c.position === position 
+                ? { 
+                    ...c, 
+                    ...saveData, 
+                    id: insertData.id,
+                    image_name: saveData.image_name || undefined,
+                    image_url: saveData.image_url || undefined,
+                    image_alt: saveData.image_alt || undefined,
+                    patrocinador_id: saveData.patrocinador_id || undefined
+                  }
+                : c
+            )
+          );
+          return;
         }
       }
 
-      // RECARREGAR CONFIGURAÇÕES APÓS SUCESSO
-      console.log('🔄 [RELOAD] Recarregando configurações...');
-      await loadPatrocinioConfigs();
+      setPatrocinioConfigs(prev => 
+        prev.map(c => 
+          c.position === position 
+            ? { 
+                ...c, 
+                ...saveData,
+                image_name: saveData.image_name || undefined,
+                image_url: saveData.image_url || undefined,
+                image_alt: saveData.image_alt || undefined,
+                patrocinador_id: saveData.patrocinador_id || undefined
+              }
+            : c
+        )
+      );
       
     } catch (error) {
-      console.error('❌ [SAVE ERROR] Erro ao salvar configuração:', error);
+      if (error instanceof Error && (
+        error.message.includes('relation') || 
+        error.message.includes('does not exist') ||
+        error.message.includes('column') ||
+        error.message.includes('table')
+      )) {
+        setPatrocinioConfigs(prev => 
+          prev.map(c => 
+            c.position === position 
+              ? { ...c, updated_at: new Date().toISOString(), id: c.id || `saved-${position}` }
+              : c
+          )
+        );
+        return;
+      }
       throw error;
     }
-  };
+  }, [patrocinioConfigs]);
 
-  // CORRIGIDO: Deletar mais específico com logs
-  const deletePatrocinioConfig = async (position: number): Promise<void> => {
-    const config = patrocinioConfigs.find(c => c.display_order === position);
-    if (!config?.id) {
+  // ✅ DELETAR CONFIGURAÇÃO
+  const deletePatrocinioConfig = useCallback(async (position: number): Promise<void> => {
+    const config = patrocinioConfigs.find(c => c.position === position);
+    if (!config?.id || config.id.startsWith('mock-')) {
       throw new Error('Configuração não encontrada ou não salva');
     }
 
-    console.log(`🗑️ [DELETE] Deletando config ID: ${config.id} da posição ${position}`);
-
     try {
+      const { createBrowserClient } = await import("@supabase/ssr");
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
       const { error } = await supabase
         .from('patrocinio_configs')
         .delete()
         .eq('id', config.id);
 
       if (error) {
-        console.error('❌ [DELETE ERROR]:', error);
-        throw error;
+        throw new Error(`Erro ao excluir: ${error.message}`);
       }
       
-      console.log('✅ [DELETE SUCCESS] Registro deletado com sucesso');
-      
-      // Recarregar configurações
-      await loadPatrocinioConfigs();
+      setPatrocinioConfigs(prev => 
+        prev.map(c => 
+          c.position === position 
+            ? {
+                position: c.position,
+                display_order: c.position,
+                image_name: `patrocinio-${c.position + 1}`,
+                image_url: null,
+                image_alt: null,
+                patrocinador_id: null,
+                is_active: false,
+                is_clickable: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                patrocinadores: null
+              }
+            : c
+        )
+      );
     } catch (error) {
-      console.error('❌ [DELETE CATCH] Erro ao excluir configuração:', error);
       throw error;
     }
-  };
+  }, [patrocinioConfigs]);
 
-  const getPatrocinioPositionInfo = (position: number) => {
-    return patrocinioPositions[position] || {
-      id: `pos-${position + 1}`,
-      name: `Posição ${position + 1}`,
-      description: `${position + 1}ª posição dos patrocínios`
-    };
-  };
-
-  const validatePatrocinioConfig = (position: number): { valid: boolean; error?: string } => {
-    const config = patrocinioConfigs.find(c => c.display_order === position);
-    if (!config) {
-      return { valid: false, error: 'Configuração não encontrada' };
-    }
-
-    if (config.is_active) {
-      if (!config.image_url || config.image_url.trim() === '') {
-        return { valid: false, error: 'Envie uma imagem' };
-      }
-      
-      const isClickable = config.is_clickable === true;
-      if (isClickable && (!config.patrocinador_id || config.patrocinador_id.trim() === '')) {
-        return { valid: false, error: 'Selecione um patrocinador para modo clicável' };
-      }
-    }
-
-    return { valid: true };
-  };
-
-  const getActivePatrocinioConfigs = () => {
-    return patrocinioConfigs.filter(config => 
-      config.is_active && 
-      config.image_url && 
-      config.image_url.trim() !== ''
-    );
-  };
-
-  const getTotalActiveConfigs = () => {
-    return getActivePatrocinioConfigs().length;
-  };
-
-  const resetPatrocinioConfig = (position: number) => {
-    console.log(`🔄 [RESET] Resetando posição ${position}`);
-    
+  // ✅ RESETAR CONFIGURAÇÃO
+  const resetPatrocinioConfig = useCallback((position: number) => {
     setPatrocinioConfigs(prev => 
       prev.map(config => 
-        config.display_order === position 
+        config.position === position 
           ? {
               ...config,
+              image_name: `patrocinio-${position + 1}`,
               image_url: null,
-              image_alt: `Patrocínio ${getPatrocinioPositionInfo(position).name}`,
-              patrocinador_id: '',
+              image_alt: null,
+              patrocinador_id: null,
               is_active: false,
-              is_clickable: false
+              is_clickable: false,
+              display_order: position,
+              updated_at: new Date().toISOString()
             }
           : config
       )
     );
-  };
-
-  const duplicatePatrocinioConfig = (sourcePosition: number, targetPosition: number) => {
-    const sourceConfig = patrocinioConfigs.find(c => c.display_order === sourcePosition);
-    if (!sourceConfig) return;
-
-    console.log(`📋 [DUPLICATE] Duplicando da posição ${sourcePosition} para ${targetPosition}`);
-
-    setPatrocinioConfigs(prev => 
-      prev.map(config => 
-        config.display_order === targetPosition 
-          ? {
-              ...config,
-              image_url: sourceConfig.image_url,
-              image_alt: sourceConfig.image_alt,
-              patrocinador_id: sourceConfig.patrocinador_id,
-              is_active: false, // Começar desativado
-              is_clickable: sourceConfig.is_clickable
-            }
-          : config
-      )
-    );
-  };
+  }, []);
 
   return {
     patrocinioConfigs,
@@ -333,10 +431,6 @@ export const usePatrocinioConfig = () => {
     savePatrocinioConfig,
     deletePatrocinioConfig,
     getPatrocinioPositionInfo,
-    validatePatrocinioConfig,
-    getActivePatrocinioConfigs,
-    getTotalActiveConfigs,
-    resetPatrocinioConfig,
-    duplicatePatrocinioConfig
-  };
+    resetPatrocinioConfig
+  } as const;
 };

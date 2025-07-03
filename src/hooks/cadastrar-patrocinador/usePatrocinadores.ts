@@ -30,8 +30,32 @@ if (isSupabaseConfigured) {
 }
 
 // ========================
-// TIPOS
+// TIPOS ATUALIZADOS
 // ========================
+
+// Tipo para dados brutos do Supabase (nomes NOVOS das colunas do banco)
+interface PatrocinadorDB {
+  id: string;
+  nome: string;
+  slug: string;
+  bannerUrl?: string;
+  ownerId: string;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+// Tipo para dados desconhecidos vindos do Supabase
+interface SupabaseRowUnknown {
+  id?: unknown;
+  nome?: unknown;
+  slug?: unknown;
+  bannerUrl?: unknown; 
+  ownerId?: unknown;  
+  criadoEm?: unknown;
+  atualizadoEm?: unknown;
+}
+
+// ✅ TIPOS QUE ESTAVAM FALTANDO
 interface PatrocinadorValidation {
   valid: boolean;
   error?: string;
@@ -41,28 +65,6 @@ interface PatrocinadoresStats {
   total: number;
   comBanner: number;
   thisMonth: number;
-}
-
-// Tipo para dados brutos do Supabase (nomes das colunas do banco)
-interface PatrocinadorDB {
-  id: string;
-  nome: string;
-  slug: string;
-  bannerurl?: string;
-  ownerid: string;
-  criadoem: string;
-  atualizadoem: string;
-}
-
-// Tipo para dados desconhecidos vindos do Supabase
-interface SupabaseRowUnknown {
-  id?: unknown;
-  nome?: unknown;
-  slug?: unknown;
-  bannerurl?: unknown;
-  ownerid?: unknown;
-  criadoem?: unknown;
-  atualizadoem?: unknown;
 }
 
 // ========================
@@ -114,10 +116,10 @@ export const usePatrocinadores = () => {
     id: item.id,
     nome: item.nome,
     slug: item.slug,
-    bannerUrl: item.bannerurl || undefined,
-    ownerId: item.ownerid,
-    criadoEm: item.criadoem,
-    atualizadoEm: item.atualizadoem
+    bannerUrl: item.bannerUrl || undefined,
+    ownerId: item.ownerId,
+    criadoEm: item.criadoEm,
+    atualizadoEm: item.atualizadoEm
   });
 
   // Validação com tipo correto - SEM ANY
@@ -125,9 +127,9 @@ export const usePatrocinadores = () => {
     return typeof item?.id === 'string' && 
            typeof item?.nome === 'string' && 
            typeof item?.slug === 'string' &&
-           typeof item?.ownerid === 'string' &&
-           typeof item?.criadoem === 'string' &&
-           typeof item?.atualizadoem === 'string' &&
+           typeof item?.ownerId === 'string' &&    // ✅ CORRIGIDO
+           typeof item?.criadoEm === 'string' &&   // ✅ CORRIGIDO
+           typeof item?.atualizadoEm === 'string' && // ✅ CORRIGIDO
            item.id.length > 0 &&
            item.nome.length > 0 &&
            item.slug.length > 0;
@@ -158,7 +160,7 @@ export const usePatrocinadores = () => {
       const { data, error: supabaseError } = await supabase
         .from('patrocinadores')
         .select('*')
-        .order('criadoem', { ascending: false }); // CORREÇÃO: criadoem em lowercase
+        .order('criadoEm', { ascending: false }); // ✅ CORRIGIDO: criadoEm
 
       if (supabaseError) {
         console.error('❌ Erro Supabase:', supabaseError);
@@ -229,12 +231,12 @@ export const usePatrocinadores = () => {
       return novoId;
     }
 
-    // Supabase - usar nomes corretos das colunas
+    // Supabase - usar nomes NOVOS das colunas
     const dados = {
       nome: nome.trim(),
       slug: gerarSlug(nome.trim()),
-      ownerid: userId, // CORREÇÃO: ownerid
-      // criadoem e atualizadoem são preenchidos automaticamente pelo banco
+      ownerId: userId, // ✅ CORRIGIDO: ownerId
+      // criadoEm e atualizadoEm são preenchidos automaticamente pelo banco
     };
 
     console.log('📤 Inserindo dados:', dados);
@@ -314,11 +316,11 @@ export const usePatrocinadores = () => {
       return;
     }
 
-    // Supabase - usar nome correto da coluna
+    // Supabase - usar nome NOVO da coluna
     const { error: supabaseError } = await supabase
       .from('patrocinadores')
       .update({ 
-        bannerurl: bannerUrl.trim() || null, // CORREÇÃO: bannerurl
+        bannerUrl: bannerUrl.trim() || null, // ✅ CORRIGIDO: bannerUrl
       })
       .eq('id', id);
 

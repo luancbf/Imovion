@@ -14,7 +14,7 @@ export default function Home() {
     >
       <Header />
 
-      <section className="pb-10">
+      <section className="w-full pb-10">
         <Slider />
       </section>
       <FiltrosExpansivos />

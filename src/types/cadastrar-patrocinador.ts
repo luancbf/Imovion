@@ -8,33 +8,41 @@ export interface Patrocinador {
   ownerId?: string;
 }
 
+export interface PatrocinioConfig {
+  id?: string;
+  position: number;
+  display_order?: number;
+  image_name?: string;
+  image_url?: string | null;
+  image_alt?: string | null;
+  patrocinador_id?: string | null;
+  is_active: boolean;
+  is_clickable: boolean;
+  created_at?: string;
+  updated_at?: string;
+  patrocinadores?: {
+    id: string;
+    nome: string;
+    slug: string;
+  } | null;
+}
+
 export interface SliderBanner {
   id?: string;
   image_name: string;
-  image_url?: string | null;
-  image_alt?: string;
-  patrocinador_id: string;
-  is_active: boolean;
-  display_order: number;
-  patrocinadores?: {
-    nome: string;
-    slug: string;
-  };
-}
-
-export interface PatrocinioConfig {
-  id?: string;
-  image_name: string;
   image_url: string | null;
-  image_alt: string;
-  patrocinador_id: string;
+  image_alt: string | null;
+  patrocinador_id: string | null;
   is_active: boolean;
   is_clickable: boolean;
-  display_order: number;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
   patrocinadores?: {
+    id: string;
     nome: string;
     slug: string;
-  };
+  } | null;
 }
 
 export interface SliderImageInfo {
