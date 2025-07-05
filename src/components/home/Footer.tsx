@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-gradient-to-r from-blue-100 to-blue-200 pt-10 pb-10 mt-20 border-t border-blue-200">
+    <footer className="w-full bg-gradient-to-r from-blue-100 to-blue-200 pt-10 pb-10 border-t border-blue-200">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center px-4 gap-8">
         {/* Contato - Esquerda */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left md:ml-20">

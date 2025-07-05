@@ -29,7 +29,7 @@ export default function FiltrosExpansiveis() {
     "flex-1 px-1 py-1 sm:py-2 rounded transition-all duration-150 shadow font-poppins font-semibold text-base sm:text-xl cursor-pointer";
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 justify-items-center" ref={containerRef}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 justify-items-center" ref={containerRef}>
       {/* Residencial */}
       <div className="flex flex-col items-center w-full">
         <button

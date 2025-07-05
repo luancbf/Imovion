@@ -167,7 +167,7 @@ export default function Slider({
 
   return (
     <div className={`w-full ${className}`}>
-      <div className={`relative w-full ${heightClasses[height]} bg-gray-100 shadow-lg overflow-hidden`}>
+      <div className={`relative w-full h-50 sm:h-70 lg:h-110 bg-gray-100 shadow-lg overflow-hidden`}>
         <Swiper
           modules={[Navigation, Pagination, Autoplay]}
           navigation={showControls && banners.length > 1}

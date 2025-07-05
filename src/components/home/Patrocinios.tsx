@@ -119,10 +119,10 @@ export default function Patrocinios() {
   console.log('🎨 [RENDER] Renderizando', patrocinios.length, 'patrocínios');
 
   return (
-    <section className="py-12 px-6">
+    <section className="py-8 sm:py-12 px-4">
       <div className="mx-auto w-fit">
         {/* Grid que se ajusta ao próprio conteúdo */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-4">
           {patrocinios.map((patrocinio, index) => {
             // ✅ Determinar se é clicável e tem patrocinador
             const isClickable = patrocinio.is_clickable && 
@@ -130,7 +130,7 @@ export default function Patrocinios() {
             
             const PatrocinioCard = (
               <div 
-                className={`w-60 h-60 group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 ${
+                className={`w-40 lg:w-60 h-40 lg:h-60 group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 ${
                   isClickable ? 'cursor-pointer' : ''
                 }`}
                 style={{ 
