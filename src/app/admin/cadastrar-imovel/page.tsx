@@ -7,6 +7,7 @@ import FiltroCadastroImoveis from '@/components/cadastrar-imovel/FiltroCadastroI
 import ListaImoveis from '@/components/cadastrar-imovel/ListaImoveis';
 import cidadesComBairros from '@/constants/cidadesComBairros';
 import type { Imovel } from '@/types/Imovel';
+import type { ImovelEdicao } from '@/types/formularios';
 import { createBrowserClient } from "@supabase/ssr";
 
 const opcoesTipoImovel: Record<string, string[]> = {
@@ -29,78 +30,175 @@ export default function CadastrarImovel() {
   const [patrocinadores, setPatrocinadores] = useState<{ id: string; nome: string }[]>([]);
   const [filtros, setFiltros] = useState({ tipoNegocio: '', setorNegocio: '', patrocinador: '' });
   const [carregando, setCarregando] = useState(false);
+  const [imovelEditando, setImovelEditando] = useState<ImovelEdicao | null>(null); // ✅ Tipo correto
 
   useEffect(() => {
     (async () => {
       setCarregando(true);
-      let query = supabase.from('imoveis').select('*').order('dataCadastro', { ascending: false });
-      if (filtros.tipoNegocio) query = query.eq('tipoNegocio', filtros.tipoNegocio);
-      if (filtros.setorNegocio) query = query.eq('setorNegocio', filtros.setorNegocio);
-      if (filtros.patrocinador) query = query.eq('patrocinador', filtros.patrocinador);
-      const { data: imoveisData } = await query;
-      setImoveis(imoveisData as Imovel[] || []);
-      const { data: patrocinadoresData } = await supabase.from('patrocinadores').select('id, nome');
-      setPatrocinadores(patrocinadoresData || []);
-      setCarregando(false);
+      try {
+        let query = supabase
+          .from('imoveis')
+          .select('*')
+          .order('datacadastro', { ascending: false });
+        
+        if (filtros.tipoNegocio) {
+          query = query.eq('tiponegocio', filtros.tipoNegocio);
+        }
+        if (filtros.setorNegocio) {
+          query = query.eq('setornegocio', filtros.setorNegocio);
+        }
+        if (filtros.patrocinador) {
+          query = query.eq('patrocinadorid', filtros.patrocinador);
+        }
+        
+        const { data: imoveisData, error: imoveisError } = await query;
+        
+        if (imoveisError) {
+          console.error('Erro ao buscar imóveis:', imoveisError);
+          setImoveis([]);
+        } else {
+          setImoveis(imoveisData as Imovel[] || []);
+        }
+        
+        const { data: patrocinadoresData, error: patrocinadorError } = await supabase
+          .from('patrocinadores')
+          .select('id, nome');
+        
+        if (patrocinadorError) {
+          console.error('Erro ao buscar patrocinadores:', patrocinadorError);
+          setPatrocinadores([]);
+        } else {
+          setPatrocinadores(patrocinadoresData || []);
+        }
+        
+      } catch (error) {
+        console.error('Erro geral:', error);
+        setImoveis([]);
+        setPatrocinadores([]);
+      } finally {
+        setCarregando(false);
+      }
     })();
   }, [filtros]);
 
   const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este imóvel?')) {
-      await supabase.from('imoveis').delete().eq('id', id);
-      setImoveis(imoveis => imoveis.filter(imovel => imovel.id !== id));
+      try {
+        const { error } = await supabase
+          .from('imoveis')
+          .delete()
+          .eq('id', id);
+        
+        if (error) {
+          console.error('Erro ao excluir:', error);
+          alert('Erro ao excluir imóvel: ' + error.message);
+        } else {
+          setImoveis(imoveis => imoveis.filter(imovel => imovel.id !== id));
+          // Se o imóvel excluído estava sendo editado, cancelar edição
+          if (imovelEditando?.id === id) {
+            setImovelEditando(null);
+          }
+          alert('Imóvel excluído com sucesso!');
+        }
+      } catch (error) {
+        console.error('Erro geral ao excluir:', error);
+        alert('Erro inesperado ao excluir imóvel.');
+      }
     }
   };
 
-  const handleEdit = async (id: string, dados?: Partial<Imovel>) => {
-    if (!id || !dados) return;
-    await supabase.from('imoveis').update(dados).eq('id', id);
-    setImoveis(imoveis => imoveis.map(imovel => imovel.id === id ? { ...imovel, ...dados } : imovel));
+  // ✅ CORREÇÃO: Função para carregar imóvel no formulário com tipagem correta
+  const handleEditarNoFormulario = (imovel: Imovel) => {
+    const imovelParaEdicao: ImovelEdicao = {
+      // ✅ Copiar todas as propriedades do Imovel original
+      id: imovel.id,
+      cidade: imovel.cidade,
+      bairro: imovel.bairro,
+      enderecodetalhado: imovel.enderecodetalhado,
+      valor: imovel.valor,
+      metragem: imovel.metragem,
+      descricao: imovel.descricao,
+      tipoimovel: imovel.tipoimovel,
+      tiponegocio: imovel.tiponegocio,
+      setornegocio: imovel.setornegocio,
+      whatsapp: imovel.whatsapp,
+      patrocinadorid: imovel.patrocinadorid,
+      datacadastro: imovel.datacadastro,
+      ativo: imovel.ativo,
+      imagens: imovel.imagens,
+      itens: imovel.itens,
+      
+      // ✅ Adicionar propriedades extras que o formulário espera (camelCase)
+      tipoImovel: imovel.tipoimovel,
+      enderecoDetalhado: imovel.enderecodetalhado,
+      tipoNegocio: imovel.tiponegocio,
+      setorNegocio: imovel.setornegocio,
+      dataCadastro: imovel.datacadastro,
+      patrocinador: imovel.patrocinadorid,
+    };
+
+    setImovelEditando(imovelParaEdicao);
+  };
+
+  // ✅ Função para limpar edição
+  const handleLimparEdicao = () => {
+    setImovelEditando(null);
   };
 
   const handleSuccess = async () => {
     setCarregando(true);
-    const { data } = await supabase.from('imoveis').select('*').order('dataCadastro', { ascending: false });
-    setImoveis(data as Imovel[] || []);
-    setCarregando(false);
-  };
-
-  const handleSalvarImovel = async (dados: Partial<Imovel>) => {
-    await supabase.from('imoveis').insert({
-      ...dados
-    });
-    handleSuccess();
+    
+    try {
+      const { data, error } = await supabase
+        .from('imoveis')
+        .select('*')
+        .order('datacadastro', { ascending: false });
+      
+      if (error) {
+        console.error('Erro ao atualizar lista:', error);
+        setImoveis([]);
+      } else {
+        setImoveis(data as Imovel[] || []);
+      }
+      
+      // ✅ Limpar edição após sucesso
+      setImovelEditando(null);
+      
+    } catch (error) {
+      console.error('Erro geral ao atualizar:', error);
+      setImoveis([]);
+    } finally {
+      setCarregando(false);
+    }
   };
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-gray-50">
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6">
         <div className="space-y-8">
-        
-          {/* Formulário - Componente com estilização própria */}
+          
           <FormularioImovel
             patrocinadores={patrocinadores}
             cidadesComBairros={cidadesComBairros}
             opcoesTipoImovel={opcoesTipoImovel}
             onSuccess={handleSuccess}
-            onSalvar={handleSalvarImovel}
+            dadosIniciais={imovelEditando} // ✅ Agora com tipo correto ImovelEdicao
+            onLimpar={handleLimparEdicao} // ✅ Callback para limpar
           />
 
-          {/* Filtros - Componente com estilização própria */}
           <FiltroCadastroImoveis
             patrocinadores={patrocinadores}
             onFiltroChange={setFiltros}
           />
 
-          {/* Lista - Componente com estilização própria */}
           <ListaImoveis
             imoveis={imoveis}
             carregando={carregando}
             onDelete={handleDelete}
-            onEdit={handleEdit}
+            onEdit={handleEditarNoFormulario} // ✅ Nova função
             patrocinadores={patrocinadores}
             cidadesComBairros={cidadesComBairros}
-            opcoesTipoImovel={opcoesTipoImovel}
+            // ✅ REMOVIDO opcoesTipoImovel pois não existe na interface ListaImoveisProps
           />
 
         </div>

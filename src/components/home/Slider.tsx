@@ -56,7 +56,6 @@ export default function Slider({
         setLoading(true);
         setError(null);
 
-        // ✅ CORRIGIDO: Usar os nomes corretos dos campos
         const { data: sliderConfigs, error } = await supabase
           .from('slider_banners')
           .select(`
@@ -131,9 +130,9 @@ export default function Slider({
   if (loading) {
     return (
       <div className={`w-full ${className}`}>
-        <div className={`relative w-full ${heightClasses[height]} overflow-hidden rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse shadow-lg`}>
+        <div className={`relative w-full ${heightClasses[height]} overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse shadow-lg`}>
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-400 border-t-transparent" />
+            <div className="animate-spin h-6 w-6 border-2 border-gray-400 border-t-transparent" />
           </div>
         </div>
       </div>
@@ -144,13 +143,13 @@ export default function Slider({
   if (error) {
     return (
       <div className={`w-full ${className}`}>
-        <div className={`relative w-full ${heightClasses[height]} overflow-hidden rounded-2xl bg-gradient-to-br from-red-100 to-red-200 border border-red-300 shadow-lg`}>
+        <div className={`relative w-full ${heightClasses[height]} overflow-hidden bg-gradient-to-br from-red-100 to-red-200 border border-red-300 shadow-lg`}>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center p-4">
               <p className="text-red-800 font-medium mb-2">Erro ao carregar slider</p>
               <button
                 onClick={() => window.location.reload()}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm transition-colors"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm transition-colors"
               >
                 Tentar Novamente
               </button>
@@ -168,7 +167,7 @@ export default function Slider({
 
   return (
     <div className={`w-full ${className}`}>
-      <div className={`relative w-full ${heightClasses[height]} bg-gray-100 rounded-2xl shadow-lg overflow-hidden`}>
+      <div className={`relative w-full ${heightClasses[height]} bg-gray-100 shadow-lg overflow-hidden`}>
         <Swiper
           modules={[Navigation, Pagination, Autoplay]}
           navigation={showControls && banners.length > 1}
@@ -225,16 +224,6 @@ export default function Slider({
                         style={{ objectFit: 'cover' }}
                       />
                     </Link>
-                  )}
-
-                  {/* ✅ Overlay com informação de clique (opcional - só para debug) */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                      {isClickable 
-                        ? `→ ${banner.patrocinador_nome || 'Patrocinador'}` 
-                        : '→ Home'
-                      }
-                    </div>
                   )}
                 </div>
               </SwiperSlide>

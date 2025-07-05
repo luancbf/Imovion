@@ -9,10 +9,9 @@ interface ListaImoveisProps {
   imoveis: Imovel[];
   carregando: boolean;
   onDelete: (id: string) => void;
-  onEdit: (id: string, dados?: Partial<Imovel>) => void;
+  onEdit: (imovel: Imovel) => void;
   patrocinadores: { id: string; nome: string }[];
   cidadesComBairros: Record<string, string[]>;
-  opcoesTipoImovel: Record<string, string[]>;
 }
 
 export default function ListaImoveis({
@@ -21,31 +20,31 @@ export default function ListaImoveis({
   onDelete,
   onEdit,
   patrocinadores,
-  cidadesComBairros,
-  opcoesTipoImovel
+  cidadesComBairros
 }: ListaImoveisProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [busca, setBusca] = useState('');
 
-  // Filtrar imóveis por busca
-  const imoveisFiltrados = imoveis.filter(imovel =>
-    (imovel.tipoImovel || '').toLowerCase().includes(busca.toLowerCase()) ||
-    (imovel.enderecoDetalhado || '').toLowerCase().includes(busca.toLowerCase()) ||
-    (imovel.cidade || '').toLowerCase().includes(busca.toLowerCase()) ||
-    (imovel.bairro || '').toLowerCase().includes(busca.toLowerCase()) ||
-    (imovel.descricao || '').toLowerCase().includes(busca.toLowerCase()) ||
-    (imovel.tipoNegocio || '').toLowerCase().includes(busca.toLowerCase()) ||
-    (imovel.setorNegocio || '').toLowerCase().includes(busca.toLowerCase())
-  );
+  const imoveisFiltrados = imoveis.filter(imovel => {
+    const buscarEm = busca.toLowerCase();
+    return (
+      (imovel.tipoimovel || '').toLowerCase().includes(buscarEm) ||
+      (imovel.enderecodetalhado || '').toLowerCase().includes(buscarEm) ||
+      (imovel.cidade || '').toLowerCase().includes(buscarEm) ||
+      (imovel.bairro || '').toLowerCase().includes(buscarEm) ||
+      (imovel.descricao || '').toLowerCase().includes(buscarEm) ||
+      (imovel.tiponegocio || '').toLowerCase().includes(buscarEm) ||
+      (imovel.setornegocio || '').toLowerCase().includes(buscarEm)
+    );
+  });
 
-  // Estatísticas dos imóveis
   const stats = {
     total: imoveis.length,
-    residencial: imoveis.filter(i => i.tipoNegocio === 'Residencial').length,
-    comercial: imoveis.filter(i => i.tipoNegocio === 'Comercial').length,
-    rural: imoveis.filter(i => i.tipoNegocio === 'Rural').length,
-    venda: imoveis.filter(i => i.setorNegocio === 'Venda').length,
-    aluguel: imoveis.filter(i => i.setorNegocio === 'Aluguel').length,
+    residencial: imoveis.filter(i => i.tiponegocio === 'Residencial').length,
+    comercial: imoveis.filter(i => i.tiponegocio === 'Comercial').length,
+    rural: imoveis.filter(i => i.tiponegocio === 'Rural').length,
+    venda: imoveis.filter(i => i.setornegocio === 'Venda').length,
+    aluguel: imoveis.filter(i => i.setornegocio === 'Aluguel').length,
     resultados: imoveisFiltrados.length
   };
 
@@ -172,7 +171,7 @@ export default function ListaImoveis({
           </h3>
           <p className="text-blue-600 mb-4">
             {busca 
-              ? `Não encontramos imóveis com &quot;${busca}&quot;. Tente outros termos.`
+              ? `Não encontramos imóveis com "${busca}". Tente outros termos.`
               : 'Comece cadastrando seu primeiro imóvel usando o formulário acima.'
             }
           </p>
@@ -204,6 +203,11 @@ export default function ListaImoveis({
               <ImovelCardCadastro
                 imovel={{
                   ...imovel,
+                  tipoImovel: imovel.tipoimovel,
+                  enderecoDetalhado: imovel.enderecodetalhado,
+                  tipoNegocio: imovel.tiponegocio,
+                  setorNegocio: imovel.setornegocio,
+                  dataCadastro: imovel.datacadastro,
                   itens: Object.fromEntries(
                     Object.entries(imovel.itens ?? {}).map(([k, v]) => [k, Number(v)])
                   )
@@ -211,7 +215,6 @@ export default function ListaImoveis({
                 onDelete={onDelete}
                 onEdit={onEdit}
                 cidadesComBairros={cidadesComBairros}
-                opcoesTipoImovel={opcoesTipoImovel}
                 patrocinadores={patrocinadores}
                 viewMode={viewMode}
               />
@@ -236,7 +239,7 @@ export default function ListaImoveis({
           
           <div className="text-right">
             <p className="text-xs text-gray-500">
-              💡 Use os filtros acima para refinar sua busca
+              💡 Clique em &quot;Editar&quot; para carregar no formulário acima
             </p>
           </div>
         </div>

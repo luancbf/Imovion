@@ -27,10 +27,12 @@ export default function UploadImages({
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
 
   const handleDragStart = (index: number) => setDraggedIndex(index);
+  
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
   };
+  
   const handleDropImage = (index: number) => {
     if (draggedIndex !== null && draggedIndex !== index) {
       onReorder(draggedIndex, index);
@@ -41,6 +43,7 @@ export default function UploadImages({
   const moveLeft = (index: number) => {
     if (index > 0) onReorder(index, index - 1);
   };
+  
   const moveRight = (index: number) => {
     if (index < previews.length - 1) onReorder(index, index + 1);
   };
@@ -65,7 +68,7 @@ export default function UploadImages({
       <div className="flex flex-wrap gap-4 mt-4 justify-center">
         {previews.map((preview, index) => (
           <div
-            key={index}
+            key={`${preview}-${index}`}
             className="relative w-28 h-28 flex flex-col items-center group bg-white rounded-lg shadow transition-all"
             draggable
             onDragStart={e => {
@@ -90,6 +93,10 @@ export default function UploadImages({
               fill
               className="object-cover rounded-lg"
               style={{ zIndex: 1 }}
+              sizes="112px"
+              onError={() => {
+                console.error('Erro ao carregar imagem:', preview);
+              }}
             />
             <button
               type="button"
@@ -115,7 +122,9 @@ export default function UploadImages({
                 aria-label="Mover para a esquerda"
                 tabIndex={-1}
               >
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                  <path d="M15 18l-6-6 6-6" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </button>
               <button
                 type="button"
@@ -128,7 +137,9 @@ export default function UploadImages({
                 aria-label="Mover para a direita"
                 tabIndex={-1}
               >
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                  <path d="M9 6l6 6-6 6" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </button>
             </div>
           </div>

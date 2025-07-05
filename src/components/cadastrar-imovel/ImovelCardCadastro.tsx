@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { FiEdit2, FiTrash2, FiEye, FiChevronDown, FiChevronUp, FiImage, FiMapPin, FiHome, FiCalendar } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
-import EditarImovelModal from '@/components/cadastrar-imovel/EditarImovelModal';
 import type { Imovel } from '@/types/Imovel';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
@@ -14,14 +13,18 @@ import 'swiper/css/pagination';
 
 interface ImovelComItens extends Imovel {
   itens?: Record<string, number>;
+  tipoImovel?: string;
+  enderecoDetalhado?: string;
+  tipoNegocio?: string;
+  setorNegocio?: string;
+  dataCadastro?: Date | string;
 }
 
 interface ImovelCardProps {
   imovel: ImovelComItens;
   onDelete: (id: string) => void;
-  onEdit: (id: string, dados: Partial<Imovel>) => void | Promise<void>;
+  onEdit: (imovel: ImovelComItens) => void;
   cidadesComBairros: Record<string, string[]>;
-  opcoesTipoImovel: Record<string, string[]>;
   patrocinadores: { id: string; nome: string }[];
   viewMode?: 'grid' | 'list';
 }
@@ -133,23 +136,54 @@ export default function ImovelCard({
   imovel,
   onDelete,
   onEdit,
-  cidadesComBairros,
-  opcoesTipoImovel,
   patrocinadores,
   viewMode = 'grid'
 }: ImovelCardProps) {
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
-  const [editando, setEditando] = useState(false);
-  const [form, setForm] = useState<Partial<Imovel>>({ ...imovel });
   const [exibirMais, setExibirMais] = useState(false);
 
+  // ✅ Acessar propriedades com fallback para compatibilidade
+  const tipoImovel = imovel.tipoImovel || imovel.tipoimovel;
+  const enderecoDetalhado = imovel.enderecoDetalhado || imovel.enderecodetalhado;
+  const tipoNegocio = imovel.tipoNegocio || imovel.tiponegocio;
+  const setorNegocio = imovel.setorNegocio || imovel.setornegocio;
+  const dataCadastro = imovel.dataCadastro || imovel.datacadastro;
+
   const imagens = imovel.imagens || [];
-  const itensDisponiveis = ITENS_POR_SETOR[imovel.tipoNegocio || ''] || [];
-  const patrocinadorNome = patrocinadores.find(p => p.id === imovel.patrocinador)?.nome || 'N/A';
+  const itensDisponiveis = ITENS_POR_SETOR[tipoNegocio || ''] || [];
+  const patrocinadorNome = patrocinadores.find(p => 
+    p.id === imovel.patrocinador || p.id === imovel.patrocinadorid
+  )?.nome || 'N/A';
 
   const handleConfirmarExclusao = () => {
     onDelete(imovel.id!);
     setConfirmandoExclusao(false);
+  };
+
+  // ✅ Handler para editar no formulário principal
+  const handleEditar = () => {
+    // Preparar dados para o formulário principal com nomes em camelCase
+    const dadosParaFormulario = {
+      ...imovel,
+      // ✅ Garantir compatibilidade com formulário
+      tipoImovel: tipoImovel,
+      enderecoDetalhado: enderecoDetalhado,
+      tipoNegocio: tipoNegocio,
+      setorNegocio: setorNegocio,
+      dataCadastro: dataCadastro,
+    };
+    
+    // Chamar callback para carregar no formulário
+    onEdit(dadosParaFormulario);
+    
+    // Fazer scroll suave para o formulário
+    const formulario = document.querySelector('[data-formulario-imovel]');
+    if (formulario) {
+      formulario.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
   };
 
   // Layout para visualização em lista
@@ -163,7 +197,7 @@ export default function ImovelCard({
               <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-blue-100 group-hover:border-blue-200 transition-colors">
                 <Image
                   src={imagens[0]}
-                  alt={`${formatarTexto(imovel.tipoImovel)} em ${formatarTexto(imovel.cidade)}`}
+                  alt={`${formatarTexto(tipoImovel)} em ${formatarTexto(imovel.cidade)}`}
                   fill
                   className="object-cover"
                   unoptimized
@@ -186,11 +220,11 @@ export default function ImovelCard({
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
                 <h3 className="font-bold text-blue-900 text-lg mb-1 group-hover:text-blue-700 transition-colors">
-                  {getTipoIcon(imovel.tipoNegocio)} {formatarTexto(imovel.tipoImovel)}
+                  {getTipoIcon(tipoNegocio)} {formatarTexto(tipoImovel)}
                 </h3>
                 <div className="flex items-center gap-2 text-sm text-blue-600 mb-2">
                   <span className="bg-blue-100 px-2 py-1 rounded-full">
-                    {getSetorIcon(imovel.setorNegocio)} {imovel.setorNegocio || 'N/A'}
+                    {getSetorIcon(setorNegocio)} {setorNegocio || 'N/A'}
                   </span>
                   <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
                     {imovel.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -200,7 +234,7 @@ export default function ImovelCard({
               <div className="text-right text-sm text-gray-500">
                 <div className="flex items-center gap-1">
                   <FiCalendar size={14} />
-                  {formatarData(imovel.dataCadastro)}
+                  {formatarData(dataCadastro)}
                 </div>
               </div>
             </div>
@@ -232,9 +266,9 @@ export default function ImovelCard({
               </Link>
               
               <button
-                onClick={() => setEditando(true)}
+                onClick={handleEditar}
                 className="flex items-center gap-1 p-2 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg transition-all duration-200 text-sm"
-                title="Editar imóvel"
+                title="Editar no formulário"
               >
                 <FiEdit2 size={16} />
                 <span className="hidden sm:inline">Editar</span>
@@ -274,21 +308,6 @@ export default function ImovelCard({
             </div>
           </div>
         )}
-
-        {/* Modal de edição */}
-        <EditarImovelModal
-          open={editando}
-          form={form}
-          onClose={() => setEditando(false)}
-          onSave={(dadosEditados) => {
-            setForm(dadosEditados);
-            onEdit(imovel.id!, dadosEditados);
-            setEditando(false);
-          }}
-          cidadesComBairros={cidadesComBairros}
-          opcoesTipoImovel={opcoesTipoImovel}
-          patrocinadores={patrocinadores}
-        />
       </div>
     );
   }
@@ -311,7 +330,7 @@ export default function ImovelCard({
                 <div className="relative w-full h-48">
                   <Image
                     src={img}
-                    alt={`${formatarTexto(imovel.tipoImovel)} em ${formatarTexto(imovel.cidade)} - Foto ${i + 1}`}
+                    alt={`${formatarTexto(tipoImovel)} em ${formatarTexto(imovel.cidade)} - Foto ${i + 1}`}
                     fill
                     className="object-cover transition-all duration-500"
                     unoptimized
@@ -333,16 +352,16 @@ export default function ImovelCard({
         {/* Badges */}
         <div className="absolute top-3 left-3 flex gap-2">
           <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-            {getTipoIcon(imovel.tipoNegocio)} {imovel.tipoNegocio || 'N/A'}
+            {getTipoIcon(tipoNegocio)} {tipoNegocio || 'N/A'}
           </span>
           <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-            {getSetorIcon(imovel.setorNegocio)} {imovel.setorNegocio || 'N/A'}
+            {getSetorIcon(setorNegocio)} {setorNegocio || 'N/A'}
           </span>
         </div>
 
         <div className="absolute top-3 right-3">
           <span className="bg-black/70 text-white px-2 py-1 rounded-full text-xs">
-            {formatarData(imovel.dataCadastro)}
+            {formatarData(dataCadastro)}
           </span>
         </div>
       </div>
@@ -352,7 +371,7 @@ export default function ImovelCard({
         {/* Cabeçalho */}
         <div>
           <h3 className="font-bold text-blue-900 text-lg mb-2 group-hover:text-blue-700 transition-colors">
-            {formatarTexto(imovel.tipoImovel)}
+            {formatarTexto(tipoImovel)}
           </h3>
           <p className="text-green-700 font-bold text-xl">
             {imovel.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -367,7 +386,7 @@ export default function ImovelCard({
           </div>
           <div className="flex items-center gap-2">
             <FiHome size={14} />
-            <span>{imovel.metragem}m² • {formatarTexto(imovel.enderecoDetalhado)}</span>
+            <span>{imovel.metragem}m² • {formatarTexto(enderecoDetalhado)}</span>
           </div>
           <div className="flex items-center gap-2">
             <span>🏢</span>
@@ -409,7 +428,7 @@ export default function ImovelCard({
               <h4 className="font-semibold text-blue-900 mb-2">Características</h4>
               <div className="grid grid-cols-2 gap-2">
                 {itensDisponiveis.map((item) => {
-                  const valor = (form.itens ?? imovel.itens)?.[item.chave];
+                  const valor = imovel.itens?.[item.chave];
                   if (typeof valor !== 'number' || valor === 0) return null;
                   const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
                   return (
@@ -440,9 +459,9 @@ export default function ImovelCard({
           </Link>
           
           <button
-            onClick={() => setEditando(true)}
+            onClick={handleEditar}
             className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
-            title="Editar imóvel"
+            title="Editar no formulário"
           >
             <FiEdit2 size={16} />
             <span>Editar</span>
@@ -483,21 +502,6 @@ export default function ImovelCard({
           </div>
         )}
       </div>
-
-      {/* Modal de edição */}
-      <EditarImovelModal
-        open={editando}
-        form={form}
-        onClose={() => setEditando(false)}
-        onSave={(dadosEditados) => {
-          setForm(dadosEditados);
-          onEdit(imovel.id!, dadosEditados);
-          setEditando(false);
-        }}
-        cidadesComBairros={cidadesComBairros}
-        opcoesTipoImovel={opcoesTipoImovel}
-        patrocinadores={patrocinadores}
-      />
     </div>
   );
 }

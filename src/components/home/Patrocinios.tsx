@@ -153,22 +153,6 @@ export default function Patrocinios() {
                     console.log('✅ [IMAGE LOADED]:', patrocinio.image_url);
                   }}
                 />
-                
-                {/* Overlay gradiente no hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-600/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                
-                {/* Borda animada */}
-                <div className="absolute inset-0 rounded-xl border-2 border-transparent group-hover:border-blue-300 transition-colors duration-500"></div>
-                
-                {/* Efeito de brilho */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                
-                {/* Indicador de clicável */}
-                {isClickable && (
-                  <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    👆 Clique aqui
-                  </div>
-                )}
               </div>
             );
 

@@ -43,13 +43,13 @@ export default function FiltrosExpansiveis() {
           <div className="flex flex-row gap-1 sm:gap-3 bg-blue-50 p-1 sm:p-4 py-3 rounded-b shadow-inner animate-fade-in w-full">
             <button
               className={`${botaoSecundarioClasse} bg-blue-400 hover:bg-blue-500 text-white`}
-              onClick={() => router.push('/residencial/comprar')}
+              onClick={() => router.push('/residencial/venda')}
             >
               Compra
             </button>
             <button
               className={`${botaoSecundarioClasse} bg-blue-400 hover:bg-blue-500 text-white`}
-              onClick={() => router.push('/residencial/alugar')}
+              onClick={() => router.push('/residencial/aluguel')}
             >
               Aluguel
             </button>
@@ -70,13 +70,13 @@ export default function FiltrosExpansiveis() {
           <div className="flex flex-row gap-1 sm:gap-3 bg-green-50 p-1 sm:p-4 py-3 rounded-b shadow-inner animate-fade-in w-full">
             <button
               className={`${botaoSecundarioClasse} bg-green-400 hover:bg-green-500 text-white`}
-              onClick={() => router.push('/comercial/comprar')}
+              onClick={() => router.push('/comercial/venda')}
             >
               Compra
             </button>
             <button
               className={`${botaoSecundarioClasse} bg-green-400 hover:bg-green-500 text-white`}
-              onClick={() => router.push('/comercial/alugar')}
+              onClick={() => router.push('/comercial/aluguel')}
             >
               Aluguel
             </button>
@@ -97,13 +97,13 @@ export default function FiltrosExpansiveis() {
           <div className="flex flex-row gap-2 bg-yellow-50 p-1 sm:p-4 py-3 rounded-b shadow-inner animate-fade-in w-full">
             <button
               className={`${botaoSecundarioClasse} bg-yellow-500 hover:bg-yellow-600 text-white`}
-              onClick={() => router.push('/rural/comprar')}
+              onClick={() => router.push('/rural/venda')}
             >
               Compra
             </button>
             <button
               className={`${botaoSecundarioClasse} bg-yellow-500 hover:bg-yellow-600 text-white`}
-              onClick={() => router.push('/rural/alugar')}
+              onClick={() => router.push('/rural/aluguel')}
             >
               Aluguel
             </button>
@@ -134,6 +134,7 @@ export default function FiltrosExpansiveis() {
           </div>
         )}
       </div>
+      
       <style jsx>{`
         .animate-fade-in {
           animation: fadeIn 0.3s;

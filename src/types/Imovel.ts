@@ -2,18 +2,20 @@ export interface Imovel {
   id: string;
   cidade: string;
   bairro: string;
-  enderecoDetalhado: string;
+  enderecodetalhado: string;
   valor: number;
   metragem: number;
   descricao: string;
-  tipoImovel: string;
-  tipoNegocio: string;
-  setorNegocio?: string;
+  tipoimovel: string;
+  tiponegocio: string;
+  setornegocio?: string;
   whatsapp: string;
   patrocinador?: string;
+  patrocinadorid?: string;
   imagens: string[];
-  dataCadastro?: Date | string;
+  datacadastro?: Date | string;
   itens?: Record<string, unknown>;
+  ativo?: boolean;
   latitude?: number | null;
   longitude?: number | null;
 }
