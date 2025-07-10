@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import { createBrowserClient } from "@supabase/ssr";
@@ -24,208 +24,173 @@ interface SliderBanner {
 
 interface SliderProps {
   className?: string;
-  height?: 'small' | 'medium' | 'large';
   showControls?: boolean;
   autoplay?: boolean;
+  type?: 'principal' | 'secundario';
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-export default function Slider({ 
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
+export default function Slider({
   className = "",
-  height = 'large',
   showControls = true,
-  autoplay = true
+  autoplay = true,
+  type = 'principal'
 }: SliderProps) {
   const [banners, setBanners] = useState<SliderBanner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Classes de altura responsivas
-  const heightClasses = {
-    small: 'h-[200px] sm:h-[250px]',
-    medium: 'h-[300px] sm:h-[400px]',
-    large: 'h-[400px] sm:h-[500px] lg:h-[600px]'
-  };
+  // Remova 'type' do array de dependências do useMemo
+  const shuffledBanners = useMemo(() => (
+    banners.length ? shuffleArray(banners) : []
+  ), [banners]);
 
   useEffect(() => {
-    async function fetchBanners() {
-      try {
-        setLoading(true);
-        setError(null);
+    const fetchBanners = async () => {
+      setLoading(true);
+      setError(null);
 
-        const { data: sliderConfigs, error } = await supabase
-          .from('slider_banners')
-          .select(`
-            id,
-            image_name,
-            image_url,
-            image_alt,
-            order_index,
-            is_active,
-            is_clickable,
-            patrocinadores (
-              slug,
-              nome
-            )
-          `)
-          .eq('is_active', true)
-          .not('image_url', 'is', null)
-          .order('order_index', { ascending: true });
+      const { data, error } = await supabase
+        .from('slider_banners')
+        .select(`
+          id,
+          image_name,
+          image_url,
+          image_alt,
+          order_index,
+          is_active,
+          is_clickable,
+          patrocinadores (
+            slug,
+            nome
+          )
+        `)
+        .eq('is_active', true)
+        .not('image_url', 'is', null)
+        .like('image_name', `${type}%`)
+        .order('order_index', { ascending: true });
 
-        if (error) {
-          console.error('❌ [SLIDER] Erro ao buscar configurações:', error);
-          setError('Erro ao carregar slider');
-          setBanners([]);
-          return;
-        }
-
-        console.log('📊 [SLIDER] Dados recebidos:', sliderConfigs);
-
-        const processedBanners: SliderBanner[] = [];
-        
-        sliderConfigs?.forEach(config => {
-          const patrocinador = Array.isArray(config.patrocinadores) 
-            ? config.patrocinadores[0] 
-            : config.patrocinadores;
-
-          if (config.image_url && typeof config.image_url === 'string') {
-            // ✅ NOVA LÓGICA: Para banners clicáveis, validar se tem patrocinador
-            if (config.is_clickable && !patrocinador) {
-              console.warn('⚠️ [SLIDER] Banner clicável sem patrocinador:', config.image_name);
-              return; // Pula este banner se for clicável mas não tem patrocinador
-            }
-
-            processedBanners.push({
-              id: config.id,
-              image_name: config.image_name,
-              image_url: config.image_url,
-              image_alt: config.image_alt || `Banner ${config.image_name}`,
-              patrocinador_slug: patrocinador?.slug || null,
-              patrocinador_nome: patrocinador?.nome || null,
-              order_index: config.order_index,
-              is_active: config.is_active,
-              is_clickable: config.is_clickable || false
-            });
-          }
-        });
-
-        console.log('✅ [SLIDER] Banners processados:', processedBanners);
-        setBanners(processedBanners);
-      } catch (error) {
-        console.error('❌ [SLIDER] Erro ao carregar banners:', error);
+      if (error) {
         setError('Erro ao carregar slider');
         setBanners([]);
-      } finally {
-        setLoading(false);
+      } else {
+        // Tipagem explícita para o retorno do Supabase
+        // Se quiser, crie uma interface para o retorno do Supabase
+        const processed = (data ?? []).map((config: Record<string, unknown>) => {
+          const patrocinador = Array.isArray(config.patrocinadores)
+            ? (config.patrocinadores[0] as { slug?: string; nome?: string })
+            : (config.patrocinadores as { slug?: string; nome?: string } | undefined);
+
+          if (typeof config.image_url === 'string' && config.image_url) {
+            if (config.is_clickable && !patrocinador) return null;
+            return {
+              id: config.id as string,
+              image_name: config.image_name as string,
+              image_url: config.image_url as string,
+              image_alt: (config.image_alt as string) || `Banner ${config.image_name}`,
+              patrocinador_slug: patrocinador?.slug || null,
+              patrocinador_nome: patrocinador?.nome || null,
+              order_index: config.order_index as number,
+              is_active: config.is_active as boolean,
+              is_clickable: config.is_clickable as boolean || false
+            };
+          }
+          return null;
+        }).filter(Boolean) as SliderBanner[];
+
+        setBanners(processed);
       }
-    }
+      setLoading(false);
+    };
 
     fetchBanners();
-  }, []);
+  }, [type]);
 
-  // Loading state
   if (loading) {
     return (
       <div className={`w-full ${className}`}>
-        <div className={`relative w-full ${heightClasses[height]} overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse shadow-lg`}>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="animate-spin h-6 w-6 border-2 border-gray-400 border-t-transparent" />
-          </div>
+        <div className="relative w-full h-50 overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse shadow-lg flex items-center justify-center">
+          <div className="animate-spin h-6 w-6 border-2 border-gray-400 border-t-transparent" />
         </div>
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className={`w-full ${className}`}>
-        <div className={`relative w-full ${heightClasses[height]} overflow-hidden bg-gradient-to-br from-red-100 to-red-200 border border-red-300 shadow-lg`}>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center p-4">
-              <p className="text-red-800 font-medium mb-2">Erro ao carregar slider</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm transition-colors"
-              >
-                Tentar Novamente
-              </button>
-            </div>
+        <div className="relative w-full h-30 overflow-hidden bg-gradient-to-br from-red-100 to-red-200 border border-red-300 shadow-lg flex items-center justify-center">
+          <div className="text-center p-4">
+            <p className="text-red-800 font-medium mb-2">Erro ao carregar slider</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm transition-colors"
+            >
+              Tentar Novamente
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // Não renderiza se não houver banners
-  if (banners.length === 0) {
-    return null;
-  }
+  if (!shuffledBanners.length) return null;
 
   return (
     <div className={`w-full ${className}`}>
-      <div className={`relative w-full h-50 sm:h-70 lg:h-110 bg-gray-100 shadow-lg overflow-hidden`}>
+      <div className="relative w-full h-50 bg-gray-100 shadow-lg overflow-hidden">
         <Swiper
           modules={[Navigation, Pagination, Autoplay]}
-          navigation={showControls && banners.length > 1}
-          pagination={banners.length > 1 ? { clickable: true } : false}
-          autoplay={autoplay ? { 
-            delay: 4500,
+          navigation={showControls && shuffledBanners.length > 1}
+          pagination={shuffledBanners.length > 1 ? { clickable: true } : false}
+          autoplay={autoplay ? {
+            delay: type === 'principal' ? 4500 : 5000,
             disableOnInteraction: false,
-            pauseOnMouseEnter: true 
+            pauseOnMouseEnter: true
           } : false}
-          loop={banners.length > 1}
+          loop={shuffledBanners.length > 1}
           className="w-full h-full"
           style={{ height: '100%' }}
         >
-          {banners.map((banner, idx) => {
-            const isClickable = banner.is_clickable;
-            const hasPatrocinador = banner.patrocinador_slug && banner.patrocinador_nome;
+          {shuffledBanners.map((banner, idx) => {
+            const isClickable = banner.is_clickable && banner.patrocinador_slug && banner.patrocinador_nome;
+            const linkHref = isClickable
+              ? `/patrocinadores/${banner.patrocinador_slug}`
+              : "/";
 
             return (
-              <SwiperSlide key={banner.id}>
-                <div className="relative w-full h-full">
-                  {/* ✅ CORRIGIDO: Lógica de link baseada na clicabilidade */}
-                  {isClickable && hasPatrocinador ? (
-                    <Link 
-                      href={`/patrocinadores/${banner.patrocinador_slug}`}
-                      className="block w-full h-full"
-                      aria-label={`Ver detalhes do ${banner.patrocinador_nome}`}
-                    >
-                      <Image
-                        src={banner.image_url}
-                        alt={banner.image_alt}
-                        fill
-                        className="object-cover transition-transform duration-500 hover:scale-105"
-                        priority={idx === 0}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
-                        quality={90}
-                        style={{ objectFit: 'cover' }}
-                      />
-                    </Link>
-                  ) : (
-                    // ✅ Para banners não clicáveis, vai para home
-                    <Link 
-                      href="/"
-                      className="block w-full h-full"
-                      aria-label="Ir para página inicial"
-                    >
-                      <Image
-                        src={banner.image_url}
-                        alt={banner.image_alt}
-                        fill
-                        className="object-cover transition-transform duration-500 hover:scale-105"
-                        priority={idx === 0}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
-                        quality={90}
-                        style={{ objectFit: 'cover' }}
-                      />
-                    </Link>
-                  )}
-                </div>
+              <SwiperSlide key={`${banner.id}-${idx}`}>
+                <Link
+                  href={linkHref}
+                  className="block w-full h-full"
+                  aria-label={isClickable
+                    ? `Ver detalhes do ${banner.patrocinador_nome}`
+                    : "Ir para página inicial"}
+                >
+                  <Image
+                    src={banner.image_url}
+                    alt={banner.image_alt}
+                    fill
+                    className="object-cover transition-transform duration-500 hover:scale-105"
+                    priority={idx === 0 && type === 'principal'}
+                    sizes="100vw"
+                    quality={90}
+                    style={{ objectFit: 'cover' }}
+                  />
+                </Link>
               </SwiperSlide>
             );
           })}

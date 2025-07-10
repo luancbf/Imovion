@@ -3,16 +3,32 @@
 import { useState, useCallback } from 'react';
 import { PatrocinioConfig } from '@/types/cadastrar-patrocinador';
 
-// ✅ Configuração das 8 posições disponíveis
+// ✅ Configuração das 24 posições disponíveis
 const availablePatrocinioPositions = [
-  { position: 0, name: 'Banner Principal', description: 'Destaque no topo', location: 'Header principal' },
-  { position: 1, name: 'Lateral Direita', description: 'Sidebar direita', location: 'Lateral da página' },
-  { position: 2, name: 'Meio do Conteúdo', description: 'Entre as listagens', location: 'Centro da página' },
-  { position: 3, name: 'Lateral Esquerda', description: 'Sidebar esquerda', location: 'Lateral esquerda' },
-  { position: 4, name: 'Rodapé Superior', description: 'Acima do footer', location: 'Pré-rodapé' },
-  { position: 5, name: 'Rodapé Inferior', description: 'Footer principal', location: 'Rodapé' },
-  { position: 6, name: 'Banner Móvel', description: 'Mobile sticky', location: 'Mobile fixo' },
-  { position: 7, name: 'Pop-up Banner', description: 'Banner flutuante', location: 'Overlay' }
+  { position: 0, name: 'Posição 1', description: 'Primeira posição', location: 'Linha 1 - Coluna 1' },
+  { position: 1, name: 'Posição 2', description: 'Segunda posição', location: 'Linha 1 - Coluna 2' },
+  { position: 2, name: 'Posição 3', description: 'Terceira posição', location: 'Linha 1 - Coluna 3' },
+  { position: 3, name: 'Posição 4', description: 'Quarta posição', location: 'Linha 1 - Coluna 4' },
+  { position: 4, name: 'Posição 5', description: 'Quinta posição', location: 'Linha 1 - Coluna 5' },
+  { position: 5, name: 'Posição 6', description: 'Sexta posição', location: 'Linha 1 - Coluna 6' },
+  { position: 6, name: 'Posição 7', description: 'Sétima posição', location: 'Linha 2 - Coluna 1' },
+  { position: 7, name: 'Posição 8', description: 'Oitava posição', location: 'Linha 2 - Coluna 2' },
+  { position: 8, name: 'Posição 9', description: 'Nona posição', location: 'Linha 2 - Coluna 3' },
+  { position: 9, name: 'Posição 10', description: 'Décima posição', location: 'Linha 2 - Coluna 4' },
+  { position: 10, name: 'Posição 11', description: 'Décima primeira posição', location: 'Linha 2 - Coluna 5' },
+  { position: 11, name: 'Posição 12', description: 'Décima segunda posição', location: 'Linha 2 - Coluna 6' },
+  { position: 12, name: 'Posição 13', description: 'Décima terceira posição', location: 'Linha 3 - Coluna 1' },
+  { position: 13, name: 'Posição 14', description: 'Décima quarta posição', location: 'Linha 3 - Coluna 2' },
+  { position: 14, name: 'Posição 15', description: 'Décima quinta posição', location: 'Linha 3 - Coluna 3' },
+  { position: 15, name: 'Posição 16', description: 'Décima sexta posição', location: 'Linha 3 - Coluna 4' },
+  { position: 16, name: 'Posição 17', description: 'Décima sétima posição', location: 'Linha 3 - Coluna 5' },
+  { position: 17, name: 'Posição 18', description: 'Décima oitava posição', location: 'Linha 3 - Coluna 6' },
+  { position: 18, name: 'Posição 19', description: 'Décima nona posição', location: 'Linha 4 - Coluna 1' },
+  { position: 19, name: 'Posição 20', description: 'Vigésima posição', location: 'Linha 4 - Coluna 2' },
+  { position: 20, name: 'Posição 21', description: 'Vigésima primeira posição', location: 'Linha 4 - Coluna 3' },
+  { position: 21, name: 'Posição 22', description: 'Vigésima segunda posição', location: 'Linha 4 - Coluna 4' },
+  { position: 22, name: 'Posição 23', description: 'Vigésima terceira posição', location: 'Linha 4 - Coluna 5' },
+  { position: 23, name: 'Posição 24', description: 'Vigésima quarta posição', location: 'Linha 4 - Coluna 6' }
 ];
 
 // ✅ Tipo para dados do Supabase

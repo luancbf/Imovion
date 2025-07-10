@@ -98,11 +98,11 @@ export default function Patrocinios() {
     return (
       <section className="py-8 px-6 bg-gradient-to-b from-gray-50 to-white">
         <div className="mx-auto w-fit">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-            {[...Array(6)].map((_, index) => (
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(24)].map((_, index) => (
               <div 
                 key={`loading-${index}`}
-                className="w-40 h-40 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl shadow-sm animate-pulse"
+                className="w-32 h-32 lg:w-40 lg:h-40 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl shadow-sm animate-pulse"
               />
             ))}
           </div>
@@ -121,8 +121,7 @@ export default function Patrocinios() {
   return (
     <section className="py-8 sm:py-12 px-4">
       <div className="mx-auto w-fit">
-        {/* Grid que se ajusta ao próprio conteúdo */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-4">
+        <div className="grid grid-cols-4 gap-2 sm:gap-5">
           {patrocinios.map((patrocinio, index) => {
             // ✅ Determinar se é clicável e tem patrocinador
             const isClickable = patrocinio.is_clickable && 
@@ -130,11 +129,11 @@ export default function Patrocinios() {
             
             const PatrocinioCard = (
               <div 
-                className={`w-40 lg:w-60 h-40 lg:h-60 group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 ${
+                className={`w-22 h-22 sm:w-40 sm:h-40 xl:w-36 xl:h-36 2xl:w-32 2xl:h-32 group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 ${
                   isClickable ? 'cursor-pointer' : ''
                 }`}
                 style={{ 
-                  animationDelay: `${index * 150}ms`,
+                  animationDelay: `${index * 100}ms`,
                 }}
               >
                 {/* Imagem principal */}
@@ -143,7 +142,7 @@ export default function Patrocinios() {
                   alt={patrocinio.image_alt}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, (max-width: 1536px) 16vw, 12vw"
                   onError={(e) => {
                     console.error('❌ [IMAGE ERROR] Erro ao carregar:', patrocinio.image_url);
                     const target = e.target as HTMLImageElement;

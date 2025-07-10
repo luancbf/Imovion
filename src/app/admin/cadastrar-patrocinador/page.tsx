@@ -13,7 +13,7 @@ import PatrocinioConfiguration from '@/components/cadastrar-patrocinador/Patroci
 
 export default function CadastrarPatrocinador() {
   useAuthGuard();
-  
+
   // Estados principais da página
   const [showSliderConfig, setShowSliderConfig] = useState(false);
   const [showPatrocinioConfig, setShowPatrocinioConfig] = useState(false);
@@ -53,8 +53,7 @@ export default function CadastrarPatrocinador() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Header Administrativo */}
+    <div>
       <AdminHeader
         showSliderConfig={showSliderConfig}
         showPatrocinioConfig={showPatrocinioConfig}
@@ -62,8 +61,7 @@ export default function CadastrarPatrocinador() {
         onTogglePatrocinio={handleTogglePatrocinio}
       />
 
-      {/* Container Principal - CORREÇÃO: Padding bottom para menu móvel */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 space-y-8">
+      <main className="space-y-8 px-0 sm:px-2">
         
         {/* 1. Formulário de Cadastro/Edição */}
         <PatrocinadorForm
@@ -89,10 +87,7 @@ export default function CadastrarPatrocinador() {
           onEdit={handleEditPatrocinador}
           refreshTrigger={refreshTrigger}
         />
-
-        {/* CORREÇÃO: Espaçador adicional para garantir que o último conteúdo seja visível */}
-        <div className="h-4 md:h-0"></div>
-
+        
         {/* Indicador de Seções Ativas */}
         {(showSliderConfig || showPatrocinioConfig) && (
           <div className="fixed bottom-24 md:bottom-6 right-6 z-40">

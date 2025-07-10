@@ -6,18 +6,10 @@ import FormularioImovel from '@/components/cadastrar-imovel/FormularioImovel';
 import FiltroCadastroImoveis from '@/components/cadastrar-imovel/FiltroCadastroImoveis';
 import ListaImoveis from '@/components/cadastrar-imovel/ListaImoveis';
 import cidadesComBairros from '@/constants/cidadesComBairros';
+import { opcoesTipoImovel } from '@/constants/opcoesTipoImovel';
 import type { Imovel } from '@/types/Imovel';
 import type { ImovelEdicao } from '@/types/formularios';
 import { createBrowserClient } from "@supabase/ssr";
-
-const opcoesTipoImovel: Record<string, string[]> = {
-  'Residencial-Venda': ['Casa', 'Casa em Condomínio Fechado', 'Apartamento', 'Terreno', 'Sobrado', 'Cobertura', 'Outros'],
-  'Residencial-Aluguel': ['Casa', 'Casa em Condomínio Fechado', 'Apartamento', 'Kitnet', 'Flat', 'Loft', 'Outros'],
-  'Comercial-Venda': ['Ponto Comercial', 'Sala', 'Salão', 'Prédio', 'Terreno', 'Galpão', 'Box Comercial', 'Outros'],
-  'Comercial-Aluguel': ['Ponto Comercial', 'Sala', 'Salão', 'Prédio', 'Terreno', 'Galpão', 'Box Comercial', 'Outros'],
-  'Rural-Venda': ['Chácara', 'Sítio', 'Fazenda', 'Terreno', 'Barracão', 'Pousada', 'Outros'],
-  'Rural-Aluguel': ['Chácara', 'Sítio', 'Fazenda', 'Terreno', 'Barracão', 'Pousada', 'Outros']
-};
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -180,7 +172,7 @@ export default function CadastrarImovel() {
           <FormularioImovel
             patrocinadores={patrocinadores}
             cidadesComBairros={cidadesComBairros}
-            opcoesTipoImovel={opcoesTipoImovel}
+            opcoesTipoImovel={opcoesTipoImovel} // ✅ Usando a constante importada
             onSuccess={handleSuccess}
             dadosIniciais={imovelEditando} // ✅ Agora com tipo correto ImovelEdicao
             onLimpar={handleLimparEdicao} // ✅ Callback para limpar

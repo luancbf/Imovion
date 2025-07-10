@@ -7,10 +7,10 @@ export const ITENS_POR_SETOR: Record<string, { chave: string; nome: string; icon
     { chave: "salas", nome: "Salas de Estar", icone: "🛋️" },
     { chave: "cozinhas", nome: "Cozinhas", icone: "🍳" },
     { chave: "closets", nome: "Closets", icone: "👗" },
-    { chave: "lavanderias", nome: "Lavanderias", icone: "🧺" },
-    { chave: "varandas", nome: "Varandas", icone: "🪑" },
-    { chave: "escritorios", nome: "Escritórios", icone: "💻" },
-    { chave: "despensas", nome: "Despensas", icone: "📦" },
+    { chave: "lavanderia", nome: "Lavanderia", icone: "🧺" },
+    { chave: "varanda", nome: "Varanda", icone: "🪑" },
+    { chave: "escritorio", nome: "Escritório", icone: "💻" },
+    { chave: "despensa", nome: "Despensa", icone: "📦" },
     { chave: "piscinas", nome: "Piscina", icone: "🏊" },
     { chave: "churrasqueiras", nome: "Churrasqueira", icone: "🔥" },
     { chave: "jardins", nome: "Jardim", icone: "🌿" },
@@ -45,7 +45,7 @@ export const ITENS_POR_SETOR: Record<string, { chave: string; nome: string; icon
   ],
   Rural: [
     { chave: "hectares", nome: "Hectares", icone: "🌾" },
-    { chave: "casasFuncionarios", nome: "Casas de Funcionários", icone: "🏠" },
+    { chave: "casaFuncionario", nome: "Casa de Funcionário", icone: "🏠" },
     { chave: "galpoes", nome: "Galpões", icone: "🏗️" },
     { chave: "casaSede", nome: "Casa Sede", icone: "🏡" },
     { chave: "curral", nome: "Curral", icone: "🐄" },
@@ -68,5 +68,5 @@ export const ITENS_POR_SETOR: Record<string, { chave: string; nome: string; icon
 };
 
 export const ITENS_QUANTITATIVOS = [
-  "quartos", "suites", "banheiros", "garagens", "cozinhas", "closets", "hectares", "casasFuncionarios", "galpoes", "salas"
+  "quartos", "suites", "banheiros", "garagens", "cozinhas", "closets", "hectares", "galpoes", "salas"
 ];

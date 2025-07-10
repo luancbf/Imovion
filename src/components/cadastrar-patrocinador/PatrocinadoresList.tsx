@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiEdit2, FiTrash2, FiSearch, FiImage, FiRefreshCw } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiSearch, FiUser, FiRefreshCw, FiPhone, FiArrowUp } from 'react-icons/fi';
 import { usePatrocinadores } from '@/hooks/cadastrar-patrocinador/usePatrocinadores';
 import { Patrocinador } from '@/types/cadastrar-patrocinador';
-import Image from "next/image";
 
 interface PatrocinadoresListProps {
   onEdit?: (patrocinador: Patrocinador) => void;
@@ -45,15 +44,20 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
     }
   };
 
+  // ✅ NOVO: Handler otimizado para edição com feedback visual
   const handleEdit = (patrocinador: Patrocinador) => {
+    // Chamar a função de edição do componente pai
     onEdit?.(patrocinador);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // ✅ NOVO: Não fazer scroll aqui, deixar o PatrocinadorForm fazer
+    // O scroll será feito pelo useEffect do PatrocinadorForm
   };
 
   // Filtros
   const patrocinadoresFiltrados = patrocinadores.filter(p =>
     p.nome?.toLowerCase().includes(busca.toLowerCase()) ||
-    p.slug?.toLowerCase().includes(busca.toLowerCase())
+    p.slug?.toLowerCase().includes(busca.toLowerCase()) ||
+    p.telefone?.toLowerCase().includes(busca.toLowerCase())
   );
 
   const formatDate = (date?: string) => 
@@ -101,7 +105,7 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
             <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Buscar patrocinador..."
+              placeholder="Buscar por nome ou telefone..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-gray-500"
@@ -154,24 +158,11 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
             >
               {/* Header do Card */}
               <div className="flex items-start gap-4 mb-4">
-                {/* Banner/Avatar */}
+                {/* Ícone ao invés de imagem */}
                 <div className="relative flex-shrink-0">
-                  {patrocinador.bannerUrl ? (
-                    <div className="relative">
-                      <Image
-                        src={patrocinador.bannerUrl}
-                        alt={`Banner ${patrocinador.nome}`}
-                        width={80}
-                        height={60}
-                        className="w-20 h-15 object-cover rounded-xl shadow-md border-2 border-blue-100 group-hover:border-blue-200 transition-colors"
-                      />
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
-                    </div>
-                  ) : (
-                    <div className="w-20 h-15 bg-blue-100 rounded-xl flex items-center justify-center border-2 border-blue-200 group-hover:border-blue-300 transition-colors">
-                      <FiImage className="text-blue-400" size={24} />
-                    </div>
-                  )}
+                  <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center border-2 border-blue-200 group-hover:border-blue-300 transition-colors">
+                    <FiUser className="text-blue-500" size={28} />
+                  </div>
                 </div>
 
                 {/* Info */}
@@ -179,6 +170,15 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
                   <h3 className="font-bold text-blue-900 text-lg truncate mb-1 group-hover:text-blue-700 transition-colors">
                     {patrocinador.nome}
                   </h3>
+                  
+                  {/* Mostrar telefone */}
+                  {patrocinador.telefone && (
+                    <div className="flex items-center gap-1 text-blue-600 text-sm mb-1">
+                      <FiPhone size={14} />
+                      <span>{patrocinador.telefone}</span>
+                    </div>
+                  )}
+                  
                   <span className="text-gray-500 text-xs">
                     {formatDate(patrocinador.criadoEm)}
                   </span>
@@ -189,10 +189,17 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
               <div className="flex gap-2 justify-end pt-4 border-t border-blue-100">
                 <button
                   onClick={() => handleEdit(patrocinador)}
-                  className="flex items-center gap-2 p-3 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 rounded-xl transition-all duration-200 transform hover:scale-105"
+                  className="flex items-center gap-2 p-3 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-xl transition-all duration-200 transform hover:scale-105 group/edit"
                   title={`Editar ${patrocinador.nome}`}
                 >
-                  <FiEdit2 size={18} />
+                  <div className="relative">
+                    <FiEdit2 size={18} />
+                    {/* ✅ NOVO: Ícone de seta indicando scroll para cima */}
+                    <FiArrowUp 
+                      size={10} 
+                      className="absolute -top-1 -right-1 text-amber-500 opacity-0 group-hover/edit:opacity-100 transition-opacity animate-bounce" 
+                    />
+                  </div>
                   <span className="text-sm font-medium hidden sm:inline">Editar</span>
                 </button>
                 

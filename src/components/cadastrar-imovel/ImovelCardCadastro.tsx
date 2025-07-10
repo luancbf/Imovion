@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FiEdit2, FiTrash2, FiEye, FiChevronDown, FiChevronUp, FiImage, FiMapPin, FiHome, FiCalendar } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiEye, FiChevronDown, FiChevronUp, FiImage, FiX, FiHome } from 'react-icons/fi';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Imovel } from '@/types/Imovel';
@@ -10,6 +10,8 @@ import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+
+import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from '@/constants/itensImovel';
 
 interface ImovelComItens extends Imovel {
   itens?: Record<string, number>;
@@ -26,81 +28,7 @@ interface ImovelCardProps {
   onEdit: (imovel: ImovelComItens) => void;
   cidadesComBairros: Record<string, string[]>;
   patrocinadores: { id: string; nome: string }[];
-  viewMode?: 'grid' | 'list';
 }
-
-const ITENS_POR_SETOR: Record<string, { chave: string; label: string }[]> = {
-  Residencial: [
-    { chave: "quartos", label: "Quartos" },
-    { chave: "suites", label: "Suítes" },
-    { chave: "banheiros", label: "Banheiros" },
-    { chave: "garagens", label: "Vagas de Garagem" },
-    { chave: "salas", label: "Salas de Estar" },
-    { chave: "cozinhas", label: "Cozinhas" },
-    { chave: "closets", label: "Closets" },
-    { chave: "lavanderias", label: "Lavanderias" },
-    { chave: "varandas", label: "Varandas" },
-    { chave: "escritorios", label: "Escritórios" },
-    { chave: "despensas", label: "Despensas" },
-    { chave: "piscinas", label: "Piscina" },
-    { chave: "churrasqueiras", label: "Churrasqueira" },
-    { chave: "jardins", label: "Jardim" },
-    { chave: "playgrounds", label: "Playground" },
-    { chave: "academias", label: "Academia" },
-    { chave: "arCondicionado", label: "Ar Condicionado" },
-    { chave: "moveisPlanejados", label: "Móveis Planejados" },
-    { chave: "areaGourmet", label: "Área Gourmet" },
-    { chave: "salaJantar", label: "Sala de Jantar" },
-    { chave: "salaTV", label: "Sala de TV" },
-    { chave: "sacada", label: "Sacada" },
-    { chave: "deposito", label: "Depósito" },
-    { chave: "quartoEmpregada", label: "Quarto de Empregada" },
-    { chave: "banheiroEmpregada", label: "Banheiro de Empregada" },
-  ],
-  Comercial: [
-    { chave: "salas", label: "Salas" },
-    { chave: "banheiros", label: "Banheiros" },
-    { chave: "garagens", label: "Vagas de Garagem" },
-    { chave: "recepcao", label: "Recepção" },
-    { chave: "deposito", label: "Depósito" },
-    { chave: "elevadores", label: "Elevadores" },
-    { chave: "copa", label: "Copa" },
-    { chave: "arCondicionado", label: "Ar Condicionado" },
-    { chave: "portarias", label: "Portaria 24h" },
-    { chave: "auditorio", label: "Auditório" },
-    { chave: "vitrine", label: "Vitrine" },
-    { chave: "mezanino", label: "Mezanino" },
-    { chave: "docas", label: "Docas" },
-    { chave: "almoxarifado", label: "Almoxarifado" },
-    { chave: "estacionamentoVisitantes", label: "Estacionamento Visitantes" },
-  ],
-  Rural: [
-    { chave: "hectares", label: "Hectares" },
-    { chave: "casasFuncionarios", label: "Casas de Funcionários" },
-    { chave: "galpoes", label: "Galpões" },
-    { chave: "casaSede", label: "Casa Sede" },
-    { chave: "curral", label: "Curral" },
-    { chave: "energia", label: "Energia" },
-    { chave: "agua", label: "Água" },
-    { chave: "represa", label: "Represa" },
-    { chave: "pocoArtesiano", label: "Poço Artesiano" },
-    { chave: "mangueiro", label: "Mangueiro" },
-    { chave: "pastagem", label: "Pastagem" },
-    { chave: "arvoresFrutiferas", label: "Árvores Frutíferas" },
-    { chave: "cercas", label: "Cercas" },
-    { chave: "trator", label: "Trator" },
-    { chave: "silo", label: "Silo" },
-    { chave: "canavial", label: "Canavial" },
-    { chave: "estabulo", label: "Estábulo" },
-    { chave: "chiqueiro", label: "Chiqueiro" },
-    { chave: "horta", label: "Horta" },
-    { chave: "tanquePeixes", label: "Tanque de Peixes" },
-  ],
-};
-
-const ITENS_QUANTITATIVOS = [
-  "quartos", "suites", "banheiros", "garagens", "cozinhas", "closets", "hectares", "casasFuncionarios", "galpoes", "salas"
-];
 
 function formatarData(data?: Date | string): string {
   if (!data) return 'Data não informada';
@@ -132,17 +60,16 @@ function getSetorIcon(setorNegocio: string | undefined): string {
   }
 }
 
-export default function ImovelCard({
+export default function ImovelCardCadastro({
   imovel,
   onDelete,
   onEdit,
   patrocinadores,
-  viewMode = 'grid'
 }: ImovelCardProps) {
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [exibirMais, setExibirMais] = useState(false);
 
-  // ✅ Acessar propriedades com fallback para compatibilidade
+  // Fallbacks para compatibilidade
   const tipoImovel = imovel.tipoImovel || imovel.tipoimovel;
   const enderecoDetalhado = imovel.enderecoDetalhado || imovel.enderecodetalhado;
   const tipoNegocio = imovel.tipoNegocio || imovel.tiponegocio;
@@ -160,161 +87,24 @@ export default function ImovelCard({
     setConfirmandoExclusao(false);
   };
 
-  // ✅ Handler para editar no formulário principal
   const handleEditar = () => {
-    // Preparar dados para o formulário principal com nomes em camelCase
     const dadosParaFormulario = {
       ...imovel,
-      // ✅ Garantir compatibilidade com formulário
-      tipoImovel: tipoImovel,
-      enderecoDetalhado: enderecoDetalhado,
-      tipoNegocio: tipoNegocio,
-      setorNegocio: setorNegocio,
-      dataCadastro: dataCadastro,
+      tipoImovel,
+      enderecoDetalhado,
+      tipoNegocio,
+      setorNegocio,
+      dataCadastro,
     };
-    
-    // Chamar callback para carregar no formulário
     onEdit(dadosParaFormulario);
-    
-    // Fazer scroll suave para o formulário
     const formulario = document.querySelector('[data-formulario-imovel]');
     if (formulario) {
-      formulario.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
+      formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  // Layout para visualização em lista
-  if (viewMode === 'list') {
-    return (
-      <div className="group bg-gradient-to-br from-blue-50 to-white p-6 rounded-2xl border border-blue-200 hover:shadow-xl hover:border-blue-300 transition-all duration-300">
-        <div className="flex gap-6">
-          {/* Imagem Principal */}
-          <div className="relative flex-shrink-0">
-            {imagens.length > 0 ? (
-              <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-blue-100 group-hover:border-blue-200 transition-colors">
-                <Image
-                  src={imagens[0]}
-                  alt={`${formatarTexto(tipoImovel)} em ${formatarTexto(imovel.cidade)}`}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-                {imagens.length > 1 && (
-                  <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                    +{imagens.length - 1}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="w-32 h-24 bg-blue-100 rounded-xl flex items-center justify-center border-2 border-blue-200">
-                <FiImage className="text-blue-400" size={24} />
-              </div>
-            )}
-          </div>
-
-          {/* Informações Principais */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1">
-                <h3 className="font-bold text-blue-900 text-lg mb-1 group-hover:text-blue-700 transition-colors">
-                  {getTipoIcon(tipoNegocio)} {formatarTexto(tipoImovel)}
-                </h3>
-                <div className="flex items-center gap-2 text-sm text-blue-600 mb-2">
-                  <span className="bg-blue-100 px-2 py-1 rounded-full">
-                    {getSetorIcon(setorNegocio)} {setorNegocio || 'N/A'}
-                  </span>
-                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
-                    {imovel.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </span>
-                </div>
-              </div>
-              <div className="text-right text-sm text-gray-500">
-                <div className="flex items-center gap-1">
-                  <FiCalendar size={14} />
-                  {formatarData(dataCadastro)}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
-              <div className="flex items-center gap-1">
-                <FiMapPin size={14} />
-                <span>{formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <FiHome size={14} />
-                <span>{imovel.metragem}m²</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>🏢</span>
-                <span>{patrocinadorNome}</span>
-              </div>
-            </div>
-
-            {/* Botões de Ação */}
-            <div className="flex gap-2">
-              <Link
-                href={`/imoveis/${imovel.id}`}
-                className="flex items-center gap-1 p-2 text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200 text-sm"
-                title="Ver página do imóvel"
-              >
-                <FiEye size={16} />
-                <span className="hidden sm:inline">Ver</span>
-              </Link>
-              
-              <button
-                onClick={handleEditar}
-                className="flex items-center gap-1 p-2 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg transition-all duration-200 text-sm"
-                title="Editar no formulário"
-              >
-                <FiEdit2 size={16} />
-                <span className="hidden sm:inline">Editar</span>
-              </button>
-              
-              <button
-                onClick={() => setConfirmandoExclusao(true)}
-                className="flex items-center gap-1 p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 text-sm"
-                title="Excluir imóvel"
-              >
-                <FiTrash2 size={16} />
-                <span className="hidden sm:inline">Excluir</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Confirmação de Exclusão */}
-        {confirmandoExclusao && (
-          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-red-700 font-medium">Confirmar exclusão deste imóvel?</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleConfirmarExclusao}
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm transition-colors"
-                >
-                  Confirmar
-                </button>
-                <button
-                  onClick={() => setConfirmandoExclusao(false)}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-lg text-sm transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Layout para visualização em grid
   return (
-    <div className="group bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-200 hover:shadow-xl hover:border-blue-300 transition-all duration-300 overflow-hidden">
+    <div className="group bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-200 hover:shadow-xl hover:border-blue-300 transition-all duration-300 overflow-visible flex flex-col h-full relative">
       {/* Slider de Imagens */}
       <div className="relative h-48 bg-gray-100">
         {imagens.length > 0 ? (
@@ -358,7 +148,6 @@ export default function ImovelCard({
             {getSetorIcon(setorNegocio)} {setorNegocio || 'N/A'}
           </span>
         </div>
-
         <div className="absolute top-3 right-3">
           <span className="bg-black/70 text-white px-2 py-1 rounded-full text-xs">
             {formatarData(dataCadastro)}
@@ -367,88 +156,68 @@ export default function ImovelCard({
       </div>
 
       {/* Conteúdo do Card */}
-      <div className="p-6 space-y-4">
-        {/* Cabeçalho */}
-        <div>
-          <h3 className="font-bold text-blue-900 text-lg mb-2 group-hover:text-blue-700 transition-colors">
+      <div className="flex-1 flex flex-col justify-between p-6 space-y-4">
+        {/* Informações principais */}
+        <div className="space-y-2">
+          <div className="font-bold text-blue-900 text-lg group-hover:text-blue-700 transition-colors truncate">
             {formatarTexto(tipoImovel)}
-          </h3>
-          <p className="text-green-700 font-bold text-xl">
-            {imovel.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          </p>
-        </div>
-
-        {/* Informações Básicas */}
-        <div className="space-y-2 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <FiMapPin size={14} />
-            <span>{formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <FiHome size={14} />
-            <span>{imovel.metragem}m² • {formatarTexto(enderecoDetalhado)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>🏢</span>
-            <span>{patrocinadorNome}</span>
-          </div>
-        </div>
-
-        {/* Toggle Detalhes */}
-        <button
-          onClick={() => setExibirMais(!exibirMais)}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
-        >
-          {exibirMais ? (
-            <>
-              <FiChevronUp size={16} />
-              Ocultar detalhes
-            </>
-          ) : (
-            <>
-              <FiChevronDown size={16} />
-              Ver detalhes
-            </>
-          )}
-        </button>
-
-        {/* Detalhes Expandidos */}
-        {exibirMais && (
-          <div className="space-y-4 pt-4 border-t border-blue-100">
-            {imovel.descricao && (
-              <div>
-                <h4 className="font-semibold text-blue-900 mb-2">Descrição</h4>
-                <p className="text-gray-700 text-sm whitespace-pre-line">
-                  {formatarTexto(imovel.descricao)}
-                </p>
-              </div>
-            )}
-
-            <div>
-              <h4 className="font-semibold text-blue-900 mb-2">Características</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {itensDisponiveis.map((item) => {
-                  const valor = imovel.itens?.[item.chave];
-                  if (typeof valor !== 'number' || valor === 0) return null;
-                  const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
-                  return (
-                    <div key={item.chave} className="bg-blue-50 rounded-lg p-2 text-center">
-                      <div className="text-blue-900 text-xs font-medium truncate">
-                        {item.label}
-                      </div>
-                      <div className="text-blue-700 font-semibold">
-                        {isQuant ? valor : "✓"}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-500">Valor</span>
+              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold text-sm">
+                {imovel.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-500">Bairro/Cidade</span>
+              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
+                {formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-500">Metragem</span>
+              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                {imovel.metragem}m²
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-500">Patrocinador</span>
+              <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs">
+                {patrocinadorNome}
+              </span>
             </div>
           </div>
-        )}
+          <div className="flex flex-col mt-2">
+            <span className="text-xs text-gray-500">Endereço</span>
+            <span className="text-gray-600 text-sm truncate">
+              {formatarTexto(enderecoDetalhado)}
+            </span>
+          </div>
+        </div>
+
+        {/* Botão de detalhes */}
+        <div className="flex justify-center mt-2">
+          <button
+            onClick={() => setExibirMais(!exibirMais)}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+          >
+            {exibirMais ? (
+              <>
+                <FiChevronUp size={16} />
+                Ocultar detalhes
+              </>
+            ) : (
+              <>
+                <FiChevronDown size={16} />
+                Ver detalhes
+              </>
+            )}
+          </button>
+        </div>
 
         {/* Botões de Ação */}
-        <div className="flex gap-2 pt-4 border-t border-blue-100">
+        <div className="flex flex-col gap-2 mt-4 sm:flex-row sm:justify-center">
           <Link
             href={`/imoveis/${imovel.id}`}
             className="flex-1 flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
@@ -457,7 +226,6 @@ export default function ImovelCard({
             <FiEye size={16} />
             <span>Ver</span>
           </Link>
-          
           <button
             onClick={handleEditar}
             className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
@@ -466,7 +234,6 @@ export default function ImovelCard({
             <FiEdit2 size={16} />
             <span>Editar</span>
           </button>
-          
           <button
             onClick={() => setConfirmandoExclusao(true)}
             className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
@@ -479,7 +246,7 @@ export default function ImovelCard({
 
         {/* Confirmação de Exclusão */}
         {confirmandoExclusao && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-4">
             <div className="text-center">
               <p className="text-red-700 font-medium mb-3">
                 Tem certeza que deseja excluir este imóvel?
@@ -502,6 +269,59 @@ export default function ImovelCard({
           </div>
         )}
       </div>
+
+      {/* Detalhes Expandidos - Sobreposto */}
+      {exibirMais && (
+        <div className="absolute inset-0 z-10 bg-white/95 rounded-2xl border-2 border-blue-300 shadow-2xl p-6 flex flex-col animate-fadeIn">
+          <button
+            className="absolute top-3 right-3 text-gray-500 hover:text-blue-700"
+            onClick={() => setExibirMais(false)}
+            title="Fechar detalhes"
+          >
+            <FiX size={22} />
+          </button>
+          <h4 className="font-bold text-blue-900 text-lg mb-4 flex items-center gap-2">
+            <FiHome className="text-blue-600" /> Detalhes do Imóvel
+          </h4>
+          {imovel.descricao && (
+            <div className="mb-4">
+              <span className="block text-xs text-gray-500 mb-1">Descrição</span>
+              <p className="text-gray-700 text-sm whitespace-pre-line">
+                {formatarTexto(imovel.descricao)}
+              </p>
+            </div>
+          )}
+          <div>
+            <span className="block text-xs text-gray-500 mb-2">Características</span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {itensDisponiveis.map((item) => {
+                const valor = imovel.itens?.[item.chave];
+                if (typeof valor !== 'number' || valor === 0) return null;
+                const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
+                return (
+                  <div key={item.chave} className="bg-blue-50 rounded-lg p-2 text-center flex flex-col items-center">
+                    <span className="text-lg">{item.icone}</span>
+                    <span className="text-blue-900 text-xs font-medium truncate">{item.nome}</span>
+                    <span className="text-blue-700 font-semibold">
+                      {isQuant ? valor : "✓"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        .animate-fadeIn {
+          animation: fadeInCard 0.25s;
+        }
+        @keyframes fadeInCard {
+          from { opacity: 0; transform: scale(0.98);}
+          to { opacity: 1; transform: scale(1);}
+        }
+      `}</style>
     </div>
   );
 }

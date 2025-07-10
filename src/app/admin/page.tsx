@@ -21,8 +21,8 @@ export default function AdminRedirect() {
   }, [carregando, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100">
-      <div className="text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 pb-20 md:pb-0">
+      <div className="text-center px-4">
         <div className="mb-8">
           <Image
             src="/imovion.png"
@@ -33,13 +33,13 @@ export default function AdminRedirect() {
           />
         </div>
         
-        <div className="flex items-center justify-center space-x-2 text-blue-700 font-poppins text-lg font-medium">
+        <div className="flex items-center justify-center space-x-2 text-blue-700 font-poppins text-lg font-medium mb-4">
           <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
           <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
           <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
         </div>
         
-        <p className="text-gray-600 mt-4 font-medium">
+        <p className="text-gray-600 font-medium">
           {carregando ? 'Verificando autenticação...' : 'Redirecionando para o painel...'}
         </p>
       </div>

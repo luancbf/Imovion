@@ -7,23 +7,29 @@ import Header from "@/components/home/Header";
 
 export default function Home() {
   return (
-    <div
-      className="
-        flex flex-col items-center min-h-screen
-      "
-    >
+    <div className="flex flex-col items-center min-h-screen">
       <Header />
-
+      
       <section className="w-full pb-10">
-        <Slider />
+        <Slider 
+          type="principal"
+          autoplay={true}
+          showControls={true}
+        />
       </section>
+      
       <FiltrosExpansivos />
+      
       <section className="w-full pt-10">
         <Patrocinios />
       </section>
 
-      <section className="w-full pt-8 pb-2">
-        <Slider />
+      <section className="w-full pt-8">
+        <Slider 
+          type="secundario"
+          autoplay={true}
+          showControls={true}
+        />
       </section>
 
       <Footer />

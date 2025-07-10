@@ -12,10 +12,9 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-// ✅ CORREÇÃO: Interface ajustada para corresponder aos itens reais
 interface ItemImovel {
   chave: string;
-  nome: string;    // ✅ Mudado de 'label' para 'nome'
+  nome: string;
   icone: string;
 }
 
@@ -206,7 +205,7 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
             className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white text-sm px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105"
             aria-label={`Ver detalhes do imóvel ${imovel.tipoimovel} em ${imovel.cidade}`}
           >
-            👁️ Ver detalhes
+            Ver detalhes
           </Link>
           
           {/* ✅ Link do WhatsApp melhorado */}
@@ -224,20 +223,8 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
               className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105"
               aria-label="Entrar em contato via WhatsApp"
             >
-              💬 WhatsApp
+              WhatsApp
             </a>
-          )}
-        </div>
-        
-        {/* ✅ Badge de informações extras */}
-        <div className="flex justify-between items-center text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
-          <span className="bg-gray-100 px-2 py-1 rounded">
-            📅 {imovel.datacadastro ? new Date(imovel.datacadastro).toLocaleDateString('pt-BR') : 'Data não informada'}
-          </span>
-          {contexto !== "patrocinador" && (
-            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
-              {formatarTexto(imovel.setornegocio)}
-            </span>
           )}
         </div>
       </div>

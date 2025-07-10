@@ -3,11 +3,22 @@
 import { useState, useCallback } from 'react';
 import { SliderBanner } from '@/types/cadastrar-patrocinador';
 
-// ✅ Configuração das imagens disponíveis
 const availableSliderImages = [
-  { name: 'banner1', title: 'Banner Principal', description: 'Primeira posição no slider' },
-  { name: 'banner2', title: 'Banner Secundário', description: 'Segunda posição no slider' },
-  { name: 'banner3', title: 'Banner Terciário', description: 'Terceira posição no slider' }
+  // 6 Banners Principais
+  { name: 'principal1', type: 'principal' },
+  { name: 'principal2', type: 'principal' },
+  { name: 'principal3', type: 'principal' },
+  { name: 'principal4', type: 'principal' },
+  { name: 'principal5', type: 'principal' },
+  { name: 'principal6', type: 'principal' },
+
+  // 6 Banners Secundários
+  { name: 'secundario1', type: 'secundario' },
+  { name: 'secundario2', type: 'secundario' },
+  { name: 'secundario3', type: 'secundario' },
+  { name: 'secundario4', type: 'secundario' },
+  { name: 'secundario5', type: 'secundario' },
+  { name: 'secundario6', type: 'secundario' }
 ];
 
 export const useSliderConfig = () => {
@@ -15,18 +26,19 @@ export const useSliderConfig = () => {
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState<Record<string, boolean>>({});
 
-  // ✅ INFORMAÇÕES DA IMAGEM
+  // INFORMAÇÕES DA IMAGEM
   const getSliderImageInfo = useCallback((imageName: string) => {
     return availableSliderImages.find(img => img.name === imageName) || {
       name: imageName,
       title: imageName,
-      description: 'Banner do slider'
+      description: 'Banner do slider',
+      type: 'principal'
     };
   }, []);
 
-  // ✅ CARREGAR BANNERS (corrigido para usar os campos corretos)
+  // CARREGAR BANNERS
   const loadSliderBanners = useCallback(async () => {
-    console.log('📥 [SLIDER] Iniciando carregamento dos banners...');
+    console.log('📥 [SLIDER] Iniciando carregamento dos banners (12 imagens)...');
     setLoading(true);
     
     try {
@@ -51,8 +63,7 @@ export const useSliderConfig = () => {
       if (error) {
         console.error('❌ [SLIDER] Erro ao carregar do banco:', error);
         console.log('🔄 [SLIDER] Criando banners mock...');
-        
-        // Criar banners mock
+
         const mockBanners: SliderBanner[] = availableSliderImages.map((imageConfig, index) => ({
           id: `mock-${index}`,
           image_name: imageConfig.name,
@@ -77,7 +88,7 @@ export const useSliderConfig = () => {
       const bannersMap = new Map(data?.map(b => [b.image_name, b]) || []);
       const allBanners: SliderBanner[] = [];
       
-      // Garantir que todos os banners existam
+      // Garantir que todos os 12 banners existam
       availableSliderImages.forEach((imageConfig, index) => {
         const existingBanner = bannersMap.get(imageConfig.name);
         if (existingBanner) {
@@ -106,7 +117,7 @@ export const useSliderConfig = () => {
     } catch (error) {
       console.error('❌ [SLIDER] Erro no carregamento:', error);
       
-      // Fallback para mock
+      // Fallback para mock com 12 imagens
       const mockBanners: SliderBanner[] = availableSliderImages.map((imageConfig, index) => ({
         id: `mock-${index}`,
         image_name: imageConfig.name,
@@ -121,7 +132,7 @@ export const useSliderConfig = () => {
         patrocinadores: null
       }));
       
-      console.log('🔄 [SLIDER MOCK] Usando dados mock');
+      console.log('🔄 [SLIDER MOCK] Usando dados mock com 12 banners');
       setSliderBanners(mockBanners);
       
     } finally {
@@ -135,35 +146,20 @@ export const useSliderConfig = () => {
     setSliderBanners(prev => 
       prev.map(banner => 
         banner.image_name === imageName 
-          ? { ...banner, [field]: value }
+          ? { 
+              ...banner, 
+              [field]: value,
+              ...(field === 'image_url' && value ? { is_active: true } : {})
+            }
           : banner
       )
     );
   }, []);
 
-  // ✅ CONTROLE DE UPLOAD
-  const setImageUploading = useCallback((imageName: string, uploading: boolean) => {
-    setUploadingImages(prev => ({ ...prev, [imageName]: uploading }));
-  }, []);
-
-  // ✅ SALVAR BANNER (corrigido para usar order_index)
+  // ✅ SALVAR BANNER
   const saveSliderBanner = useCallback(async (imageName: string): Promise<void> => {
     const banner = sliderBanners.find(b => b.image_name === imageName);
-    if (!banner) {
-      throw new Error('Banner não encontrado');
-    }
-
-    console.log(`💾 [SLIDER SAVE] Salvando banner: ${imageName}`, banner);
-
-    // ✅ VALIDAÇÃO: Banner pode ser ativo apenas com imagem
-    if (banner.is_active && (!banner.image_url || banner.image_url.trim() === '')) {
-      throw new Error('É necessário enviar uma imagem para ativar o banner');
-    }
-
-    // ✅ VALIDAÇÃO: Clicável requer patrocinador
-    if (banner.is_active && banner.is_clickable && (!banner.patrocinador_id || banner.patrocinador_id.trim() === '')) {
-      throw new Error('Para modo clicável, é necessário selecionar um patrocinador');
-    }
+    if (!banner) throw new Error('Banner não encontrado');
 
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
@@ -172,89 +168,77 @@ export const useSliderConfig = () => {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
-      // ✅ CORRIGIDO: Dados para salvar com campos corretos
       const saveData = {
         image_name: banner.image_name,
-        image_url: banner.image_url,
-        image_alt: banner.image_alt,
-        patrocinador_id: (banner.patrocinador_id && banner.patrocinador_id !== '') ? banner.patrocinador_id : null,
-        is_active: banner.is_active,
-        is_clickable: banner.is_clickable,
-        order_index: banner.order_index, // ✅ CORRIGIDO: usar order_index ao invés de display_order
+        image_url: banner.image_url ?? null,
+        image_alt: banner.image_alt ?? null,
+        patrocinador_id: banner.patrocinador_id && banner.patrocinador_id !== '' ? banner.patrocinador_id : null,
+        is_active: !!banner.is_active,
+        is_clickable: !!banner.is_clickable,
+        order_index: typeof banner.order_index === 'number' ? banner.order_index : 0,
+        created_at: banner.created_at ?? new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
-      if (banner.id && !banner.id.startsWith('mock-')) {
-        // ✅ ATUALIZAR registro existente
-        console.log(`🔄 [SLIDER UPDATE] Atualizando ID: ${banner.id}`);
-        
-        const { data, error } = await supabase
+      if (banner.id && typeof banner.id === 'string' && !banner.id.startsWith('mock-')) {
+        const { error } = await supabase
           .from('slider_banners')
           .update(saveData)
-          .eq('id', banner.id)
-          .select(`
-            *,
-            patrocinadores (
-              id,
-              nome,
-              slug
-            )
-          `);
+          .eq('id', banner.id);
 
-        if (error) {
-          console.error('❌ [SLIDER UPDATE ERROR]:', error);
-          throw new Error(`Erro ao atualizar: ${error.message}`);
-        }
-        
-        console.log('✅ [SLIDER UPDATE SUCCESS]:', data);
+        if (error) throw new Error(`Erro ao atualizar: ${error.message}`);
       } else {
-        // ✅ INSERIR novo registro
-        console.log(`➕ [SLIDER INSERT] Criando novo banner: ${imageName}`);
-        
+        // Upsert e retorna o novo registro
         const { data, error } = await supabase
           .from('slider_banners')
-          .upsert(saveData, {
-            onConflict: 'image_name'
-          })
-          .select(`
-            *,
-            patrocinadores (
-              id,
-              nome,
-              slug
+          .upsert(saveData, { onConflict: 'image_name' })
+          .select();
+
+        console.log('UPsert retorno:', { data, error, saveData });
+
+        if (error) throw new Error(`Erro ao salvar: ${error.message}`);
+
+        // Atualize o estado local com o novo id
+        if (data && data.length > 0) {
+          setSliderBanners(prev =>
+            prev.map(b =>
+              b.image_name === imageName
+                ? { ...b, id: data[0].id }
+                : b
             )
-          `);
-
-        if (error) {
-          console.error('❌ [SLIDER INSERT ERROR]:', error);
-          throw new Error(`Erro ao salvar: ${error.message}`);
+          );
         }
-        
-        console.log('✅ [SLIDER INSERT SUCCESS]:', data);
       }
 
-      // Recarregar banners
       await loadSliderBanners();
-      
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ [SLIDER SAVE ERROR]:', error);
-      
-      // Se der erro de tabela não existir, simular salvamento
-      if (error instanceof Error && error.message.includes('relation') && error.message.includes('does not exist')) {
-        console.log('🔄 [SLIDER MOCK SAVE] Simulando salvamento...');
-        setSliderBanners(prev => 
-          prev.map(b => 
-            b.image_name === imageName 
-              ? { ...b, updated_at: new Date().toISOString() }
-              : b
-          )
-        );
-        return;
-      }
-      
-      throw error;
+      throw new Error(
+        error instanceof Error && error.message
+          ? error.message
+          : 'Erro ao salvar banner'
+      );
     }
   }, [sliderBanners, loadSliderBanners]);
+
+  // ✅ SALVAR TODOS OS BANNERS EDITADOS
+  const saveAllSliderBanners = useCallback(async () => {
+    for (const banner of sliderBanners) {
+      if (banner.image_url || banner.patrocinador_id || banner.is_clickable) {
+        try {
+          await saveSliderBanner(banner.image_name);
+        } catch (error) {
+          console.error('❌ [SLIDER SAVE ERROR]:', error);
+        }
+      }
+    }
+    console.log('✅ [SLIDER] Salvamento manual concluído');
+  }, [sliderBanners, saveSliderBanner]);
+
+  // ✅ CONTROLE DE UPLOAD
+  const setImageUploading = useCallback((imageName: string, uploading: boolean) => {
+    setUploadingImages(prev => ({ ...prev, [imageName]: uploading }));
+  }, []);
 
   // ✅ DELETAR BANNER
   const deleteSliderBanner = useCallback(async (imageName: string): Promise<void> => {
@@ -283,8 +267,7 @@ export const useSliderConfig = () => {
       }
       
       console.log('✅ [SLIDER DELETE SUCCESS]');
-      
-      // Recarregar banners
+
       await loadSliderBanners();
     } catch (error) {
       console.error('❌ [SLIDER DELETE CATCH]:', error);
@@ -319,20 +302,18 @@ export const useSliderConfig = () => {
       return { valid: false, error: 'Banner não encontrado' };
     }
 
-    if (banner.is_active) {
-      if (!banner.image_url || banner.image_url.trim() === '') {
-        return { valid: false, error: 'Envie uma imagem para ativar o banner' };
-      }
-      
-      if (banner.is_clickable && (!banner.patrocinador_id || banner.patrocinador_id.trim() === '')) {
-        return { valid: false, error: 'Selecione um patrocinador para modo clicável' };
-      }
-    }
-
     return { valid: true };
   }, [sliderBanners]);
 
-  // ✅ UTILITÁRIOS
+  // ✅ FILTROS E UTILITÁRIOS
+  const getPrincipalBanners = useCallback(() => {
+    return sliderBanners.filter(banner => banner.image_name.startsWith('principal'));
+  }, [sliderBanners]);
+
+  const getSecundarioBanners = useCallback(() => {
+    return sliderBanners.filter(banner => banner.image_name.startsWith('secundario'));
+  }, [sliderBanners]);
+
   const getActiveBanners = useCallback(() => {
     return sliderBanners.filter(banner => 
       banner.is_active && 
@@ -341,25 +322,10 @@ export const useSliderConfig = () => {
     );
   }, [sliderBanners]);
 
-  const getClickableBanners = useCallback(() => {
+  const getActiveBannersByType = useCallback((type: 'principal' | 'secundario') => {
     return sliderBanners.filter(banner => 
+      banner.image_name.startsWith(type) &&
       banner.is_active && 
-      banner.is_clickable && 
-      banner.patrocinador_id && 
-      banner.patrocinador_id.trim() !== ''
-    );
-  }, [sliderBanners]);
-
-  const getTotalActiveBanners = useCallback(() => {
-    return getActiveBanners().length;
-  }, [getActiveBanners]);
-
-  const getTotalClickableBanners = useCallback(() => {
-    return getClickableBanners().length;
-  }, [getClickableBanners]);
-
-  const getBannersWithImages = useCallback(() => {
-    return sliderBanners.filter(banner => 
       banner.image_url && 
       banner.image_url.trim() !== ''
     );
@@ -373,14 +339,14 @@ export const useSliderConfig = () => {
     updateSliderBanner,
     setImageUploading,
     saveSliderBanner,
+    saveAllSliderBanners,
     deleteSliderBanner,
     resetSliderBanner,
-    getSliderImageInfo,
     validateSliderBanner,
+    getSliderImageInfo,
     getActiveBanners,
-    getClickableBanners,
-    getTotalActiveBanners,
-    getTotalClickableBanners,
-    getBannersWithImages
+    getPrincipalBanners,
+    getSecundarioBanners,
+    getActiveBannersByType
   } as const;
 };

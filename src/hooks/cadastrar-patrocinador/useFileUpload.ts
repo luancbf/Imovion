@@ -20,28 +20,6 @@ export const useFileUpload = () => {
     return { valid: true };
   };
 
-  const uploadBanner = async (file: File, patrocinadorId: string): Promise<string> => {
-    const validation = validateImage(file);
-    if (!validation.valid) {
-      throw new Error(validation.error);
-    }
-
-    setUploading(true);
-    try {
-      const filePath = `patrocinadores/${patrocinadorId}/banner_${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("imagens")
-        .upload(filePath, file);
-      
-      if (uploadError) throw new Error(uploadError.message);
-      
-      const { data: urlData } = supabase.storage.from("imagens").getPublicUrl(filePath);
-      return urlData.publicUrl;
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const uploadSliderImage = async (file: File, imageName: string): Promise<string> => {
     const validation = validateImage(file);
     if (!validation.valid) {
@@ -100,7 +78,6 @@ export const useFileUpload = () => {
 
   return {
     uploading,
-    uploadBanner,
     uploadSliderImage,
     uploadPatrocinioImage
   };

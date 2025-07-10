@@ -11,10 +11,10 @@ export default function Header() {
           <Image
             src="/imovion.png"
             alt="Imovion Logo"
-            width={1000}
-            height={80}
+            width={900}
+            height={10}
             priority
-            className="h-13 w-auto"
+            className="h-9 sm:h-11 w-auto"
           />
         </Link>
       </nav>
