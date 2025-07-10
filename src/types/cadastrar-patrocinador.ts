@@ -149,13 +149,5 @@ export const patrocinioPositions = [
   { id: 'pos-13', name: 'Posição 13', description: '13ª posição dos patrocínios' },
   { id: 'pos-14', name: 'Posição 14', description: '14ª posição dos patrocínios' },
   { id: 'pos-15', name: 'Posição 15', description: '15ª posição dos patrocínios' },
-  { id: 'pos-16', name: 'Posição 16', description: '16ª posição dos patrocínios' },
-  { id: 'pos-17', name: 'Posição 17', description: '17ª posição dos patrocínios' },
-  { id: 'pos-18', name: 'Posição 18', description: '18ª posição dos patrocínios' },
-  { id: 'pos-19', name: 'Posição 19', description: '19ª posição dos patrocínios' },
-  { id: 'pos-20', name: 'Posição 20', description: '20ª posição dos patrocínios' },
-  { id: 'pos-21', name: 'Posição 21', description: '21ª posição dos patrocínios' },
-  { id: 'pos-22', name: 'Posição 22', description: '22ª posição dos patrocínios' },
-  { id: 'pos-23', name: 'Posição 23', description: '23ª posição dos patrocínios' },
-  { id: 'pos-24', name: 'Posição 24', description: '24ª posição dos patrocínios' }
+  { id: 'pos-16', name: 'Posição 16', description: '16ª posição dos patrocínios' }
 ];

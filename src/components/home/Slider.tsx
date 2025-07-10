@@ -151,7 +151,7 @@ export default function Slider({
 
   return (
     <div className={`w-full ${className}`}>
-      <div className="relative w-full h-50 bg-gray-100 shadow-lg overflow-hidden">
+      <div className="relative w-full h-50 sm:h-80 lg:h-110 bg-gray-100 overflow-hidden">
         <Swiper
           modules={[Navigation, Pagination, Autoplay]}
           navigation={showControls && shuffledBanners.length > 1}

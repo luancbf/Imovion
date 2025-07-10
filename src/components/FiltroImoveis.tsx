@@ -226,6 +226,7 @@ export function FiltroImovel({
         <div className="flex items-center gap-3">
           <button
             type="button"
+            tabIndex={-1}
             onClick={() => handleItemQuantChange(item.chave, valorAtual - 1)}
             className="w-8 h-8 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={valorAtual <= 0}
@@ -240,6 +241,7 @@ export function FiltroImovel({
           </div>
           <button
             type="button"
+            tabIndex={-1}
             onClick={() => handleItemQuantChange(item.chave, valorAtual + 1)}
             className="w-8 h-8 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200"
             aria-label={`Aumentar ${item.nome}`}
@@ -256,6 +258,7 @@ export function FiltroImovel({
     return (
       <button
         type="button"
+        tabIndex={-1}
         onClick={() => handleItemQuantChange(item.chave, isAtivo ? 0 : 1)}
         className={`relative p-3 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02] flex flex-col items-center w-full
           ${isAtivo

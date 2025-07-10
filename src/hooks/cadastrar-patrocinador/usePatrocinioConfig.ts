@@ -20,15 +20,7 @@ const availablePatrocinioPositions = [
   { position: 12, name: 'Posição 13', description: 'Décima terceira posição', location: 'Linha 3 - Coluna 1' },
   { position: 13, name: 'Posição 14', description: 'Décima quarta posição', location: 'Linha 3 - Coluna 2' },
   { position: 14, name: 'Posição 15', description: 'Décima quinta posição', location: 'Linha 3 - Coluna 3' },
-  { position: 15, name: 'Posição 16', description: 'Décima sexta posição', location: 'Linha 3 - Coluna 4' },
-  { position: 16, name: 'Posição 17', description: 'Décima sétima posição', location: 'Linha 3 - Coluna 5' },
-  { position: 17, name: 'Posição 18', description: 'Décima oitava posição', location: 'Linha 3 - Coluna 6' },
-  { position: 18, name: 'Posição 19', description: 'Décima nona posição', location: 'Linha 4 - Coluna 1' },
-  { position: 19, name: 'Posição 20', description: 'Vigésima posição', location: 'Linha 4 - Coluna 2' },
-  { position: 20, name: 'Posição 21', description: 'Vigésima primeira posição', location: 'Linha 4 - Coluna 3' },
-  { position: 21, name: 'Posição 22', description: 'Vigésima segunda posição', location: 'Linha 4 - Coluna 4' },
-  { position: 22, name: 'Posição 23', description: 'Vigésima terceira posição', location: 'Linha 4 - Coluna 5' },
-  { position: 23, name: 'Posição 24', description: 'Vigésima quarta posição', location: 'Linha 4 - Coluna 6' }
+  { position: 15, name: 'Posição 16', description: 'Décima sexta posição', location: 'Linha 3 - Coluna 4' }
 ];
 
 // ✅ Tipo para dados do Supabase

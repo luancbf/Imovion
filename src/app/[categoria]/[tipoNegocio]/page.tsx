@@ -65,10 +65,46 @@ export default function ImoveisCategoriaPage() {
 
   // ✅ FILTRO LOCAL OTIMIZADO
   const aplicarFiltroLocal = useCallback((imoveis: Imovel[], filtros: Record<string, string>): Imovel[] => {
-    if (!filtros.tipoImovel) return imoveis;
-    return imoveis.filter(imovel =>
-      imovel.tipoimovel === filtros.tipoImovel
-    );
+    return imoveis.filter(imovel => {
+      // Tipo de imóvel
+      if (filtros.tipoImovel && imovel.tipoimovel !== filtros.tipoImovel) return false;
+      // Cidade
+      if (filtros.cidade && imovel.cidade !== filtros.cidade) return false;
+      // Bairro
+      if (filtros.bairro && imovel.bairro !== filtros.bairro) return false;
+      // Valor
+      if (filtros.valorMin && Number(imovel.valor) < Number(filtros.valorMin)) return false;
+      if (filtros.valorMax && Number(imovel.valor) > Number(filtros.valorMax)) return false;
+      // Metragem
+      if (filtros.metragemMin && Number(imovel.metragem) < Number(filtros.metragemMin)) return false;
+      if (filtros.metragemMax && Number(imovel.metragem) > Number(filtros.metragemMax)) return false;
+
+      // Características específicas (quantitativos e booleanos)
+      if (imovel.itens) {
+        let itensImovel: Record<string, string | number | boolean | null | undefined> = {};
+        try {
+          itensImovel = typeof imovel.itens === "string" ? JSON.parse(imovel.itens) : imovel.itens;
+        } catch {
+          return false;
+        }
+        for (const [chave, valor] of Object.entries(filtros)) {
+          if (
+            !['tipoImovel', 'cidade', 'bairro', 'valorMin', 'valorMax', 'metragemMin', 'metragemMax'].includes(chave) &&
+            valor !== ""
+          ) {
+            const valorFiltro = Number(valor);
+            const valorImovel = Number(itensImovel[chave] || 0);
+            // Quantitativos: >=, Booleanos: ===
+            if (ITENS_QUANTITATIVOS.includes(chave)) {
+              if (valorImovel < valorFiltro) return false;
+            } else {
+              if (valorImovel !== valorFiltro) return false;
+            }
+          }
+        }
+      }
+      return true;
+    });
   }, []);
 
   // ✅ BUSCA DE IMÓVEIS OTIMIZADA

@@ -71,9 +71,7 @@ export async function buscarImoveis(
   setor: string,
   tipoNegocio: string
 ): Promise<Imovel[]> {
-  
   try {
-    // Construir query base
     let query = supabase
       .from("imoveis")
       .select("*")
@@ -81,7 +79,7 @@ export async function buscarImoveis(
       .eq("tiponegocio", tipoNegocio)
       .eq("ativo", true);
 
-    // Aplicar filtros básicos
+    // Filtros básicos
     CAMPOS_BASICOS.forEach(campo => {
       const valor = filtros[campo];
       if (valor) {
@@ -90,36 +88,43 @@ export async function buscarImoveis(
       }
     });
 
-    // Filtros numéricos especiais
-    if (filtros.valor && isNumerico(filtros.valor)) {
-      query = query.lte("valor", Number(filtros.valor));
+    // Valor e metragem (faixa)
+    if (filtros.valorMin && isNumerico(filtros.valorMin)) {
+      query = query.gte("valor", Number(filtros.valorMin));
     }
-    
-    if (filtros.metragem && isNumerico(filtros.metragem)) {
-      query = query.gte("metragem", Number(filtros.metragem));
+    if (filtros.valorMax && isNumerico(filtros.valorMax)) {
+      query = query.lte("valor", Number(filtros.valorMax));
+    }
+    if (filtros.metragemMin && isNumerico(filtros.metragemMin)) {
+      query = query.gte("metragem", Number(filtros.metragemMin));
+    }
+    if (filtros.metragemMax && isNumerico(filtros.metragemMax)) {
+      query = query.lte("metragem", Number(filtros.metragemMax));
     }
 
-    // Filtros quantitativos (JSONB)
-    FILTROS_QUANTITATIVOS.forEach(chave => {
-      const valor = filtros[chave];
-      if (valor && isNumerico(valor) && Number(valor) > 0) {
-        query = query.gte(`itens->>${chave}`, Number(valor));
+    // Filtros quantitativos e booleanos (JSONB)
+    Object.entries(filtros).forEach(([chave, valor]) => {
+      if (
+        !['tipoImovel', 'cidade', 'bairro', 'valor', 'valorMin', 'valorMax', 'metragem', 'metragemMin', 'metragemMax'].includes(chave) &&
+        valor !== ""
+      ) {
+        if ((FILTROS_QUANTITATIVOS as readonly string[]).includes(chave)) {
+          query = query.gte(`itens->>${chave}`, Number(valor));
+        } else {
+          query = query.eq(`itens->>${chave}`, valor);
+        }
       }
     });
 
-    // Ordenação
     query = query.order('datacadastro', { ascending: false });
 
     const { data, error } = await query;
-
     if (error) {
       console.error("❌ [ERRO BUSCA]:", error.message);
       return [];
     }
 
-    console.log('✅ [BUSCA] Encontrados:', data?.length || 0);
     return (data as ImovelBanco[])?.map(mapearImovelDoBanco) ?? [];
-
   } catch (error) {
     console.error("❌ [ERRO INESPERADO]:", error);
     return [];

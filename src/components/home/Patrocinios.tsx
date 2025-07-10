@@ -119,17 +119,15 @@ export default function Patrocinios() {
   console.log('🎨 [RENDER] Renderizando', patrocinios.length, 'patrocínios');
 
   return (
-    <section className="py-8 sm:py-12 px-4">
+    <section className="px-4">
       <div className="mx-auto w-fit">
         <div className="grid grid-cols-4 gap-2 sm:gap-5">
           {patrocinios.map((patrocinio, index) => {
-            // ✅ Determinar se é clicável e tem patrocinador
-            const isClickable = patrocinio.is_clickable && 
-                               patrocinio.patrocinadores?.slug;
+            const isClickable = patrocinio.is_clickable && patrocinio.patrocinadores?.slug;
             
             const PatrocinioCard = (
               <div 
-                className={`w-22 h-22 sm:w-40 sm:h-40 xl:w-36 xl:h-36 2xl:w-32 2xl:h-32 group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 ${
+                className={`w-22 h-22 sm:w-40 sm:h-40 lg:w-50 lg:h-50 group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 ${
                   isClickable ? 'cursor-pointer' : ''
                 }`}
                 style={{ 
@@ -155,7 +153,6 @@ export default function Patrocinios() {
               </div>
             );
 
-            // ✅ Se é clicável e tem slug, envolve com Link
             if (isClickable && patrocinio.patrocinadores?.slug) {
               return (
                 <Link 
@@ -169,7 +166,6 @@ export default function Patrocinios() {
               );
             }
 
-            // ✅ Se não é clicável, retorna apenas o card
             return (
               <div key={`patrocinio-${patrocinio.id}`}>
                 {PatrocinioCard}
