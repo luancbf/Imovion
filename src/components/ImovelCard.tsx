@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FaBed, FaBath, FaCar, FaRulerCombined } from "react-icons/fa";
+import { FaBed, FaBath, FaCar, FaRulerCombined, FaWarehouse } from "react-icons/fa";
+import { MdMeetingRoom } from "react-icons/md";
+import { GiFarmTractor } from "react-icons/gi";
 import type { Imovel } from "@/types/Imovel";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
@@ -23,6 +25,12 @@ function negocioFormatado(tipoNegocio?: string) {
   if (txt === "aluguel") return "Aluguel";
   return txt.charAt(0).toUpperCase() + txt.slice(1);
 }
+
+type ItemPrincipal = {
+  icon: React.ReactElement;
+  label: string;
+  value: number | string;
+};
 
 type ImovelCardProps = {
   imovel: Imovel;
@@ -46,6 +54,45 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
     typeof imovel.itens?.garagens === "number"
       ? imovel.itens.garagens
       : Number(imovel.itens?.garagens) || 0;
+
+  const salas =
+    typeof imovel.itens?.salas === "number"
+      ? imovel.itens.salas
+      : Number(imovel.itens?.salas) || 0;
+
+  const hectares =
+    typeof imovel.itens?.hectares === "number"
+      ? imovel.itens.hectares
+      : Number(imovel.itens?.hectares) || 0;
+
+  const galpoes =
+    typeof imovel.itens?.galpoes === "number"
+      ? imovel.itens.galpoes
+      : Number(imovel.itens?.galpoes) || 0;
+
+  let itensPrincipais: ItemPrincipal[] = [];
+
+  if (imovel.setornegocio === "Residencial") {
+    itensPrincipais = [
+      { icon: <FaRulerCombined className="text-lg" title="Área" />, label: "Área", value: `${imovel.metragem || 0} m²` },
+      { icon: <FaBed className="text-lg" title="Quartos" />, label: "Quartos", value: quartos },
+      { icon: <FaBath className="text-lg" title="Banheiros" />, label: "Banheiros", value: banheiros },
+      { icon: <FaCar className="text-lg" title="Garagens" />, label: "Garagens", value: garagens },
+    ];
+  } else if (imovel.setornegocio === "Comercial") {
+    itensPrincipais = [
+      { icon: <FaRulerCombined className="text-lg" title="Área" />, label: "Área", value: `${imovel.metragem || 0} m²` },
+      { icon: <MdMeetingRoom className="text-lg" title="Salas" />, label: "Salas", value: salas },
+      { icon: <FaCar className="text-lg" title="Garagens" />, label: "Garagens", value: garagens },
+      { icon: <FaBath className="text-lg" title="Banheiros" />, label: "Banheiros", value: banheiros },
+    ];
+  } else if (imovel.setornegocio === "Rural") {
+    itensPrincipais = [
+      { icon: <FaRulerCombined className="text-lg" title="Área" />, label: "Área", value: `${imovel.metragem || 0} m²` },
+      { icon: <GiFarmTractor className="text-lg" title="Hectares" />, label: "Hectares", value: hectares },
+      { icon: <FaWarehouse className="text-lg" title="Galpões" />, label: "Galpões", value: galpoes },
+    ];
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 flex flex-col">
@@ -100,7 +147,7 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
             : 'Consulte o valor'}
         </p>
         
-        <div className="font-inter text-sm text-gray-600 space-y-1">
+        <div className="font-inter text-normal text-gray-600 space-y-1">
           <p>
             <span className="font-poppins font-bold">Local:</span> {formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}
           </p>
@@ -109,28 +156,22 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           </p>
         </div>
 
-        {/* Área e itens principais sincronizados */}
+        {/* Itens principais dinâmicos */}
         <div className="flex items-center gap-4 mt-3">
-          {/* Área */}
-          <div className="flex items-center gap-1 text-blue-900">
-            <FaRulerCombined className="text-lg" title="Área" />
-            <span className="font-bold text-sm">{imovel.metragem || 0}m²</span>
-          </div>
-          {/* Quartos */}
-          <div className="flex items-center gap-1 text-blue-900">
-            <FaBed className="text-lg" title="Quartos" />
-            <span className="font-bold text-sm">{quartos}</span>
-          </div>
-          {/* Banheiros */}
-          <div className="flex items-center gap-1 text-blue-900">
-            <FaBath className="text-lg" title="Banheiros" />
-            <span className="font-bold text-sm">{banheiros}</span>
-          </div>
-          {/* Garagens */}
-          <div className="flex items-center gap-1 text-blue-900">
-            <FaCar className="text-lg" title="Garagens" />
-            <span className="font-bold text-sm">{garagens}</span>
-          </div>
+          {itensPrincipais
+            .filter(item => {
+              if (typeof item.value === "string") {
+                const num = Number(item.value.toString().replace(/[^\d.]/g, ""));
+                return num > 0;
+              }
+              return typeof item.value === "number" ? item.value > 0 : true;
+            })
+            .map((item, idx) => (
+              <div key={item.label + idx} className="flex items-center gap-1 text-blue-900">
+                {item.icon}
+                <span className="font-bold text-sm">{item.value}</span>
+              </div>
+            ))}
         </div>
 
         {/* Botões de ação */}

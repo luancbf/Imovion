@@ -335,70 +335,30 @@ export default function ImovelPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Itens Quantitativos */}
-                {(() => {
-                  const itensQuant = itensComValor.filter(item => 
-                    ITENS_QUANTITATIVOS.includes(item.chave)
-                  );
-                  if (itensQuant.length === 0) return null;
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {itensComValor.map((item) => {
+                  const valor = itensImovel[item.chave];
+                  const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
+                  const valorNumerico = typeof valor === 'number' ? valor : Number(valor) || 0;
                   return (
-                    <div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {itensQuant.map((item) => {
-                          const valor = itensImovel[item.chave];
-                          const valorNumerico = typeof valor === 'number' ? valor : Number(valor) || 0;
-                          return (
-                            <div
-                              key={item.chave}
-                              className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200"
-                            >
-                              <div className="text-center space-y-2">
-                                <div className="text-3xl">{item.icone}</div>
-                                <span className="text-blue-900 font-medium text-sm block leading-tight">
-                                  {item.nome}
-                                </span>
-                                <div className="bg-blue-600 text-white px-3 py-1 rounded-lg font-bold text-lg">
-                                  {valorNumerico}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                    <div
+                      key={item.chave}
+                      className={`rounded-xl p-4 border transition-all duration-200 text-center flex flex-col items-center
+                        ${isQuant
+                          ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-md"
+                          : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-md"
+                        }`}
+                    >
+                      <div className={isQuant ? "text-3xl" : "text-2xl"}>{item.icone}</div>
+                      <span className={`font-medium block leading-tight ${isQuant ? "text-blue-900 text-sm" : "text-green-900 text-xs"}`}>
+                        {item.nome}
+                      </span>
+                      <div className={`${isQuant ? "bg-blue-600 text-white px-3 py-1 rounded-lg font-bold text-lg" : "bg-green-600 text-white px-2 py-1 rounded-lg font-bold text-sm"}`}>
+                        {isQuant ? valorNumerico : "✓"}
                       </div>
                     </div>
                   );
-                })()}
-
-                {/* Itens Booleanos */}
-                {(() => {
-                  const itensBool = itensComValor.filter(item => 
-                    !ITENS_QUANTITATIVOS.includes(item.chave)
-                  );
-                  if (itensBool.length === 0) return null;
-                  return (
-                    <div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                        {itensBool.map((item) => (
-                          <div
-                            key={item.chave}
-                            className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 border border-green-200 hover:shadow-md transition-all duration-200"
-                          >
-                            <div className="text-center space-y-2">
-                              <div className="text-2xl">{item.icone}</div>
-                              <span className="text-green-900 font-medium text-xs block leading-tight">
-                                {item.nome}
-                              </span>
-                              <div className="bg-green-600 text-white px-2 py-1 rounded-lg font-bold text-sm">
-                                ✓
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
+                })}
               </div>
             )}
           </section>

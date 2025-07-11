@@ -37,30 +37,30 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
 
   return (
     <div className="mb-8">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
-        <div>
-          <h1 className="font-poppins text-2xl sm:text-4xl font-bold text-blue-700 leading-tight mb-2">
-            {(tipoImovel || fallback.tipoImovel)}
-          </h1>
-          <div className="font-inter text-normal sm:text-xl text-gray-600">
-            <span className="font-poppins font-semibold">Local:</span> {(cidade || fallback.cidade)}, {(bairro || fallback.bairro)}
-          </div>
-          <div className="font-inter text-normal sm:text-xl text-gray-600">
-            <span className="font-poppins font-semibold">Endereço:</span> {(enderecoDetalhado || fallback.enderecoDetalhado)}
-          </div>
-          <div className="font-inter text-normal sm:text-xl text-gray-600">
-            <span className="font-poppins font-semibold">Área:</span> {(metragem || fallback.metragem)}m²
-          </div>
-          <div className="font-inter text-normal sm:text-xl text-gray-600">
-            <span className="font-poppins font-semibold">Descrição:</span> {descricao || fallback.descricao}
-          </div>
+      <div className="flex flex-col gap-2 mb-4">
+        <h1 className="font-poppins text-2xl sm:text-4xl font-bold text-blue-900 leading-tight mb-2">
+          {tipoImovel || fallback.tipoImovel}
+        </h1>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-poppins text-3xl sm:text-5xl font-extrabold text-green-700">
+            {formatarValor(valor || fallback.valor)}
+            {(tipoNegocio || fallback.tipoNegocio) === 'Alugar' && (
+              <span className="text-lg font-normal text-green-800"> /por mês</span>
+            )}
+          </span>
         </div>
-        <span className="flex justify-center font-poppins text-3xl sm:text-4xl font-extrabold text-green-700 drop-shadow-lg bg-green-50 px-6 py-2 rounded-2xl border-2 border-green-200 shadow-lg mt-2 sm:mt-0">
-          {formatarValor(valor || fallback.valor)}
-          {(tipoNegocio || fallback.tipoNegocio) === 'Alugar' && (
-            <span className="text-lg font-normal text-green-800"> / mês</span>
-          )}
-        </span>
+        <div className="font-inter text-normal sm:text-xl text-gray-600">
+          <span className="font-poppins font-semibold">Local:</span> {(cidade || fallback.cidade)}, {(bairro || fallback.bairro)}
+        </div>
+        <div className="font-inter text-normal sm:text-xl text-gray-600">
+          <span className="font-poppins font-semibold">Endereço:</span> {(enderecoDetalhado || fallback.enderecoDetalhado)}
+        </div>
+        <div className="font-inter text-normal sm:text-xl text-gray-600">
+          <span className="font-poppins font-semibold">Área:</span> {(metragem || fallback.metragem)}m²
+        </div>
+        <div className="font-inter text-normal sm:text-xl text-gray-600">
+          <span className="font-poppins font-semibold">Descrição:</span> {descricao || fallback.descricao}
+        </div>
       </div>
       <div className="mt-3">
         

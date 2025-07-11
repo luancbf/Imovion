@@ -27,13 +27,11 @@ export default function PatrocinadorPage() {
   const params = useParams();
   const patrocinadorSlug = String(params.id || "");
 
-  // Estados simplificados
   const [patrocinador, setPatrocinador] = useState<Patrocinador | null>(null);
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [carregandoPatrocinador, setCarregandoPatrocinador] = useState(true);
 
-  // ✅ Buscar patrocinador
   useEffect(() => {
     const fetchPatrocinador = async () => {
       if (!patrocinadorSlug) return;
@@ -68,7 +66,6 @@ export default function PatrocinadorPage() {
     fetchPatrocinador();
   }, [patrocinadorSlug]);
 
-  // ✅ Buscar TODOS os imóveis do patrocinador
   useEffect(() => {
     const fetchImoveis = async () => {
       if (!patrocinador) {
@@ -105,7 +102,6 @@ export default function PatrocinadorPage() {
     fetchImoveis();
   }, [patrocinador]);
 
-  // Loading do patrocinador
   if (carregandoPatrocinador) {
     return (
       <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-blue-100 to-white">
@@ -123,7 +119,6 @@ export default function PatrocinadorPage() {
     );
   }
 
-  // Patrocinador não encontrado
   if (!patrocinador) {
     return (
       <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-blue-100 to-white">
@@ -139,11 +134,6 @@ export default function PatrocinadorPage() {
     );
   }
 
-  // Estatísticas dos imóveis
-  const cidadesAtendidas = new Set(imoveis.map(i => i.cidade)).size;
-  const setoresDisponiveis = new Set(imoveis.map(i => i.setornegocio)).size;
-  const tiposNegocio = new Set(imoveis.map(i => i.tiponegocio)).size;
-
   return (
     <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-blue-100 to-white">
       <Header />
@@ -151,7 +141,7 @@ export default function PatrocinadorPage() {
       <main className="flex-1 flex flex-col items-center py-10 px-2">
         <div className="w-full max-w-7xl mx-auto">
           
-          {/* ✅ Cabeçalho do Patrocinador */}
+          {/* Cabeçalho do Patrocinador */}
           <div className="text-center mb-8">
             <h1 
               className="font-poppins text-3xl md:text-5xl font-extrabold text-blue-700 mb-4 drop-shadow" 
@@ -186,32 +176,7 @@ export default function PatrocinadorPage() {
             )}
           </div>
 
-          {/* ✅ Estatísticas simplificadas */}
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-blue-200">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-              📊 Portfólio Completo
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <div className="text-3xl font-bold text-blue-700 mb-1">{imoveis.length}</div>
-                <p className="text-sm text-blue-600 font-medium">🏠 Total de Imóveis</p>
-              </div>
-              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                <div className="text-3xl font-bold text-green-700 mb-1">{cidadesAtendidas}</div>
-                <p className="text-sm text-green-600 font-medium">🏙️ Cidades</p>
-              </div>
-              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                <div className="text-3xl font-bold text-purple-700 mb-1">{setoresDisponiveis}</div>
-                <p className="text-sm text-purple-600 font-medium">📋 Setores</p>
-              </div>
-              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-                <div className="text-3xl font-bold text-orange-700 mb-1">{tiposNegocio}</div>
-                <p className="text-sm text-orange-600 font-medium">💼 Modalidades</p>
-              </div>
-            </div>
-          </div>
-
-          {/* ✅ Conteúdo Principal */}
+          {/* Conteúdo Principal */}
           {carregando ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -230,7 +195,7 @@ export default function PatrocinadorPage() {
             </div>
           ) : (
             <>
-              {/* ✅ Indicador de resultados */}
+              {/* Indicador de resultados */}
               <div className="mb-6 bg-white rounded-lg shadow-sm p-4 border border-gray-200">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
                   <p className="text-gray-700 font-inter font-medium">
@@ -242,7 +207,7 @@ export default function PatrocinadorPage() {
                 </div>
               </div>
 
-              {/* ✅ Grid de imóveis */}
+              {/* Grid de imóveis */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                 {imoveis.map((imovel) => (
                   <ImovelCard 
@@ -253,7 +218,7 @@ export default function PatrocinadorPage() {
                 ))}
               </div>
 
-              {/* ✅ Footer da listagem */}
+              {/* Footer da listagem */}
               <div className="text-center text-gray-600 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
                 <p className="font-medium text-lg mb-2">
                   ✨ Portfólio completo de <strong>{patrocinador.nome}</strong>

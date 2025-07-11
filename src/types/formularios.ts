@@ -1,6 +1,6 @@
 import type { Imovel } from './Imovel';
+import type { Patrocinador } from './cadastrar-patrocinador';
 
-// ✅ Interface extendida para dados de edição
 export interface ImovelEdicao extends Partial<Imovel> {
   id?: string;
   enderecoDetalhado?: string;
@@ -13,9 +13,8 @@ export interface ImovelEdicao extends Partial<Imovel> {
   imagens?: string[];
 }
 
-// ✅ Props do formulário com tipos corretos
 export interface FormularioImovelProps {
-  patrocinadores: { id: string; nome: string }[];
+  patrocinadores: Patrocinador[];
   cidadesComBairros: Record<string, string[]>;
   opcoesTipoImovel: Record<string, string[]>;
   onSuccess: () => void;

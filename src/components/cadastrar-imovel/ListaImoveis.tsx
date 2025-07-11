@@ -116,11 +116,14 @@ export default function ListaImoveis({
         // Grid de Imóveis (padrão)
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {imoveisFiltrados.map((imovel, index) => (
-            <div 
+            <div
               key={imovel.id}
-              style={{ 
-                animationDelay: `${index * 0.1}s`,
-                animation: 'fadeInUp 0.6s ease-out forwards'
+              style={{
+                animationName: 'fadeInUp',
+                animationDuration: '0.6s',
+                animationTimingFunction: 'ease-out',
+                animationFillMode: 'forwards',
+                animationDelay: `${index * 0.1}s`
               }}
             >
               <ImovelCardCadastro

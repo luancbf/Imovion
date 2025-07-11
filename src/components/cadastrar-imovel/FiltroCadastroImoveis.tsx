@@ -167,46 +167,6 @@ export default function FiltroCadastroImoveis({
             <span>Limpar Filtros</span>
           </button>
         </div>
-
-        {/* Estatísticas dos Filtros (se tiver filtros ativos) */}
-        {hasActiveFilters && (
-          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
-            <h4 className="text-sm font-semibold text-blue-900 mb-3">
-              📊 Filtros Aplicados:
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {filtros.tipoNegocio && (
-                <div className="bg-white rounded-lg p-3 border border-blue-100">
-                  <div className="text-xs text-blue-600 font-medium">Setor</div>
-                  <div className="text-sm font-semibold text-blue-900 flex items-center gap-1">
-                    {filtros.tipoNegocio === 'Residencial' ? '🏠' : 
-                     filtros.tipoNegocio === 'Comercial' ? '🏪' : '🌾'}
-                    {filtros.tipoNegocio}
-                  </div>
-                </div>
-              )}
-              
-              {filtros.setorNegocio && (
-                <div className="bg-white rounded-lg p-3 border border-blue-100">
-                  <div className="text-xs text-blue-600 font-medium">Tipo</div>
-                  <div className="text-sm font-semibold text-blue-900 flex items-center gap-1">
-                    {filtros.setorNegocio === 'Venda' ? '💰' : '🏠'}
-                    {filtros.setorNegocio}
-                  </div>
-                </div>
-              )}
-              
-              {filtros.patrocinador && (
-                <div className="bg-white rounded-lg p-3 border border-blue-100">
-                  <div className="text-xs text-blue-600 font-medium">Patrocinador</div>
-                  <div className="text-sm font-semibold text-blue-900 flex items-center gap-1">
-                    🏢 {patrocinadores.find(p => p.id === filtros.patrocinador)?.nome || 'N/A'}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );

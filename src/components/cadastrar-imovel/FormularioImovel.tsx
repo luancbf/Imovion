@@ -54,8 +54,7 @@ export default function FormularioImovel({
   onLimpar,
 }: FormularioImovelProps) {
   const router = useRouter();
-  
-  // ✅ Estados agrupados logicamente
+
   const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
   const [itens, setItens] = useState<Record<string, number>>({});
   const [previews, setPreviews] = useState<string[]>([]);
@@ -64,63 +63,44 @@ export default function FormularioImovel({
   const [etapaAtual, setEtapaAtual] = useState(1);
   const [modoEdicao, setModoEdicao] = useState(false);
   const [carregando, setCarregando] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ CORREÇÃO: useMemo para itensDisponiveis - sem warnings do ESLint
   const itensDisponiveis = useMemo(() => {
     const setorSelecionado = formulario.tipoNegocio;
-    return setorSelecionado && ITENS_POR_SETOR[setorSelecionado] 
-      ? ITENS_POR_SETOR[setorSelecionado] 
+    return setorSelecionado && ITENS_POR_SETOR[setorSelecionado]
+      ? ITENS_POR_SETOR[setorSelecionado]
       : [];
   }, [formulario.tipoNegocio]);
 
-  // ✅ Função auxiliar para inicializar itens - otimizada
   const inicializarItens = useCallback((): Record<string, number> => {
     const todosItens = Object.values(ITENS_POR_SETOR)
       .flat()
       .filter(Boolean);
-    
-    return Object.fromEntries(
-      todosItens.map((item) => [item.chave, 0])
-    );
+    return Object.fromEntries(todosItens.map((item) => [item.chave, 0]));
   }, []);
 
-  // ✅ Helper tipado otimizado
   const getDadoInicial = useCallback((prop: string, dados: ImovelEdicao | null | undefined): string => {
     if (!dados) return "";
-    
     const dadosTyped = dados as Record<string, unknown>;
     const valor = dadosTyped[prop] ?? dadosTyped[prop.replace(/([A-Z])/g, '_$1').toLowerCase()];
-    
-    return typeof valor === 'string' ? valor : 
-           typeof valor === 'number' ? valor.toString() : "";
+    return typeof valor === 'string' ? valor :
+      typeof valor === 'number' ? valor.toString() : "";
   }, []);
 
-  // ✅ Função para formatar valores - extraída e otimizada
   const formatarValor = useCallback((valor: unknown): string => {
-    if (typeof valor === 'number' && !isNaN(valor)) {
-      return formatarParaMoeda(valor.toString());
-    }
-    if (typeof valor === 'string' && valor.trim().length > 0) {
-      return valor;
-    }
+    if (typeof valor === 'number' && !isNaN(valor)) return formatarParaMoeda(valor.toString());
+    if (typeof valor === 'string' && valor.trim().length > 0) return valor;
     return "";
   }, []);
 
   const formatarMetragemValor = useCallback((metragem: unknown): string => {
-    if (typeof metragem === 'number' && !isNaN(metragem)) {
-      return formatarMetragem(metragem.toString());
-    }
-    if (typeof metragem === 'string' && metragem.trim().length > 0) {
-      return metragem;
-    }
+    if (typeof metragem === 'number' && !isNaN(metragem)) return formatarMetragem(metragem.toString());
+    if (typeof metragem === 'string' && metragem.trim().length > 0) return metragem;
     return "";
   }, []);
 
-  // ✅ Função de limpeza otimizada
   const limparFormulario = useCallback(() => {
-    console.log('🧹 Limpando formulário');
     setFormulario(FORMULARIO_INICIAL);
     setPreviews([]);
     setImagensNovas([]);
@@ -130,17 +110,12 @@ export default function FormularioImovel({
     setModoEdicao(false);
   }, [inicializarItens]);
 
-  // ✅ useEffect otimizado para carregar dados
   useEffect(() => {
     if (!dadosIniciais?.id) {
       limparFormulario();
       return;
     }
-
-    console.log('🔄 Carregando dados para edição:', dadosIniciais);
     setModoEdicao(true);
-
-    // ✅ Carregamento de dados simplificado
     setFormulario({
       cidade: getDadoInicial('cidade', dadosIniciais),
       bairro: getDadoInicial('bairro', dadosIniciais),
@@ -154,14 +129,11 @@ export default function FormularioImovel({
       whatsapp: getDadoInicial('whatsapp', dadosIniciais),
       patrocinador: getDadoInicial('patrocinador', dadosIniciais) || getDadoInicial('patrocinadorid', dadosIniciais),
     });
-
-    // ✅ Configurar itens - simplificado
     if (dadosIniciais.itens) {
       try {
-        const itensObj = typeof dadosIniciais.itens === 'string' 
+        const itensObj = typeof dadosIniciais.itens === 'string'
           ? JSON.parse(dadosIniciais.itens)
           : dadosIniciais.itens;
-        
         const itensNumericos = Object.fromEntries(
           Object.entries(itensObj).map(([k, v]) => [k, Number(v) || 0])
         );
@@ -170,8 +142,6 @@ export default function FormularioImovel({
         setItens(inicializarItens());
       }
     }
-
-    // ✅ Configurar imagens - simplificado
     if (Array.isArray(dadosIniciais.imagens)) {
       const imagensValidas = dadosIniciais.imagens.filter(
         (img): img is string => typeof img === 'string' && img.trim().length > 0
@@ -179,34 +149,50 @@ export default function FormularioImovel({
       setImagensExistentes([...imagensValidas]);
       setPreviews([...imagensValidas]);
     }
-
     setEtapaAtual(1);
   }, [dadosIniciais, limparFormulario, inicializarItens, getDadoInicial, formatarValor, formatarMetragemValor]);
 
-  // ✅ Handlers otimizados
-  const handleChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
+  useEffect(() => {
+    if (formulario.patrocinador) {
+      const patrocinadorSelecionado = patrocinadores.find(
+        (p) => p.id === formulario.patrocinador
+      );
+      let telefonePatrocinador = "";
+      if (patrocinadorSelecionado) {
+        if (typeof patrocinadorSelecionado.telefone === "string" && patrocinadorSelecionado.telefone.trim().length > 0) {
+          telefonePatrocinador = patrocinadorSelecionado.telefone;
+        }
+        // Se quiser usar outros campos, adicione aqui (whatsapp, celular)
+      }
+      // Atualiza o campo whatsapp se estiver vazio ou diferente do telefone do patrocinador selecionado
+      if (
+        telefonePatrocinador &&
+        (formulario.whatsapp === "" || formulario.whatsapp !== telefonePatrocinador)
+      ) {
+        setFormulario(prev => ({
+          ...prev,
+          whatsapp: telefonePatrocinador
+        }));
+      }
+    }
+  }, [formulario.patrocinador, formulario.whatsapp, patrocinadores]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
     const formatters: Record<string, (val: string) => string> = {
       valor: formatarParaMoeda,
       metragem: formatarMetragem,
       whatsapp: formatarTelefone,
     };
-
     const formatter = formatters[name];
     const valorFormatado = formatter ? formatter(value) : value;
-    
     setFormulario(prev => ({ ...prev, [name]: valorFormatado }));
   }, []);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
-    
     const filesArray = Array.from(e.target.files);
     setImagensNovas(prev => [...prev, ...filesArray]);
-    
     const newPreviews = filesArray.map(file => URL.createObjectURL(file));
     setPreviews(prev => [...prev, ...newPreviews]);
   }, []);
@@ -214,17 +200,14 @@ export default function FormularioImovel({
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (!e.dataTransfer.files?.length) return;
-    
     const filesArray = Array.from(e.dataTransfer.files);
     setImagensNovas(prev => [...prev, ...filesArray]);
-    
     const newPreviews = filesArray.map(file => URL.createObjectURL(file));
     setPreviews(prev => [...prev, ...newPreviews]);
   }, []);
 
   const removeImagem = useCallback((index: number) => {
     const imagensExistentesCount = imagensExistentes.length;
-    
     if (index < imagensExistentesCount) {
       setImagensExistentes(prev => prev.filter((_, i) => i !== index));
     } else {
@@ -236,14 +219,12 @@ export default function FormularioImovel({
 
   const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
-    
     setPreviews(prev => {
       const arr = [...prev];
       const [removed] = arr.splice(fromIndex, 1);
       arr.splice(toIndex, 0, removed);
       return arr;
     });
-    
     const totalExistentes = imagensExistentes.length;
     if (fromIndex < totalExistentes || toIndex < totalExistentes) {
       setImagensExistentes(prev => {
@@ -258,34 +239,24 @@ export default function FormularioImovel({
   }, [imagensExistentes.length]);
 
   const cancelarEdicao = useCallback(() => {
-    console.log('❌ Cancelando edição');
     limparFormulario();
     onLimpar?.();
   }, [limparFormulario, onLimpar]);
 
-  // ✅ Upload otimizado
   const uploadImagensSupabase = useCallback(async (imagens: File[], imovelId: string): Promise<string[]> => {
     const urls: string[] = [];
-    
     for (const imagem of imagens) {
       if (!imagem.type.startsWith("image/")) continue;
-      if (imagem.size > 5 * 1024 * 1024) {
-        throw new Error(`A imagem ${imagem.name} excede o limite de 5MB`);
-      }
-      
+      if (imagem.size > 5 * 1024 * 1024) throw new Error(`A imagem ${imagem.name} excede o limite de 5MB`);
       const filePath = `imoveis/${imovelId}/${Date.now()}_${imagem.name}`;
       const { error } = await supabase.storage.from("imagens").upload(filePath, imagem);
-      
       if (error) throw new Error(error.message);
-      
       const { data } = supabase.storage.from("imagens").getPublicUrl(filePath);
       urls.push(data.publicUrl);
     }
-    
     return urls;
   }, []);
 
-  // ✅ Validação de etapas otimizada
   const etapaValida = useCallback((etapa: number): boolean => {
     const validacoes: Record<number, () => boolean> = {
       1: () => !!(formulario.tipoNegocio && formulario.setorNegocio && formulario.tipoImovel),
@@ -293,21 +264,15 @@ export default function FormularioImovel({
       3: () => !!(formulario.valor && formulario.metragem && formulario.descricao && formulario.whatsapp),
       4: () => (imagensExistentes.length + imagensNovas.length) > 0,
     };
-    
     return validacoes[etapa]?.() ?? true;
   }, [formulario, imagensExistentes.length, imagensNovas.length]);
 
-  // ✅ Envio do formulário CORRIGIDO com updated_at
   const enviarFormulario = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setCarregando(true);
-    
     try {
       const totalImagens = imagensExistentes.length + imagensNovas.length;
-      if (totalImagens === 0) {
-        throw new Error("Por favor, adicione pelo menos uma imagem");
-      }
-
+      if (totalImagens === 0) throw new Error("Por favor, adicione pelo menos uma imagem");
       const dadosImovel = {
         cidade: formulario.cidade,
         bairro: formulario.bairro,
@@ -324,84 +289,62 @@ export default function FormularioImovel({
           itensDisponiveis.map(item => [item.chave, itens[item.chave] || 0])
         ),
       };
-
       if (modoEdicao && dadosIniciais?.id) {
-        // ✅ CORREÇÃO: Modo edição com updated_at
         let urlsFinais = [...imagensExistentes];
-        
         if (imagensNovas.length > 0) {
           const novasUrls = await uploadImagensSupabase(imagensNovas, dadosIniciais.id);
           urlsFinais = [...urlsFinais, ...novasUrls];
         }
-        
-        // ✅ CORREÇÃO: Adicionar updated_at para resolver o erro
         const dadosUpdate = {
           ...dadosImovel,
           imagens: urlsFinais,
-          updated_at: new Date().toISOString(), // ✅ Campo obrigatório
+          updated_at: new Date().toISOString(),
         };
-        
         const { error } = await supabase
           .from("imoveis")
           .update(dadosUpdate)
           .eq("id", dadosIniciais.id);
-
-        if (error) {
-          console.error('❌ Erro no update:', error);
-          throw new Error(`Erro ao atualizar: ${error.message}`);
-        }
-        
+        if (error) throw new Error(`Erro ao atualizar: ${error.message}`);
         alert("✅ Imóvel atualizado com sucesso!");
       } else {
-        // ✅ Modo criação
         const dadosInsert = {
           ...dadosImovel,
           datacadastro: new Date().toISOString(),
-          updated_at: new Date().toISOString(), // ✅ Adicionar também na criação
+          updated_at: new Date().toISOString(),
           ativo: true,
           imagens: [],
         };
-
         const { data, error } = await supabase
           .from("imoveis")
           .insert([dadosInsert])
           .select()
           .single();
-
-        if (error || !data?.id) {
-          console.error('❌ Erro no insert:', error);
-          throw new Error(error?.message || "Erro ao criar imóvel.");
-        }
-
+        if (error || !data?.id) throw new Error(error?.message || "Erro ao criar imóvel.");
         if (imagensNovas.length > 0) {
           const urlsImagens = await uploadImagensSupabase(imagensNovas, data.id);
           await supabase
             .from("imoveis")
-            .update({ 
+            .update({
               imagens: urlsImagens,
-              updated_at: new Date().toISOString() // ✅ Manter updated_at
+              updated_at: new Date().toISOString()
             })
             .eq("id", data.id);
         }
-
         alert("✅ Imóvel cadastrado com sucesso!");
       }
-
       limparFormulario();
       onSuccess?.();
       onLimpar?.();
       router.refresh();
-
     } catch (error) {
-      console.error('❌ Erro completo:', error);
       const mensagemErro = error instanceof Error ? error.message : "Erro desconhecido ao processar imóvel.";
       alert(`❌ ${mensagemErro}`);
     } finally {
       setCarregando(false);
     }
   }, [
-    formulario, imagensExistentes, imagensNovas, itensDisponiveis, itens, 
-    modoEdicao, dadosIniciais, uploadImagensSupabase, limparFormulario, 
+    formulario, imagensExistentes, imagensNovas, itensDisponiveis, itens,
+    modoEdicao, dadosIniciais, uploadImagensSupabase, limparFormulario,
     onSuccess, onLimpar, router
   ]);
 
@@ -418,14 +361,13 @@ export default function FormularioImovel({
               {modoEdicao ? "✏️ Editando Imóvel" : "🏠 Cadastrar Novo Imóvel"}
             </h1>
             <p className="text-blue-600 text-sm">
-              {modoEdicao 
-                ? `Atualizando ${formulario.tipoImovel || 'imóvel'} em ${formulario.cidade}` 
+              {modoEdicao
+                ? `Atualizando ${formulario.tipoImovel || 'imóvel'} em ${formulario.cidade}`
                 : "Preencha os dados para cadastrar um novo imóvel"
               }
             </p>
           </div>
         </div>
-
         {modoEdicao && (
           <button
             type="button"
@@ -446,7 +388,6 @@ export default function FormularioImovel({
             const isAtual = etapaAtual === etapa.numero;
             const isConcluida = etapaValida(etapa.numero);
             const isAcessivel = index === 0 || etapaValida(etapa.numero - 1);
-
             return (
               <div key={etapa.numero} className="flex flex-col items-center flex-1">
                 <button
@@ -474,9 +415,8 @@ export default function FormularioImovel({
             );
           })}
         </div>
-
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
             style={{ width: `${(ETAPAS.filter((_, i) => etapaValida(i + 1)).length / ETAPAS.length) * 100}%` }}
           />
@@ -485,16 +425,14 @@ export default function FormularioImovel({
 
       {/* Formulário */}
       <form onSubmit={enviarFormulario} className="space-y-8">
-        
         {/* Etapa 1: Tipo & Categoria */}
         {etapaAtual === 1 && (
-          <div className="space-y-6 animate-slide-in">
+          <div className="space-y-6">
             <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
               <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
                 <FiHome size={20} />
                 Classificação do Imóvel
               </h3>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-blue-900">
@@ -513,7 +451,6 @@ export default function FormularioImovel({
                     <option value="Rural">🌾 Rural</option>
                   </select>
                 </div>
-
                 {formulario.tipoNegocio && (
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-blue-900">
@@ -533,7 +470,6 @@ export default function FormularioImovel({
                   </div>
                 )}
               </div>
-
               {formulario.tipoNegocio && formulario.setorNegocio && (
                 <div className="mt-6 space-y-2">
                   <label className="block text-sm font-semibold text-blue-900">
@@ -563,13 +499,12 @@ export default function FormularioImovel({
 
         {/* Etapa 2: Localização */}
         {etapaAtual === 2 && (
-          <div className="space-y-6 animate-slide-in">
+          <div className="space-y-6">
             <div className="bg-green-50 rounded-2xl p-6 border border-green-200">
               <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
                 <FiMapPin size={20} />
                 Localização do Imóvel
               </h3>
-              
               <SelectCidadeBairro
                 cidadesComBairros={cidadesComBairros}
                 cidade={formulario.cidade}
@@ -577,7 +512,6 @@ export default function FormularioImovel({
                 onChange={handleChange}
                 selectClass={CLASSES.select}
               />
-              
               <div className="mt-6 space-y-2">
                 <label className="block text-sm font-semibold text-green-900">
                   Endereço Completo
@@ -600,13 +534,12 @@ export default function FormularioImovel({
 
         {/* Etapa 3: Detalhes & Valor */}
         {etapaAtual === 3 && (
-          <div className="space-y-6 animate-slide-in">
+          <div className="space-y-6">
             <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200">
               <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
                 <FiDollarSign size={20} />
                 Detalhes Comerciais
               </h3>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-purple-900">
@@ -621,7 +554,6 @@ export default function FormularioImovel({
                     required
                   />
                 </div>
-                
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-purple-900">
                     Metragem
@@ -636,7 +568,6 @@ export default function FormularioImovel({
                   />
                 </div>
               </div>
-              
               <div className="mt-6 space-y-2">
                 <label className="block text-sm font-semibold text-purple-900">
                   WhatsApp para Contato
@@ -650,7 +581,6 @@ export default function FormularioImovel({
                   required
                 />
               </div>
-              
               <div className="mt-6 space-y-2">
                 <label className="block text-sm font-semibold text-purple-900">
                   Descrição do Imóvel
@@ -668,7 +598,6 @@ export default function FormularioImovel({
                   💡 Uma boa descrição atrai mais interessados
                 </p>
               </div>
-
               {/* Patrocinador */}
               {patrocinadores.length > 0 && (
                 <div className="mt-6 space-y-2">
@@ -696,7 +625,7 @@ export default function FormularioImovel({
 
         {/* Etapa 4: Imagens */}
         {etapaAtual === 4 && (
-          <div className="space-y-6 animate-slide-in">
+          <div className="space-y-6">
             <div className="bg-orange-50 rounded-2xl p-6 border border-orange-200">
               <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center gap-2">
                 <FiUpload size={20} />
@@ -707,7 +636,6 @@ export default function FormularioImovel({
                   </span>
                 )}
               </h3>
-              
               <UploadImages
                 previews={previews}
                 onDrop={handleDrop}
@@ -725,13 +653,12 @@ export default function FormularioImovel({
 
         {/* Etapa 5: Características */}
         {etapaAtual === 5 && formulario.tipoNegocio && (
-          <div className="space-y-6 animate-slide-in">
+          <div className="space-y-6">
             <div className="bg-indigo-50 rounded-2xl p-6 border border-indigo-200">
               <h3 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center gap-2">
                 <FiEdit3 size={20} />
                 Características Específicas
               </h3>
-              
               <ItensImovel
                 itensDisponiveis={itensDisponiveis}
                 itens={itens}
@@ -754,7 +681,6 @@ export default function FormularioImovel({
                 ← Anterior
               </button>
             )}
-            
             {etapaAtual < ETAPAS.length && etapaValida(etapaAtual) && (
               <button
                 type="button"
@@ -765,10 +691,9 @@ export default function FormularioImovel({
               </button>
             )}
           </div>
-
           <div className="flex gap-3">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={carregando || !ETAPAS.every((_, i) => etapaValida(i + 1))}
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
             >
@@ -787,24 +712,6 @@ export default function FormularioImovel({
           </div>
         </div>
       </form>
-
-      {/* CSS para animações */}
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-slide-in {
-          animation: slideIn 0.3s ease-out;
-        }
-      `}</style>
     </section>
   );
 }

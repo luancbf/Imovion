@@ -9,6 +9,7 @@ import cidadesComBairros from '@/constants/cidadesComBairros';
 import { opcoesTipoImovel } from '@/constants/opcoesTipoImovel';
 import type { Imovel } from '@/types/Imovel';
 import type { ImovelEdicao } from '@/types/formularios';
+import type { Patrocinador } from '@/types/cadastrar-patrocinador';
 import { createBrowserClient } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -19,10 +20,10 @@ export default function CadastrarImovel() {
   useAuthGuard();
 
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
-  const [patrocinadores, setPatrocinadores] = useState<{ id: string; nome: string }[]>([]);
+  const [patrocinadores, setPatrocinadores] = useState<Patrocinador[]>([]);
   const [filtros, setFiltros] = useState({ tipoNegocio: '', setorNegocio: '', patrocinador: '' });
   const [carregando, setCarregando] = useState(false);
-  const [imovelEditando, setImovelEditando] = useState<ImovelEdicao | null>(null); // ✅ Tipo correto
+  const [imovelEditando, setImovelEditando] = useState<ImovelEdicao | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -54,10 +55,9 @@ export default function CadastrarImovel() {
         
         const { data: patrocinadoresData, error: patrocinadorError } = await supabase
           .from('patrocinadores')
-          .select('id, nome');
+          .select('id, nome, slug, telefone, whatsapp, celular');
         
         if (patrocinadorError) {
-          console.error('Erro ao buscar patrocinadores:', patrocinadorError);
           setPatrocinadores([]);
         } else {
           setPatrocinadores(patrocinadoresData || []);
@@ -86,7 +86,6 @@ export default function CadastrarImovel() {
           alert('Erro ao excluir imóvel: ' + error.message);
         } else {
           setImoveis(imoveis => imoveis.filter(imovel => imovel.id !== id));
-          // Se o imóvel excluído estava sendo editado, cancelar edição
           if (imovelEditando?.id === id) {
             setImovelEditando(null);
           }
@@ -99,10 +98,8 @@ export default function CadastrarImovel() {
     }
   };
 
-  // ✅ CORREÇÃO: Função para carregar imóvel no formulário com tipagem correta
   const handleEditarNoFormulario = (imovel: Imovel) => {
     const imovelParaEdicao: ImovelEdicao = {
-      // ✅ Copiar todas as propriedades do Imovel original
       id: imovel.id,
       cidade: imovel.cidade,
       bairro: imovel.bairro,
@@ -120,7 +117,6 @@ export default function CadastrarImovel() {
       imagens: imovel.imagens,
       itens: imovel.itens,
       
-      // ✅ Adicionar propriedades extras que o formulário espera (camelCase)
       tipoImovel: imovel.tipoimovel,
       enderecoDetalhado: imovel.enderecodetalhado,
       tipoNegocio: imovel.tiponegocio,
@@ -132,7 +128,6 @@ export default function CadastrarImovel() {
     setImovelEditando(imovelParaEdicao);
   };
 
-  // ✅ Função para limpar edição
   const handleLimparEdicao = () => {
     setImovelEditando(null);
   };
@@ -153,7 +148,6 @@ export default function CadastrarImovel() {
         setImoveis(data as Imovel[] || []);
       }
       
-      // ✅ Limpar edição após sucesso
       setImovelEditando(null);
       
     } catch (error) {
@@ -172,10 +166,10 @@ export default function CadastrarImovel() {
           <FormularioImovel
             patrocinadores={patrocinadores}
             cidadesComBairros={cidadesComBairros}
-            opcoesTipoImovel={opcoesTipoImovel} // ✅ Usando a constante importada
+            opcoesTipoImovel={opcoesTipoImovel}
             onSuccess={handleSuccess}
-            dadosIniciais={imovelEditando} // ✅ Agora com tipo correto ImovelEdicao
-            onLimpar={handleLimparEdicao} // ✅ Callback para limpar
+            dadosIniciais={imovelEditando}
+            onLimpar={handleLimparEdicao}
           />
 
           <FiltroCadastroImoveis
@@ -187,10 +181,9 @@ export default function CadastrarImovel() {
             imoveis={imoveis}
             carregando={carregando}
             onDelete={handleDelete}
-            onEdit={handleEditarNoFormulario} // ✅ Nova função
+            onEdit={handleEditarNoFormulario}
             patrocinadores={patrocinadores}
             cidadesComBairros={cidadesComBairros}
-            // ✅ REMOVIDO opcoesTipoImovel pois não existe na interface ListaImoveisProps
           />
 
         </div>

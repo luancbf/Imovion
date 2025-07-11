@@ -66,7 +66,6 @@ export default function ImovelCardCadastro({
   onEdit,
   patrocinadores,
 }: ImovelCardProps) {
-  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [exibirMais, setExibirMais] = useState(false);
 
   // Fallbacks para compatibilidade
@@ -84,7 +83,6 @@ export default function ImovelCardCadastro({
 
   const handleConfirmarExclusao = () => {
     onDelete(imovel.id!);
-    setConfirmandoExclusao(false);
   };
 
   const handleEditar = () => {
@@ -170,9 +168,9 @@ export default function ImovelCardCadastro({
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-gray-500">Bairro/Cidade</span>
+              <span className="text-xs text-gray-500">Cidade/Bairro</span>
               <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
-                {formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}
+                {formatarTexto(imovel.cidade)}, {formatarTexto(imovel.bairro)}
               </span>
             </div>
             <div className="flex flex-col">
@@ -200,7 +198,7 @@ export default function ImovelCardCadastro({
         <div className="flex justify-center mt-2">
           <button
             onClick={() => setExibirMais(!exibirMais)}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors cursor-pointer"
           >
             {exibirMais ? (
               <>
@@ -220,7 +218,7 @@ export default function ImovelCardCadastro({
         <div className="flex flex-col gap-2 mt-4 sm:flex-row sm:justify-center">
           <Link
             href={`/imoveis/${imovel.id}`}
-            className="flex-1 flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
+            className="flex-1 flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105 cursor-pointer"
             title="Ver página do imóvel"
           >
             <FiEye size={16} />
@@ -228,53 +226,28 @@ export default function ImovelCardCadastro({
           </Link>
           <button
             onClick={handleEditar}
-            className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
+            className="flex-1 flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105 cursor-pointer"
             title="Editar no formulário"
           >
             <FiEdit2 size={16} />
             <span>Editar</span>
           </button>
           <button
-            onClick={() => setConfirmandoExclusao(true)}
-            className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105"
+            onClick={handleConfirmarExclusao}
+            className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded-xl transition-all duration-200 transform hover:scale-105 cursor-pointer"
             title="Excluir imóvel"
           >
             <FiTrash2 size={16} />
             <span>Excluir</span>
           </button>
         </div>
-
-        {/* Confirmação de Exclusão */}
-        {confirmandoExclusao && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-4">
-            <div className="text-center">
-              <p className="text-red-700 font-medium mb-3">
-                Tem certeza que deseja excluir este imóvel?
-              </p>
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={handleConfirmarExclusao}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                >
-                  Confirmar
-                </button>
-                <button
-                  onClick={() => setConfirmandoExclusao(false)}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Detalhes Expandidos - Sobreposto */}
       {exibirMais && (
         <div className="absolute inset-0 z-10 bg-white/95 rounded-2xl border-2 border-blue-300 shadow-2xl p-6 flex flex-col animate-fadeIn">
           <button
-            className="absolute top-3 right-3 text-gray-500 hover:text-blue-700"
+            className="absolute top-3 right-3 text-gray-500 hover:text-blue-700 cursor-pointer"
             onClick={() => setExibirMais(false)}
             title="Fechar detalhes"
           >
