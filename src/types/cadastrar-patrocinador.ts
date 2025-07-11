@@ -24,7 +24,7 @@ export interface PatrocinioConfig {
     id: string;
     nome: string;
     slug: string;
-    telefone?: string; // ✅ NOVO: Telefone no relacionamento
+    telefone?: string;
   } | null;
 }
 
@@ -43,7 +43,7 @@ export interface SliderBanner {
     id: string;
     nome: string;
     slug: string;
-    telefone?: string; // ✅ NOVO: Telefone no relacionamento
+    telefone?: string;
   } | null;
 }
 
@@ -59,74 +59,24 @@ export interface PatrocinioPosition {
   description: string;
 }
 
-// Constantes - 12 banners divididos em principais e secundários
 export const availableSliderImages: SliderImageInfo[] = [
   // 6 Banners Principais (slider superior)
-  {
-    name: 'principal1',
-    title: 'Banner Principal 1',
-    description: 'Primeira imagem do slider principal'
-  },
-  {
-    name: 'principal2',
-    title: 'Banner Principal 2',
-    description: 'Segunda imagem do slider principal'
-  },
-  {
-    name: 'principal3',
-    title: 'Banner Principal 3',
-    description: 'Terceira imagem do slider principal'
-  },
-  {
-    name: 'principal4',
-    title: 'Banner Principal 4',
-    description: 'Quarta imagem do slider principal'
-  },
-  {
-    name: 'principal5',
-    title: 'Banner Principal 5',
-    description: 'Quinta imagem do slider principal'
-  },
-  {
-    name: 'principal6',
-    title: 'Banner Principal 6',
-    description: 'Sexta imagem do slider principal'
-  },
+  {name: 'principal1', title: 'Banner Principal 1', description: 'Primeira imagem do slider principal'},
+  {name: 'principal2', title: 'Banner Principal 2', description: 'Segunda imagem do slider principal'},
+  {name: 'principal3', title: 'Banner Principal 3', description: 'Terceira imagem do slider principal'},
+  {name: 'principal4', title: 'Banner Principal 4', description: 'Quarta imagem do slider principal'},
+  {name: 'principal5', title: 'Banner Principal 5', description: 'Quinta imagem do slider principal'},
+  {name: 'principal6', title: 'Banner Principal 6', description: 'Sexta imagem do slider principal'},
   
   // 6 Banners Secundários (slider inferior)
-  {
-    name: 'secundario1',
-    title: 'Banner Secundário 1',
-    description: 'Primeira imagem do slider secundário'
-  },
-  {
-    name: 'secundario2',
-    title: 'Banner Secundário 2',
-    description: 'Segunda imagem do slider secundário'
-  },
-  {
-    name: 'secundario3',
-    title: 'Banner Secundário 3',
-    description: 'Terceira imagem do slider secundário'
-  },
-  {
-    name: 'secundario4',
-    title: 'Banner Secundário 4',
-    description: 'Quarta imagem do slider secundário'
-  },
-  {
-    name: 'secundario5',
-    title: 'Banner Secundário 5',
-    description: 'Quinta imagem do slider secundário'
-  },
-  {
-    name: 'secundario6',
-    title: 'Banner Secundário 6',
-    description: 'Sexta imagem do slider secundário'
-  }
+  {name: 'secundario1', title: 'Banner Secundário 1', description: 'Primeira imagem do slider secundário'},
+  {name: 'secundario2', title: 'Banner Secundário 2', description: 'Segunda imagem do slider secundário'},
+  {name: 'secundario3', title: 'Banner Secundário 3', description: 'Terceira imagem do slider secundário'},
+  {name: 'secundario4', title: 'Banner Secundário 4', description: 'Quarta imagem do slider secundário'},
+  {name: 'secundario5', title: 'Banner Secundário 5', description: 'Quinta imagem do slider secundário'},
+  {name: 'secundario6', title: 'Banner Secundário 6', description: 'Sexta imagem do slider secundário'}
 ];
 
-// Adicionar interface para tipo de slider
 export interface SliderType {
   type: 'principal' | 'secundario';
   name: string;

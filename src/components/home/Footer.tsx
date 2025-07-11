@@ -10,8 +10,8 @@ export default function Footer() {
           <ul className="font-inter space-y-1 text-sm text-blue-700">
             <li>
               <span className="text-blue-900 font-semibold">Email:</span>{" "}
-              <a href="mailto:contato@seusite.com" className="hover:underline">
-                contato@seusite.com
+              <a href="mailto:imovionmt@gmail.com" className="hover:underline">
+                imovionmt@gmail.com
               </a>
             </li>
             <li>

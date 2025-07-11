@@ -39,6 +39,16 @@ interface ItemComponentProps {
 // CONSTANTES
 const VALORES_FILTRO = {
   valor: [
+    { label: "Até R$ 500", value: "0-500" },
+    { label: "Até R$ 800", value: "0-800" },
+    { label: "Até R$ 1.000", value: "0-1000" },
+    { label: "Até R$ 1.500", value: "0-1500" },
+    { label: "Até R$ 2.000", value: "0-2000" },
+    { label: "Até R$ 3.000", value: "0-3000" },
+    { label: "Até R$ 5.000", value: "0-5000" },
+    { label: "Acima de R$ 5.000", value: "5000-999999" },
+  ],
+  valorVenda: [
     { label: "Até R$ 100.000", value: "0-100000" },
     { label: "Até R$ 200.000", value: "0-200000" },
     { label: "Até R$ 300.000", value: "0-300000" },
@@ -215,10 +225,15 @@ export function FiltroImovel({
     </div>
   );
 
+  // Ajuste: Evita scroll automático ao clicar nos itens quantitativos/booleanos
   const ItemQuantitativo = ({ item }: ItemComponentProps) => {
     const valorAtual = Number(filtros[item.chave] || 0);
     return (
-      <div className="bg-white rounded-xl border-2 border-indigo-200 p-4 hover:border-indigo-300 transition-all duration-200 hover:shadow-md flex flex-col items-center">
+      <div
+        className="bg-white rounded-xl border-2 border-indigo-200 p-4 hover:border-indigo-300 transition-all duration-200 hover:shadow-md flex flex-col items-center"
+        tabIndex={-1} // <-- Adicionado para evitar foco e scroll
+        onMouseDown={e => e.preventDefault()} // <-- Evita foco do mouse
+      >
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xl">{item.icone}</span>
           <span className="font-medium text-indigo-900 text-sm">{item.nome}</span>
@@ -227,6 +242,7 @@ export function FiltroImovel({
           <button
             type="button"
             tabIndex={-1}
+            onMouseDown={e => e.preventDefault()} // <-- Evita foco do mouse
             onClick={() => handleItemQuantChange(item.chave, valorAtual - 1)}
             className="w-8 h-8 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={valorAtual <= 0}
@@ -242,6 +258,7 @@ export function FiltroImovel({
           <button
             type="button"
             tabIndex={-1}
+            onMouseDown={e => e.preventDefault()} // <-- Evita foco do mouse
             onClick={() => handleItemQuantChange(item.chave, valorAtual + 1)}
             className="w-8 h-8 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200"
             aria-label={`Aumentar ${item.nome}`}
@@ -259,6 +276,7 @@ export function FiltroImovel({
       <button
         type="button"
         tabIndex={-1}
+        onMouseDown={e => e.preventDefault()} // <-- Evita foco do mouse
         onClick={() => handleItemQuantChange(item.chave, isAtivo ? 0 : 1)}
         className={`relative p-3 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02] flex flex-col items-center w-full
           ${isAtivo
@@ -297,9 +315,11 @@ export function FiltroImovel({
       label: bairro.replace(/_/g, " "),
       value: bairro
     })),
-    valores: VALORES_FILTRO.valor as readonly SelectOption[],
+    valores: tipoNegocio === "Aluguel"
+      ? VALORES_FILTRO.valor as readonly SelectOption[]
+      : VALORES_FILTRO.valorVenda as readonly SelectOption[],
     metragens: VALORES_FILTRO.metragem as readonly SelectOption[]
-  }), [tiposDisponiveis, cidadesComBairros, filtros.cidade]);
+  }), [tiposDisponiveis, cidadesComBairros, filtros.cidade, tipoNegocio]);
 
   // FILTROS ATIVOS
   const filtrosAtivos = useMemo(() => {

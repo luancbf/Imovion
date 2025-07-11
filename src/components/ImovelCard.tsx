@@ -1,22 +1,14 @@
 'use client';
 
-import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaBed, FaBath, FaCar, FaRulerCombined } from "react-icons/fa";
 import type { Imovel } from "@/types/Imovel";
-import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
+import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-
-interface ItemImovel {
-  chave: string;
-  nome: string;
-  icone: string;
-}
 
 function formatarTexto(texto?: string) {
   return texto ? texto.replace(/_/g, " ") : '';
@@ -38,45 +30,28 @@ type ImovelCardProps = {
 };
 
 export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCardProps) {
-  const [exibirMais, setExibirMais] = useState(false);
   const imagens = imovel.imagens?.length ? imovel.imagens : ["/imoveis/sem-imagem.jpg"];
-  
-  // ✅ CORREÇÃO: Tipagem segura para setornegocio
-  const itensDisponiveis = useMemo((): ItemImovel[] => {
-    const setor = imovel.setornegocio;
-    if (!setor || typeof setor !== 'string') return [];
-    
-    return ITENS_POR_SETOR[setor as keyof typeof ITENS_POR_SETOR] || [];
-  }, [imovel.setornegocio]);
 
-  // ✅ Parse seguro dos itens do imóvel
-  const itensImovel = useMemo((): Record<string, number> => {
-    if (!imovel.itens) return {};
-    
-    try {
-      const parsed = typeof imovel.itens === 'string' 
-        ? JSON.parse(imovel.itens) 
-        : imovel.itens;
-      
-      // ✅ Garantir que todos os valores sejam números
-      const resultado: Record<string, number> = {};
-      if (parsed && typeof parsed === 'object') {
-        Object.entries(parsed).forEach(([key, value]) => {
-          resultado[key] = Number(value) || 0;
-        });
-      }
-      return resultado;
-    } catch (error) {
-      console.error('Erro ao parsear itens do imóvel:', error);
-      return {};
-    }
-  }, [imovel.itens]);
+  const quartos =
+    typeof imovel.itens?.quartos === "number"
+      ? imovel.itens.quartos
+      : Number(imovel.itens?.quartos) || 0;
+
+  const banheiros =
+    typeof imovel.itens?.banheiros === "number"
+      ? imovel.itens.banheiros
+      : Number(imovel.itens?.banheiros) || 0;
+
+  const garagens =
+    typeof imovel.itens?.garagens === "number"
+      ? imovel.itens.garagens
+      : Number(imovel.itens?.garagens) || 0;
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 flex flex-col">
-      <div className="relative h-45 md:h-64 bg-gray-100 flex items-center justify-center">
+      <div className="relative h-45 md:h-50 bg-gray-100 flex items-center justify-center custom-swiper-arrows">
         <Swiper
-          modules={[Navigation, Pagination]}
+          modules={[Navigation]}
           navigation
           pagination={{ clickable: true }}
           className="w-full h-full rounded"
@@ -84,7 +59,7 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
         >
           {imagens.map((img, i) => (
             <SwiperSlide key={`${img}-${i}`}>
-              <div className="relative w-full h-45 md:h-64">
+              <div className="relative w-full h-45 md:h-50">
                 <Image
                   src={img}
                   alt={`Imóvel ${formatarTexto(imovel.tipoimovel)} em ${formatarTexto(imovel.cidade)} - Foto ${i + 1}`}
@@ -103,10 +78,16 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
             </SwiperSlide>
           ))}
         </Swiper>
+        
+        <style jsx global>{`
+          .custom-swiper-arrows .swiper-button-next::after,
+          .custom-swiper-arrows .swiper-button-prev::after {
+            font-size: 1.5rem !important;
+          }
+        `}</style>
       </div>
       
       <div className="p-4 flex-1 flex flex-col gap-2">
-        {/* ✅ CORREÇÃO: Usar campos corretos do banco */}
         <h3 className="font-poppins text-lg md:text-xl font-bold text-blue-900">
           {contexto === "patrocinador"
             ? `${formatarTexto(imovel.setornegocio)} - ${negocioFormatado(imovel.tiponegocio)} - ${formatarTexto(imovel.tipoimovel)}`
@@ -123,82 +104,36 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           <p>
             <span className="font-poppins font-bold">Local:</span> {formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}
           </p>
-          {/* ✅ CORREÇÃO: Campo correto enderecodetalhado */}
           <p>
             <span className="font-poppins font-bold">Endereço:</span> {formatarTexto(imovel.enderecodetalhado)}
           </p>
-          <p>
-            <span className="font-poppins font-bold">Área:</span> {imovel.metragem || 0}m²
-          </p>
         </div>
-        
-        <button
-          className="flex items-center gap-1 font-inter text-blue-700 hover:underline text-xs mt-1 cursor-pointer"
-          onClick={() => setExibirMais(v => !v)}
-          type="button"
-        >
-          {exibirMais ? (
-            <>Ocultar detalhes <FaChevronUp className="text-xs" /></>
-          ) : (
-            <>Exibir mais <FaChevronDown className="text-xs" /></>
-          )}
-        </button>
-        
-        {exibirMais && (
-          <div className="mt-2">
-            <p className="text-gray-700 text-sm mb-2 whitespace-pre-line">
-              {formatarTexto(imovel.descricao)}
-            </p>
-            
-            {/* ✅ Seção de itens melhorada com tipagem correta */}
-            {itensDisponiveis.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-1">
-                  🏠 Características do imóvel
-                </h4>
-                
-                {/* ✅ Verificar se há itens preenchidos */}
-                {Object.values(itensImovel).some(valor => valor > 0) ? (
-                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-2">
-                    {itensDisponiveis.map((item: ItemImovel) => {
-                      const valor = itensImovel[item.chave];
-                      const valorNumerico = valor || 0;
-                      
-                      if (valorNumerico === 0) return null;
-                      
-                      const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
-                      
-                      return (
-                        <div 
-                          key={item.chave} 
-                          className="flex flex-col items-center bg-blue-50 rounded-lg px-2 py-2 min-w-0 border border-blue-100"
-                        >
-                          <span 
-                            className="text-blue-900 text-xs text-center truncate w-full font-medium" 
-                            title={item.nome} // ✅ CORREÇÃO: Usar 'nome' em vez de 'label'
-                          >
-                            {item.icone} {item.nome} {/* ✅ CORREÇÃO: Incluir ícone e usar 'nome' */}
-                          </span>
-                          <span className="text-sm font-bold text-blue-700 mt-1">
-                            {isQuant ? valorNumerico : "✓"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-gray-500 text-sm">
-                      📋 Nenhuma característica específica informada
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+
+        {/* Área e itens principais sincronizados */}
+        <div className="flex items-center gap-4 mt-3">
+          {/* Área */}
+          <div className="flex items-center gap-1 text-blue-900">
+            <FaRulerCombined className="text-lg" title="Área" />
+            <span className="font-bold text-sm">{imovel.metragem || 0}m²</span>
           </div>
-        )}
-        
-        {/* ✅ Botões de ação melhorados */}
+          {/* Quartos */}
+          <div className="flex items-center gap-1 text-blue-900">
+            <FaBed className="text-lg" title="Quartos" />
+            <span className="font-bold text-sm">{quartos}</span>
+          </div>
+          {/* Banheiros */}
+          <div className="flex items-center gap-1 text-blue-900">
+            <FaBath className="text-lg" title="Banheiros" />
+            <span className="font-bold text-sm">{banheiros}</span>
+          </div>
+          {/* Garagens */}
+          <div className="flex items-center gap-1 text-blue-900">
+            <FaCar className="text-lg" title="Garagens" />
+            <span className="font-bold text-sm">{garagens}</span>
+          </div>
+        </div>
+
+        {/* Botões de ação */}
         <div className="font-poppins flex flex-wrap gap-2 mt-4">
           <Link
             href={`/imoveis/${imovel.id}`}
@@ -207,8 +142,6 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           >
             Ver detalhes
           </Link>
-          
-          {/* ✅ Link do WhatsApp melhorado */}
           {imovel.whatsapp && (
             <a
               href={`https://wa.me/55${imovel.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(

@@ -30,11 +30,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isLinkAtivo = (href: string) => pathname === href;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
-      
-      {/* ========================================= */}
-      {/* HEADER MOBILE SIMPLES (apenas logo) */}
-      {/* ========================================= */}
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-blue-100">
+      {/* HEADER MOBILE */}
       <header className="lg:hidden fixed top-0 left-0 right-0 w-full bg-white border-b border-blue-200 flex items-center justify-center px-4 py-3 shadow-sm z-50">
         <Link href="/" className="flex items-center">
           <Image
@@ -47,10 +44,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Link>
       </header>
 
-      <div className="flex min-h-screen">
-        {/* ========================================= */}
-        {/* MENU LATERAL DESKTOP (100% fixo na tela) */}
-        {/* ========================================= */}
+      <div className="flex min-h-screen w-full">
+        {/* MENU LATERAL DESKTOP */}
         <aside className="hidden lg:block w-64 fixed top-0 left-0 h-screen bg-white border-r border-blue-200 text-gray-800 shadow-sm z-30">
           <div className="flex flex-col h-full">
             {/* Logo */}
@@ -104,19 +99,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </aside>
 
-        {/* ========================================= */}
         {/* CONTEÚDO PRINCIPAL */}
-        {/* ========================================= */}
-        <main className="flex-1 w-full min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20 lg:pt-0 lg:pb-0 lg:ml-64">
-          <div className="w-full h-full">
+        <main className="flex-1 w-full min-h-screen max-w-none px-0 pt-16 pb-20 lg:pt-0 lg:pb-0 lg:ml-64 flex flex-col">
+          <div className="flex-1 flex flex-col w-full h-full">
             {children}
           </div>
         </main>
       </div>
 
-      {/* ========================================= */}
-      {/* MENU INFERIOR MOBILE/TABLET (fixo) */}
-      {/* ========================================= */}
+      {/* MENU INFERIOR MOBILE/TABLET */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
         <div className="flex justify-around items-center py-2">
           {menuLinks.map((link) => (

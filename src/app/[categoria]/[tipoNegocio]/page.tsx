@@ -13,7 +13,6 @@ import { opcoesTipoImovel } from "@/constants/opcoesTipoImovel";
 import { buscarImoveisPorCategoria } from "@/services/buscaImoveis";
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 
-// ✅ TIPOS
 type SetorTipo = "Residencial" | "Comercial" | "Rural";
 type NegocioTipo = "Aluguel" | "Venda";
 
@@ -32,7 +31,6 @@ export default function ImoveisCategoriaPage() {
     [setorCapitalizado]
   );
 
-  // ✅ ESTADO
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [mostrarFiltro, setMostrarFiltro] = useState(false);
@@ -45,7 +43,6 @@ export default function ImoveisCategoriaPage() {
     )
   }));
 
-  // ✅ FUNÇÕES UTILITÁRIAS
   const obterSetor = useCallback((categoria: string): SetorTipo => {
     const map: Record<string, SetorTipo> = {
       residencial: "Residencial",
@@ -63,7 +60,6 @@ export default function ImoveisCategoriaPage() {
     return map[tipo.toLowerCase()] || "Aluguel";
   }, []);
 
-  // ✅ FILTRO LOCAL OTIMIZADO
   const aplicarFiltroLocal = useCallback((imoveis: Imovel[], filtros: Record<string, string>): Imovel[] => {
     return imoveis.filter(imovel => {
       // Tipo de imóvel
@@ -94,7 +90,6 @@ export default function ImoveisCategoriaPage() {
           ) {
             const valorFiltro = Number(valor);
             const valorImovel = Number(itensImovel[chave] || 0);
-            // Quantitativos: >=, Booleanos: ===
             if (ITENS_QUANTITATIVOS.includes(chave)) {
               if (valorImovel < valorFiltro) return false;
             } else {
@@ -107,7 +102,6 @@ export default function ImoveisCategoriaPage() {
     });
   }, []);
 
-  // ✅ BUSCA DE IMÓVEIS OTIMIZADA
   const buscarImoveis = useCallback(async () => {
     setCarregando(true);
 
@@ -121,7 +115,6 @@ export default function ImoveisCategoriaPage() {
       const imoveisFinais = aplicarFiltroLocal(imoveisBrutos, filtros);
       setImoveis(imoveisFinais);
 
-      // ✅ Log simplificado
       console.log(`✅ Encontrados ${imoveisFinais.length} imóveis para ${categoriaParam}/${tipoNegocioParam}`);
 
     } catch (error) {
@@ -132,7 +125,6 @@ export default function ImoveisCategoriaPage() {
     }
   }, [categoriaParam, tipoNegocioParam, filtros, aplicarFiltroLocal]);
 
-  // ✅ LIMPAR FILTROS
   const limparFiltros = useCallback(() => {
     setFiltros({
       tipoImovel: "",
@@ -144,7 +136,6 @@ export default function ImoveisCategoriaPage() {
     });
   }, [itensQuantitativos]);
 
-  // ✅ EFFECTS
   useEffect(() => {
     buscarImoveis();
   }, [buscarImoveis]);
@@ -152,20 +143,18 @@ export default function ImoveisCategoriaPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-white">
       <Header />
-
-      {/* ✅ MAIN CONTENT */}
       <main className="flex-1 py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
 
-          {/* ✅ FILTROS */}
-          <div className="mb-8 lg:mb-12">
+          {/* FILTROS */}
+          <div className="mb-2 lg:mb-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">
+              <h2 className="font-poppins text-xl lg:text-3xl font-bold text-gray-800">
                 Explore os Imóveis
               </h2>
               <button
                 onClick={() => setMostrarFiltro(!mostrarFiltro)}
-                className="flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl cursor-pointer"
+                className="font-poppins flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl cursor-pointer"
               >
                 <FiFilter size={20} />
                 Filtrar
@@ -218,13 +207,13 @@ export default function ImoveisCategoriaPage() {
           ) : (
             <div>
               <div className="flex justify-between items-center mb-8">
-                <p className="text-gray-600 text-lg">
+                <p className="font-inter text-gray-600 text-normal">
                   <span className="font-semibold">{imoveis.length}</span>
                   {imoveis.length === 1 ? ' imóvel encontrado' : ' imóveis encontrados'}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {imoveis.map((imovel) => (
                   <ImovelCard key={imovel.id} imovel={imovel} />
                 ))}

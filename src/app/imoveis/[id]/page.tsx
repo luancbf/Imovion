@@ -279,16 +279,18 @@ export default function ImovelPage() {
   return (
     <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-blue-100 to-white relative">
       <Header />
-      <main className="flex-1 flex flex-col items-center py-8 px-2 relative z-10">
-        <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border border-blue-100 p-4 sm:p-8">
+      <main className="flex-1 flex flex-col items-center lg:py-8 relative z-10">
+        <div className="w-full max-w-4xl mx-auto bg-white lg:rounded-3xl shadow-xl border border-blue-100 p-4 sm:p-8">
+          {/* Carousel de imagens */}
           <ImovelCarousel
             imagens={imovel.imagens || ["/imoveis/sem-imagem.jpg"]}
             cidade={imovel.cidade}
             tipo={imovel.tipoimovel}
-            altura="h-72 sm:h-105"
+            altura="h-60 sm:h-95"
             onImageClick={abrirModal}
           />
 
+          {/* Badge do patrocinador */}
           {imovel.patrocinadorid && patrocinadorNome && (
             <div className="mb-6 flex justify-start">
               <PatrocinadorBadge 
@@ -298,6 +300,7 @@ export default function ImovelPage() {
             </div>
           )}
 
+          {/* Detalhes do imóvel (valor, tipo, metragem, etc) */}
           <ImovelDetalhes
             tipoNegocio={negocio}
             valor={imovel.valor || 0}
@@ -309,12 +312,11 @@ export default function ImovelPage() {
             descricao={imovel.descricao || ""}
           />
 
-          {/* ✅ SEÇÃO DE CARACTERÍSTICAS */}
+          {/* Características do imóvel */}
           <section className="mt-8">
             <h4 className="font-poppins font-semibold text-blue-700 mb-6 text-lg sm:text-2xl text-center flex items-center justify-center gap-2">
               🏠 Características do Imóvel
             </h4>
-            
             {itensDisponiveis.length === 0 ? (
               <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
                 <div className="text-4xl mb-3">📋</div>
@@ -333,80 +335,71 @@ export default function ImovelPage() {
                 </p>
               </div>
             ) : (
-              <>
-                {/* ✅ Separar itens quantitativos dos booleanos */}
-                <div className="space-y-6">
-                  
-                  {/* Itens Quantitativos */}
-                  {(() => {
-                    const itensQuant = itensComValor.filter(item => 
-                      ITENS_QUANTITATIVOS.includes(item.chave)
-                    );
-                    
-                    if (itensQuant.length === 0) return null;
-                    
-                    return (
-                      <div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {itensQuant.map((item) => {
-                            const valor = itensImovel[item.chave];
-                            const valorNumerico = typeof valor === 'number' ? valor : Number(valor) || 0;
-                            
-                            return (
-                              <div
-                                key={item.chave}
-                                className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200"
-                              >
-                                <div className="text-center space-y-2">
-                                  <div className="text-3xl">{item.icone}</div>
-                                  <span className="text-blue-900 font-medium text-sm block leading-tight">
-                                    {item.nome}
-                                  </span>
-                                  <div className="bg-blue-600 text-white px-3 py-1 rounded-lg font-bold text-lg">
-                                    {valorNumerico}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Itens Booleanos */}
-                  {(() => {
-                    const itensBool = itensComValor.filter(item => 
-                      !ITENS_QUANTITATIVOS.includes(item.chave)
-                    );
-                    
-                    if (itensBool.length === 0) return null;
-                    
-                    return (
-                      <div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                          {itensBool.map((item) => (
+              <div className="space-y-6">
+                {/* Itens Quantitativos */}
+                {(() => {
+                  const itensQuant = itensComValor.filter(item => 
+                    ITENS_QUANTITATIVOS.includes(item.chave)
+                  );
+                  if (itensQuant.length === 0) return null;
+                  return (
+                    <div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {itensQuant.map((item) => {
+                          const valor = itensImovel[item.chave];
+                          const valorNumerico = typeof valor === 'number' ? valor : Number(valor) || 0;
+                          return (
                             <div
                               key={item.chave}
-                              className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 border border-green-200 hover:shadow-md transition-all duration-200"
+                              className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 hover:shadow-md transition-all duration-200"
                             >
                               <div className="text-center space-y-2">
-                                <div className="text-2xl">{item.icone}</div>
-                                <span className="text-green-900 font-medium text-xs block leading-tight">
+                                <div className="text-3xl">{item.icone}</div>
+                                <span className="text-blue-900 font-medium text-sm block leading-tight">
                                   {item.nome}
                                 </span>
-                                <div className="bg-green-600 text-white px-2 py-1 rounded-lg font-bold text-sm">
-                                  ✓
+                                <div className="bg-blue-600 text-white px-3 py-1 rounded-lg font-bold text-lg">
+                                  {valorNumerico}
                                 </div>
                               </div>
                             </div>
-                          ))}
-                        </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })()}
-                </div>
-              </>
+                    </div>
+                  );
+                })()}
+
+                {/* Itens Booleanos */}
+                {(() => {
+                  const itensBool = itensComValor.filter(item => 
+                    !ITENS_QUANTITATIVOS.includes(item.chave)
+                  );
+                  if (itensBool.length === 0) return null;
+                  return (
+                    <div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                        {itensBool.map((item) => (
+                          <div
+                            key={item.chave}
+                            className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 border border-green-200 hover:shadow-md transition-all duration-200"
+                          >
+                            <div className="text-center space-y-2">
+                              <div className="text-2xl">{item.icone}</div>
+                              <span className="text-green-900 font-medium text-xs block leading-tight">
+                                {item.nome}
+                              </span>
+                              <div className="bg-green-600 text-white px-2 py-1 rounded-lg font-bold text-sm">
+                                ✓
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             )}
           </section>
 
@@ -417,9 +410,8 @@ export default function ImovelPage() {
                 href={whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-3 w-full sm:w-auto text-center bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-2xl font-bold text-lg sm:text-xl shadow-lg hover:scale-105 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer font-poppins"
+                className="font-poppins inline-flex items-center justify-center gap-3 w-full sm:w-auto text-center bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-2xl font-bold text-lg sm:text-xl shadow-lg hover:scale-105 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer font-poppins"
               >
-                <span className="text-2xl">💬</span>
                 Falar no WhatsApp
               </a>
             ) : (

@@ -12,14 +12,14 @@ type ImovelCarouselProps = {
   cidade?: string;
   tipo?: string;
   altura?: string;
-  onImageClick?: (index: number) => void; // Adiciona prop para clique
+  onImageClick?: (index: number) => void;
 };
 
 export default function ImovelCarousel({
   imagens,
   cidade,
   tipo,
-  altura = "h-72 md:h-96",
+  altura = "h-60 md:h-90",
   onImageClick,
 }: ImovelCarouselProps) {
   return (
