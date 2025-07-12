@@ -44,13 +44,8 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
     }
   };
 
-  // ✅ NOVO: Handler otimizado para edição com feedback visual
   const handleEdit = (patrocinador: Patrocinador) => {
-    // Chamar a função de edição do componente pai
     onEdit?.(patrocinador);
-    
-    // ✅ NOVO: Não fazer scroll aqui, deixar o PatrocinadorForm fazer
-    // O scroll será feito pelo useEffect do PatrocinadorForm
   };
 
   // Filtros
@@ -194,7 +189,6 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
                 >
                   <div className="relative">
                     <FiEdit2 size={18} />
-                    {/* ✅ NOVO: Ícone de seta indicando scroll para cima */}
                     <FiArrowUp 
                       size={10} 
                       className="absolute -top-1 -right-1 text-amber-500 opacity-0 group-hover/edit:opacity-100 transition-opacity animate-bounce" 

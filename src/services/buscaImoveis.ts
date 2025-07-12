@@ -1,12 +1,10 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { Imovel } from "@/types/Imovel";
 
-// ✅ CONFIGURAÇÃO SUPABASE
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
 const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
-// ✅ INTERFACE PARA DADOS DO BANCO
 interface ImovelBanco {
   id: string;
   cidade: string;
@@ -16,8 +14,8 @@ interface ImovelBanco {
   metragem: number;
   descricao: string;
   tipoimovel: string;
-  tiponegocio: string;    // Aluguel/Venda
-  setornegocio: string;   // Residencial/Comercial/Rural
+  tiponegocio: string;
+  setornegocio: string;
   whatsapp: string;
   patrocinador: string;
   imagens: string[];
@@ -27,7 +25,6 @@ interface ImovelBanco {
   patrocinadorid: string;
 }
 
-// ✅ CONSTANTES
 const FILTROS_QUANTITATIVOS = [
   "quartos", "suites", "banheiros", "garagens", 
   "salas", "hectares", "casasFuncionarios", "galpoes"
@@ -37,14 +34,12 @@ const CAMPOS_BASICOS = [
   "cidade", "bairro", "tipoImovel"
 ] as const;
 
-// ✅ UTILITÁRIOS
 const capitalizarString = (str: string): string => 
   str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
 const isNumerico = (valor: string): boolean => 
   valor !== "" && !isNaN(Number(valor));
 
-// ✅ MAPEAMENTO DE DADOS (SEM INVERSÃO)
 const mapearImovelDoBanco = (item: ImovelBanco): Imovel => ({
   id: item.id,
   cidade: item.cidade ?? "",
@@ -65,7 +60,6 @@ const mapearImovelDoBanco = (item: ImovelBanco): Imovel => ({
   patrocinadorid: item.patrocinadorid ?? "",
 });
 
-// ✅ FUNÇÃO PRINCIPAL DE BUSCA
 export async function buscarImoveis(
   filtros: Record<string, string>,
   setor: string,
@@ -79,7 +73,6 @@ export async function buscarImoveis(
       .eq("tiponegocio", tipoNegocio)
       .eq("ativo", true);
 
-    // Filtros básicos
     CAMPOS_BASICOS.forEach(campo => {
       const valor = filtros[campo];
       if (valor) {
@@ -88,7 +81,6 @@ export async function buscarImoveis(
       }
     });
 
-    // Valor e metragem (faixa)
     if (filtros.valorMin && isNumerico(filtros.valorMin)) {
       query = query.gte("valor", Number(filtros.valorMin));
     }
@@ -102,7 +94,6 @@ export async function buscarImoveis(
       query = query.lte("metragem", Number(filtros.metragemMax));
     }
 
-    // Filtros quantitativos e booleanos (JSONB)
     Object.entries(filtros).forEach(([chave, valor]) => {
       if (
         !['tipoImovel', 'cidade', 'bairro', 'valor', 'valorMin', 'valorMax', 'metragem', 'metragemMin', 'metragemMax'].includes(chave) &&
@@ -131,7 +122,6 @@ export async function buscarImoveis(
   }
 }
 
-// ✅ BUSCAR POR CATEGORIA (OTIMIZADA)
 export async function buscarImoveisPorCategoria(
   categoria: string, 
   tipoNegocio: string,
@@ -150,7 +140,6 @@ export async function buscarImoveisPorCategoria(
   return buscarImoveis(filtros, setorCapitalizado, tipoCapitalizado);
 }
 
-// ✅ BUSCAR IMÓVEIS EM DESTAQUE
 export async function buscarImoveisDestaque(limite: number = 8): Promise<Imovel[]> {
   try {
     const { data, error } = await supabase
@@ -173,7 +162,6 @@ export async function buscarImoveisDestaque(limite: number = 8): Promise<Imovel[
   }
 }
 
-// ✅ BUSCAR IMÓVEL POR ID
 export async function buscarImovelPorId(id: string): Promise<Imovel | null> {
   if (!id) return null;
 
@@ -198,7 +186,6 @@ export async function buscarImovelPorId(id: string): Promise<Imovel | null> {
   }
 }
 
-// ✅ BUSCAR CIDADES DISPONÍVEIS
 export async function buscarCidadesDisponiveis(): Promise<string[]> {
   try {
     const { data, error } = await supabase
@@ -221,7 +208,6 @@ export async function buscarCidadesDisponiveis(): Promise<string[]> {
   }
 }
 
-// ✅ BUSCAR BAIRROS POR CIDADE
 export async function buscarBairrosPorCidade(cidade: string): Promise<string[]> {
   if (!cidade) return [];
 
@@ -247,7 +233,6 @@ export async function buscarBairrosPorCidade(cidade: string): Promise<string[]> 
   }
 }
 
-// ✅ ESTATÍSTICAS RÁPIDAS
 export async function buscarEstatisticas(): Promise<{
   total: number;
   porSetor: Record<string, number>;
@@ -270,15 +255,12 @@ export async function buscarEstatisticas(): Promise<{
     const cidades = new Set<string>();
 
     data.forEach(item => {
-      // Contar por setor
       const setor = item.setornegocio || "Outros";
       porSetor[setor] = (porSetor[setor] || 0) + 1;
 
-      // Contar por tipo
       const tipo = item.tiponegocio || "Outros";
       porTipo[tipo] = (porTipo[tipo] || 0) + 1;
 
-      // Coletar cidades
       if (item.cidade) cidades.add(item.cidade);
     });
 

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { PatrocinioConfig } from '@/types/cadastrar-patrocinador';
 
-// ✅ Configuração das 24 posições disponíveis
+// Configuração das 24 posições disponíveis
 const availablePatrocinioPositions = [
   { position: 0, name: 'Posição 1', description: 'Primeira posição', location: 'Linha 1 - Coluna 1' },
   { position: 1, name: 'Posição 2', description: 'Segunda posição', location: 'Linha 1 - Coluna 2' },
@@ -23,7 +23,7 @@ const availablePatrocinioPositions = [
   { position: 15, name: 'Posição 16', description: 'Décima sexta posição', location: 'Linha 3 - Coluna 4' }
 ];
 
-// ✅ Tipo para dados do Supabase
+// Tipo para dados do Supabase
 interface SupabasePatrocinioConfig {
   id: string;
   position: number;
@@ -47,7 +47,7 @@ interface SupabasePatrocinioConfig {
   } | null;
 }
 
-// ✅ Tipo para dados de salvamento
+// Tipo para dados de salvamento
 interface SavePatrocinioData {
   position: number;
   image_name?: string | null;
@@ -65,7 +65,7 @@ export const usePatrocinioConfig = () => {
   const [loading, setLoading] = useState(false);
   const [uploadingPositions, setUploadingPositions] = useState<Record<number, boolean>>({});
 
-  // ✅ INFORMAÇÕES DA POSIÇÃO
+  // INFORMAÇÕES DA POSIÇÃO
   const getPatrocinioPositionInfo = useCallback((position: number) => {
     return availablePatrocinioPositions.find(pos => pos.position === position) || {
       position,
@@ -75,7 +75,7 @@ export const usePatrocinioConfig = () => {
     };
   }, []);
 
-  // ✅ FUNÇÃO AUXILIAR PARA CRIAR MOCK CONFIGS
+  // FUNÇÃO AUXILIAR PARA CRIAR MOCK CONFIGS
   const createMockConfigs = useCallback((): PatrocinioConfig[] => {
     return availablePatrocinioPositions.map((positionConfig) => ({
       id: `mock-${positionConfig.position}`,
@@ -93,16 +93,15 @@ export const usePatrocinioConfig = () => {
     }));
   }, []);
 
-  // ✅ CARREGAR CONFIGURAÇÕES
+  // CARREGAR CONFIGURAÇÕES
   const loadPatrocinioConfigs = useCallback(async () => {
-    console.log('📥 [PATROCINIO] Iniciando carregamento...');
     setLoading(true);
     
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!
       );
 
       let selectFields = `
@@ -149,7 +148,6 @@ export const usePatrocinioConfig = () => {
           `;
         }
       } catch {
-        console.log('⚠️ [PATROCINIO] Algumas colunas opcionais não existem');
       }
 
       const { data, error } = await supabase
@@ -158,7 +156,6 @@ export const usePatrocinioConfig = () => {
         .order('position');
       
       if (error) {
-        console.error('❌ [PATROCINIO] Erro ao carregar do banco:', error);
         const mockConfigs = createMockConfigs();
         setPatrocinioConfigs(mockConfigs);
         return;
@@ -256,8 +253,8 @@ export const usePatrocinioConfig = () => {
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!
       );
 
       const saveData: SavePatrocinioData = {
@@ -281,7 +278,6 @@ export const usePatrocinioConfig = () => {
           saveData.is_clickable = config.is_clickable ?? false;
         }
       } catch {
-        // Ignorar se colunas não existem
       }
 
       if (config.id && !config.id.startsWith('mock-')) {
@@ -361,7 +357,7 @@ export const usePatrocinioConfig = () => {
     }
   }, [patrocinioConfigs]);
 
-  // ✅ DELETAR CONFIGURAÇÃO
+  // DELETAR CONFIGURAÇÃO
   const deletePatrocinioConfig = useCallback(async (position: number): Promise<void> => {
     const config = patrocinioConfigs.find(c => c.position === position);
     if (!config?.id || config.id.startsWith('mock-')) {
@@ -371,8 +367,8 @@ export const usePatrocinioConfig = () => {
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!
       );
 
       const { error } = await supabase
@@ -408,7 +404,7 @@ export const usePatrocinioConfig = () => {
     }
   }, [patrocinioConfigs]);
 
-  // ✅ RESETAR CONFIGURAÇÃO
+  // RESETAR CONFIGURAÇÃO
   const resetPatrocinioConfig = useCallback((position: number) => {
     setPatrocinioConfigs(prev => 
       prev.map(config => 

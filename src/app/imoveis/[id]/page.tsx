@@ -13,8 +13,8 @@ import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import ImovelModal from "@/components/imovel/ImovelModal";
 import type { Imovel } from "@/types/Imovel";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
 const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 function formatarTexto(texto?: string) {
@@ -31,9 +31,7 @@ function negocioFormatado(tipoNegocio?: string) {
   return txt.charAt(0).toUpperCase() + txt.slice(1);
 }
 
-// ✅ FUNÇÃO PARA DETERMINAR O SETOR CORRETO
 function determinarSetor(imovel: Imovel): string {
-  // Inferir pelo tipo de imóvel
   const tipo = imovel.tipoimovel?.toLowerCase() || "";
   
   if (tipo.includes("casa") || tipo.includes("apartamento") || tipo.includes("residencial")) {
@@ -48,7 +46,6 @@ function determinarSetor(imovel: Imovel): string {
     return "Rural";
   }
   
-  // Default para Residencial se não conseguir determinar
   return "Residencial";
 }
 
@@ -102,7 +99,6 @@ export default function ImovelPage() {
     buscarImovel();
   }, [id]);
 
-  // Buscar nome do patrocinador
   useEffect(() => {
     async function buscarNomePatrocinador() {
       if (!imovel?.patrocinadorid) return;
@@ -128,7 +124,6 @@ export default function ImovelPage() {
     buscarNomePatrocinador();
   }, [imovel?.patrocinadorid]);
 
-  // Buscar outros imóveis do patrocinador
   useEffect(() => {
     async function buscarImoveisPatrocinador() {
       if (!imovel?.patrocinadorid) {
@@ -195,7 +190,6 @@ export default function ImovelPage() {
     );
   }
 
-  // WhatsApp
   const whatsappNumber = imovel.whatsapp 
     ? imovel.whatsapp.replace(/\D/g, "").slice(-11)
     : "";
@@ -210,29 +204,23 @@ export default function ImovelPage() {
       )}`
     : null;
 
-  // ✅ CORREÇÃO: Determinar setor correto
   const setorReal = determinarSetor(imovel);
   const negocio = negocioFormatado(imovel.tiponegocio);
   
-  // ✅ CORREÇÃO: Buscar itens disponíveis com setor correto
   const itensDisponiveis = setorReal && ITENS_POR_SETOR[setorReal]
     ? ITENS_POR_SETOR[setorReal]
     : [];
   
-  // ✅ CORREÇÃO: Parse mais robusto dos itens do banco
   let itensImovel: Record<string, string | number | boolean> = {};
   if (imovel.itens) {
     try {
-      // Para JSONB do PostgreSQL, pode vir como objeto ou string
       if (typeof imovel.itens === 'object' && imovel.itens !== null) {
-        // Se já é objeto, usar diretamente
         Object.entries(imovel.itens).forEach(([key, value]) => {
           if (value !== null && value !== undefined) {
             itensImovel[key] = value as string | number | boolean;
           }
         });
       } else if (typeof imovel.itens === 'string') {
-        // Se é string, parsear JSON
         const parsed = JSON.parse(imovel.itens);
         if (parsed && typeof parsed === 'object') {
           Object.entries(parsed).forEach(([key, value]) => {
@@ -247,19 +235,15 @@ export default function ImovelPage() {
     }
   }
 
-  // ✅ CORREÇÃO: Filtrar itens com verificação mais tolerante
   const itensComValor = itensDisponiveis.filter(item => {
     const valor = itensImovel[item.chave];
     
-    // ✅ Verificação mais tolerante
     if (valor === undefined || valor === null || valor === '') return false;
     
-    // Para números - aceitar qualquer número > 0
     if (typeof valor === 'number') {
       return valor > 0;
     }
     
-    // Para strings - aceitar números > 0 ou strings não vazias
     if (typeof valor === 'string') {
       const numValue = Number(valor);
       if (!isNaN(numValue)) {
@@ -268,7 +252,6 @@ export default function ImovelPage() {
       return valor.trim() !== '' && valor !== '0' && valor !== 'false';
     }
     
-    // Para booleanos - aceitar apenas true
     if (typeof valor === 'boolean') {
       return valor === true;
     }

@@ -19,8 +19,8 @@ interface PatrocinioConfig {
   } | null;
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
 const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 export default function Patrocinios() {
@@ -31,7 +31,6 @@ export default function Patrocinios() {
     async function fetchPatrocinios() {
       try {
         setLoading(true);
-        console.log('🔍 [FETCH] Iniciando busca de patrocínios...');
 
         const { data, error } = await supabase
           .from('patrocinio_configs')
@@ -53,15 +52,11 @@ export default function Patrocinios() {
           .order('display_order', { ascending: true });
 
         if (error) {
-          console.error('❌ [FETCH ERROR]:', error);
           setPatrocinios([]);
           return;
         }
 
-        console.log('✅ [FETCH SUCCESS] Dados recebidos:', data);
-
         if (!data || data.length === 0) {
-          console.log('⚠️ [NO DATA] Nenhum patrocínio encontrado');
           setPatrocinios([]);
           return;
         }
@@ -80,11 +75,9 @@ export default function Patrocinios() {
               : item.patrocinadores
           }));
 
-        console.log('📊 [FILTERED] Patrocínios válidos:', validPatrocinios.length);
         setPatrocinios(validPatrocinios);
 
-      } catch (error) {
-        console.error('❌ [CATCH] Erro ao buscar patrocínios:', error);
+      } catch {
         setPatrocinios([]);
       } finally {
         setLoading(false);
@@ -112,11 +105,8 @@ export default function Patrocinios() {
   }
 
   if (patrocinios.length === 0) {
-    console.log('📭 [RENDER] Nenhum patrocínio para exibir');
     return null;
   }
-
-  console.log('🎨 [RENDER] Renderizando', patrocinios.length, 'patrocínios');
 
   return (
     <section className="px-4">
@@ -142,12 +132,10 @@ export default function Patrocinios() {
                   className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, (max-width: 1536px) 16vw, 12vw"
                   onError={(e) => {
-                    console.error('❌ [IMAGE ERROR] Erro ao carregar:', patrocinio.image_url);
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                   }}
                   onLoad={() => {
-                    console.log('✅ [IMAGE LOADED]:', patrocinio.image_url);
                   }}
                 />
               </div>

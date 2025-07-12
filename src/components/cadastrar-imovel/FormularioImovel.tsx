@@ -12,11 +12,10 @@ import { formatarParaMoeda, formatarMetragem, formatarTelefone } from "@/utils/f
 import type { FormularioImovelProps, ImovelEdicao } from "@/types/formularios";
 
 const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
 );
 
-// ✅ Constantes extraídas
 const FORMULARIO_INICIAL = {
   cidade: "",
   bairro: "",
@@ -162,9 +161,7 @@ export default function FormularioImovel({
         if (typeof patrocinadorSelecionado.telefone === "string" && patrocinadorSelecionado.telefone.trim().length > 0) {
           telefonePatrocinador = patrocinadorSelecionado.telefone;
         }
-        // Se quiser usar outros campos, adicione aqui (whatsapp, celular)
       }
-      // Atualiza o campo whatsapp se estiver vazio ou diferente do telefone do patrocinador selecionado
       if (
         telefonePatrocinador &&
         (formulario.whatsapp === "" || formulario.whatsapp !== telefonePatrocinador)

@@ -53,7 +53,6 @@ export default function Slider({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Remova 'type' do array de dependências do useMemo
   const shuffledBanners = useMemo(() => (
     banners.length ? shuffleArray(banners) : []
   ), [banners]);
@@ -87,8 +86,6 @@ export default function Slider({
         setError('Erro ao carregar slider');
         setBanners([]);
       } else {
-        // Tipagem explícita para o retorno do Supabase
-        // Se quiser, crie uma interface para o retorno do Supabase
         const processed = (data ?? []).map((config: Record<string, unknown>) => {
           const patrocinador = Array.isArray(config.patrocinadores)
             ? (config.patrocinadores[0] as { slug?: string; nome?: string })

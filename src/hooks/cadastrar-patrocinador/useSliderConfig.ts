@@ -4,15 +4,12 @@ import { useState, useCallback } from 'react';
 import { SliderBanner } from '@/types/cadastrar-patrocinador';
 
 const availableSliderImages = [
-  // 6 Banners Principais
   { name: 'principal1', type: 'principal' },
   { name: 'principal2', type: 'principal' },
   { name: 'principal3', type: 'principal' },
   { name: 'principal4', type: 'principal' },
   { name: 'principal5', type: 'principal' },
   { name: 'principal6', type: 'principal' },
-
-  // 6 Banners Secundários
   { name: 'secundario1', type: 'secundario' },
   { name: 'secundario2', type: 'secundario' },
   { name: 'secundario3', type: 'secundario' },
@@ -38,14 +35,13 @@ export const useSliderConfig = () => {
 
   // CARREGAR BANNERS
   const loadSliderBanners = useCallback(async () => {
-    console.log('📥 [SLIDER] Iniciando carregamento dos banners (12 imagens)...');
     setLoading(true);
     
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!
       );
 
       const { data, error } = await supabase
@@ -60,9 +56,7 @@ export const useSliderConfig = () => {
         `)
         .order('order_index');
       
-      if (error) {
-        console.error('❌ [SLIDER] Erro ao carregar do banco:', error);
-        console.log('🔄 [SLIDER] Criando banners mock...');
+      if (error || !data) {
 
         const mockBanners: SliderBanner[] = availableSliderImages.map((imageConfig, index) => ({
           id: `mock-${index}`,
@@ -82,42 +76,28 @@ export const useSliderConfig = () => {
         return;
       }
       
-      console.log('📊 [SLIDER] Dados do banco:', data);
-      
-      // Mapear dados existentes
-      const bannersMap = new Map(data?.map(b => [b.image_name, b]) || []);
-      const allBanners: SliderBanner[] = [];
-      
-      // Garantir que todos os 12 banners existam
-      availableSliderImages.forEach((imageConfig, index) => {
+      const bannersMap = new Map(data.map(b => [b.image_name, b]));
+      const allBanners: SliderBanner[] = availableSliderImages.map((imageConfig, index) => {
         const existingBanner = bannersMap.get(imageConfig.name);
-        if (existingBanner) {
-          console.log(`✅ [SLIDER] Banner existente: ${imageConfig.name} ID: ${existingBanner.id}`);
-          allBanners.push(existingBanner);
-        } else {
-          console.log(`➕ [SLIDER] Criando banner vazio: ${imageConfig.name}`);
-          allBanners.push({
-            image_name: imageConfig.name,
-            image_url: null,
-            image_alt: null,
-            patrocinador_id: null,
-            is_active: false,
-            is_clickable: false,
-            order_index: index,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            patrocinadores: null
-          });
-        }
+        return existingBanner
+          ? existingBanner
+          : {
+              image_name: imageConfig.name,
+              image_url: null,
+              image_alt: null,
+              patrocinador_id: null,
+              is_active: false,
+              is_clickable: false,
+              order_index: index,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              patrocinadores: null
+            };
       });
       
-      console.log('📋 [SLIDER] Total de banners:', allBanners.length);
       setSliderBanners(allBanners);
       
-    } catch (error) {
-      console.error('❌ [SLIDER] Erro no carregamento:', error);
-      
-      // Fallback para mock com 12 imagens
+    } catch {
       const mockBanners: SliderBanner[] = availableSliderImages.map((imageConfig, index) => ({
         id: `mock-${index}`,
         image_name: imageConfig.name,
@@ -132,7 +112,6 @@ export const useSliderConfig = () => {
         patrocinadores: null
       }));
       
-      console.log('🔄 [SLIDER MOCK] Usando dados mock com 12 banners');
       setSliderBanners(mockBanners);
       
     } finally {
@@ -140,9 +119,8 @@ export const useSliderConfig = () => {
     }
   }, []);
 
-  // ✅ ATUALIZAR BANNER NO ESTADO
+  // ATUALIZAR BANNER NO ESTADO
   const updateSliderBanner = useCallback((imageName: string, field: keyof SliderBanner, value: string | boolean | number | null) => {
-    console.log(`🔄 [SLIDER UPDATE] ${imageName}.${field}:`, value);
     setSliderBanners(prev => 
       prev.map(banner => 
         banner.image_name === imageName 
@@ -156,7 +134,7 @@ export const useSliderConfig = () => {
     );
   }, []);
 
-  // ✅ SALVAR BANNER
+  // SALVAR BANNER
   const saveSliderBanner = useCallback(async (imageName: string): Promise<void> => {
     const banner = sliderBanners.find(b => b.image_name === imageName);
     if (!banner) throw new Error('Banner não encontrado');
@@ -164,8 +142,8 @@ export const useSliderConfig = () => {
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!
       );
 
       const saveData = {
@@ -188,17 +166,13 @@ export const useSliderConfig = () => {
 
         if (error) throw new Error(`Erro ao atualizar: ${error.message}`);
       } else {
-        // Upsert e retorna o novo registro
         const { data, error } = await supabase
           .from('slider_banners')
           .upsert(saveData, { onConflict: 'image_name' })
           .select();
 
-        console.log('UPsert retorno:', { data, error, saveData });
-
         if (error) throw new Error(`Erro ao salvar: ${error.message}`);
 
-        // Atualize o estado local com o novo id
         if (data && data.length > 0) {
           setSliderBanners(prev =>
             prev.map(b =>
@@ -212,7 +186,6 @@ export const useSliderConfig = () => {
 
       await loadSliderBanners();
     } catch (error: unknown) {
-      console.error('❌ [SLIDER SAVE ERROR]:', error);
       throw new Error(
         error instanceof Error && error.message
           ? error.message
@@ -221,39 +194,35 @@ export const useSliderConfig = () => {
     }
   }, [sliderBanners, loadSliderBanners]);
 
-  // ✅ SALVAR TODOS OS BANNERS EDITADOS
+  // SALVAR TODOS OS BANNERS EDITADOS
   const saveAllSliderBanners = useCallback(async () => {
     for (const banner of sliderBanners) {
       if (banner.image_url || banner.patrocinador_id || banner.is_clickable) {
         try {
           await saveSliderBanner(banner.image_name);
-        } catch (error) {
-          console.error('❌ [SLIDER SAVE ERROR]:', error);
+        } catch {
         }
       }
     }
-    console.log('✅ [SLIDER] Salvamento manual concluído');
   }, [sliderBanners, saveSliderBanner]);
 
-  // ✅ CONTROLE DE UPLOAD
+  // CONTROLE DE UPLOAD
   const setImageUploading = useCallback((imageName: string, uploading: boolean) => {
     setUploadingImages(prev => ({ ...prev, [imageName]: uploading }));
   }, []);
 
-  // ✅ DELETAR BANNER
+  // DELETAR BANNER
   const deleteSliderBanner = useCallback(async (imageName: string): Promise<void> => {
     const banner = sliderBanners.find(b => b.image_name === imageName);
     if (!banner?.id || banner.id.startsWith('mock-')) {
       throw new Error('Banner não encontrado ou não salvo');
     }
 
-    console.log(`🗑️ [SLIDER DELETE] Deletando banner: ${imageName} ID: ${banner.id}`);
-
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!
       );
 
       const { error } = await supabase
@@ -262,22 +231,17 @@ export const useSliderConfig = () => {
         .eq('id', banner.id);
 
       if (error) {
-        console.error('❌ [SLIDER DELETE ERROR]:', error);
         throw new Error(`Erro ao excluir: ${error.message}`);
       }
-      
-      console.log('✅ [SLIDER DELETE SUCCESS]');
 
       await loadSliderBanners();
     } catch (error) {
-      console.error('❌ [SLIDER DELETE CATCH]:', error);
       throw error;
     }
   }, [sliderBanners, loadSliderBanners]);
 
-  // ✅ RESETAR BANNER
+  // RESETAR BANNER
   const resetSliderBanner = useCallback((imageName: string) => {
-    console.log(`🔄 [SLIDER RESET] Resetando banner: ${imageName}`);
     
     setSliderBanners(prev => 
       prev.map(banner => 
@@ -295,7 +259,7 @@ export const useSliderConfig = () => {
     );
   }, []);
 
-  // ✅ VALIDAÇÃO
+  // VALIDAÇÃO
   const validateSliderBanner = useCallback((imageName: string): { valid: boolean; error?: string } => {
     const banner = sliderBanners.find(b => b.image_name === imageName);
     if (!banner) {
@@ -305,7 +269,7 @@ export const useSliderConfig = () => {
     return { valid: true };
   }, [sliderBanners]);
 
-  // ✅ FILTROS E UTILITÁRIOS
+  // FILTROS E UTILITÁRIOS
   const getPrincipalBanners = useCallback(() => {
     return sliderBanners.filter(banner => banner.image_name.startsWith('principal'));
   }, [sliderBanners]);

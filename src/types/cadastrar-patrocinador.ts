@@ -60,7 +60,6 @@ export interface PatrocinioPosition {
 }
 
 export const availableSliderImages: SliderImageInfo[] = [
-  // 6 Banners Principais (slider superior)
   {name: 'principal1', title: 'Banner Principal 1', description: 'Primeira imagem do slider principal'},
   {name: 'principal2', title: 'Banner Principal 2', description: 'Segunda imagem do slider principal'},
   {name: 'principal3', title: 'Banner Principal 3', description: 'Terceira imagem do slider principal'},
@@ -68,7 +67,6 @@ export const availableSliderImages: SliderImageInfo[] = [
   {name: 'principal5', title: 'Banner Principal 5', description: 'Quinta imagem do slider principal'},
   {name: 'principal6', title: 'Banner Principal 6', description: 'Sexta imagem do slider principal'},
   
-  // 6 Banners Secundários (slider inferior)
   {name: 'secundario1', title: 'Banner Secundário 1', description: 'Primeira imagem do slider secundário'},
   {name: 'secundario2', title: 'Banner Secundário 2', description: 'Segunda imagem do slider secundário'},
   {name: 'secundario3', title: 'Banner Secundário 3', description: 'Terceira imagem do slider secundário'},

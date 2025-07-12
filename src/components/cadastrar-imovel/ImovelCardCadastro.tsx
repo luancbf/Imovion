@@ -68,7 +68,6 @@ export default function ImovelCardCadastro({
 }: ImovelCardProps) {
   const [exibirMais, setExibirMais] = useState(false);
 
-  // Fallbacks para compatibilidade
   const tipoImovel = imovel.tipoImovel || imovel.tipoimovel;
   const enderecoDetalhado = imovel.enderecoDetalhado || imovel.enderecodetalhado;
   const tipoNegocio = imovel.tipoNegocio || imovel.tiponegocio;

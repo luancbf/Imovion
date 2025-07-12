@@ -3,39 +3,31 @@ import { createBrowserClient } from "@supabase/ssr";
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Patrocinador } from '@/types/cadastrar-patrocinador';
 
-// ========================
 // CONFIGURAÇÃO
-// ========================
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
 
 let supabase: SupabaseClient | null = null;
 if (isSupabaseConfigured) {
   try {
     supabase = createBrowserClient(supabaseUrl!, supabaseKey!);
-    console.log('✅ Cliente Supabase criado');
-  } catch (error) {
-    console.warn('⚠️ Erro ao criar cliente Supabase:', error);
+  } catch {
+    // Nenhuma ação necessária
   }
-} else {
-  console.warn('❌ Supabase não configurado');
 }
 
-// ========================
 // TIPOS ATUALIZADOS
-// ========================
 
 // Tipo para dados brutos do Supabase
 interface PatrocinadorDB {
   id: string;
   nome: string;
   slug: string;
-  telefone?: string; // ✅ NOVO: Campo telefone
+  telefone?: string;
   ownerId: string;
   criadoEm: string;
   atualizadoEm: string;
-  // ❌ REMOVIDO: bannerUrl
 }
 
 // Tipo para dados desconhecidos vindos do Supabase
@@ -43,11 +35,10 @@ interface SupabaseRowUnknown {
   id?: unknown;
   nome?: unknown;
   slug?: unknown;
-  telefone?: unknown; // ✅ NOVO: Campo telefone
+  telefone?: unknown;
   ownerId?: unknown;  
   criadoEm?: unknown;
   atualizadoEm?: unknown;
-  // ❌ REMOVIDO: bannerUrl
 }
 
 interface PatrocinadorValidation {
@@ -57,46 +48,17 @@ interface PatrocinadorValidation {
 
 interface PatrocinadoresStats {
   total: number;
-  comTelefone: number; // ✅ ALTERADO: de comBanner para comTelefone
+  comTelefone: number;
   thisMonth: number;
 }
 
-// ========================
-// DADOS MOCK
-// ========================
-const mockData: Patrocinador[] = [
-  {
-    id: 'mock-1',
-    nome: 'Construtora ABC',
-    slug: 'construtora-abc',
-    telefone: '(11) 99999-1234', // ✅ NOVO: Campo telefone
-    criadoEm: new Date().toISOString(),
-    atualizadoEm: new Date().toISOString(),
-    ownerId: 'mock-user'
-  },
-  {
-    id: 'mock-2',
-    nome: 'Imobiliária XYZ',
-    slug: 'imobiliaria-xyz',
-    telefone: '(11) 88888-5678', // ✅ NOVO: Campo telefone
-    criadoEm: new Date().toISOString(),
-    atualizadoEm: new Date().toISOString(),
-    ownerId: 'mock-user'
-  }
-];
-
-// ========================
 // HOOK PRINCIPAL
-// ========================
 export const usePatrocinadores = () => {
   const [patrocinadores, setPatrocinadores] = useState<Patrocinador[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [useMockData, setUseMockData] = useState(!isSupabaseConfigured);
 
-  // ========================
   // UTILITÁRIOS
-  // ========================
   const gerarSlug = useCallback((texto: string): string => {
     return texto
       .toLowerCase()
@@ -107,47 +69,38 @@ export const usePatrocinadores = () => {
       .replace(/^-+|-+$/g, '');
   }, []);
 
-  // ✅ NOVO: Validação de telefone
   const validarTelefone = useCallback((telefone: string): boolean => {
-    if (!telefone?.trim()) return true; // Telefone é opcional
+    if (!telefone?.trim()) return true;
     
-    // Remove tudo que não é número
     const numeros = telefone.replace(/\D/g, '');
     
-    // Aceita 10 ou 11 dígitos (com ou sem 9 no celular)
     return numeros.length >= 10 && numeros.length <= 11;
   }, []);
 
-  // ✅ NOVO: Formatar telefone
   const formatarTelefone = useCallback((telefone: string): string => {
     if (!telefone?.trim()) return '';
     
     const numeros = telefone.replace(/\D/g, '');
     
     if (numeros.length === 10) {
-      // (11) 1234-5678
       return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
     } else if (numeros.length === 11) {
-      // (11) 91234-5678
       return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
     }
     
-    return telefone; // Retorna original se não conseguir formatar
+    return telefone;
   }, []);
 
-  // Função para mapear dados do banco para o formato do app
   const mapPatrocinadorFromDB = (item: PatrocinadorDB): Patrocinador => ({
     id: item.id,
     nome: item.nome,
     slug: item.slug,
-    telefone: item.telefone || undefined, // ✅ NOVO: Campo telefone
+    telefone: item.telefone || undefined,
     ownerId: item.ownerId,
     criadoEm: item.criadoEm,
     atualizadoEm: item.atualizadoEm
-    // ❌ REMOVIDO: bannerUrl
   });
 
-  // Validação atualizada
   const isValidPatrocinadorDB = (item: SupabaseRowUnknown): item is PatrocinadorDB => {
     return typeof item?.id === 'string' && 
            typeof item?.nome === 'string' && 
@@ -160,61 +113,44 @@ export const usePatrocinadores = () => {
            item.slug.length > 0;
   };
 
-  // ========================
   // OPERAÇÕES DE LEITURA
-  // ========================
   const loadPatrocinadores = useCallback(async (): Promise<void> => {
     setLoading(true);
     setError(null);
-    
+
+    if (!supabase) {
+      setError('Supabase não configurado');
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (!supabase || useMockData) {
-        console.log('🔄 Usando dados mock...');
-        await new Promise(resolve => setTimeout(resolve, 300));
-        setPatrocinadores(mockData);
-        if (!isSupabaseConfigured) {
-          setError('⚠️ Modo desenvolvimento: Configure o Supabase para dados reais');
-        }
-        return;
-      }
-
-      console.log('🔄 Carregando do Supabase...');
-
       const { data, error: supabaseError } = await supabase
         .from('patrocinadores')
         .select('*')
         .order('criadoEm', { ascending: false });
 
       if (supabaseError) {
-        console.error('❌ Erro Supabase:', supabaseError);
-        setUseMockData(true);
-        setPatrocinadores(mockData);
-        setError(`Erro: ${supabaseError.message}. Usando dados mock.`);
+        setError(`Erro: ${supabaseError.message}`);
+        setPatrocinadores([]);
+        setLoading(false);
         return;
       }
-
-      console.log('📊 Dados recebidos:', data);
 
       const validPatrocinadores = (data || [])
         .filter(isValidPatrocinadorDB)
         .map(mapPatrocinadorFromDB);
 
-      console.log('✅ Patrocinadores válidos:', validPatrocinadores.length);
       setPatrocinadores(validPatrocinadores);
-      
-    } catch (error) {
-      console.error('❌ Erro ao carregar:', error);
-      setUseMockData(true);
-      setPatrocinadores(mockData);
-      setError('Erro de conexão. Usando dados mock.');
+    } catch {
+      setError('Erro de conexão.');
+      setPatrocinadores([]);
     } finally {
       setLoading(false);
     }
-  }, [useMockData]);
+  }, []);
 
-  // ========================
   // VALIDAÇÕES ATUALIZADAS
-  // ========================
   const validatePatrocinador = useCallback((nome: string, telefone?: string, editingId?: string): PatrocinadorValidation => {
     const nomeTrim = nome?.trim();
     
@@ -222,7 +158,6 @@ export const usePatrocinadores = () => {
     if (nomeTrim.length < 2) return { valid: false, error: 'Mínimo 2 caracteres' };
     if (nomeTrim.length > 100) return { valid: false, error: 'Máximo 100 caracteres' };
 
-    // ✅ NOVO: Validar telefone se fornecido
     if (telefone?.trim() && !validarTelefone(telefone)) {
       return { valid: false, error: 'Telefone inválido (use formato: (11) 99999-1234)' };
     }
@@ -234,40 +169,21 @@ export const usePatrocinadores = () => {
     return { valid: true };
   }, [patrocinadores, gerarSlug, validarTelefone]);
 
-  // ========================
   // OPERAÇÕES CRUD ATUALIZADAS
-  // ========================
   const createPatrocinador = useCallback(async (nome: string, telefone?: string, userId = 'system'): Promise<string> => {
     setError(null);
 
     const validation = validatePatrocinador(nome, telefone);
     if (!validation.valid) throw new Error(validation.error);
 
-    // Mock
-    if (useMockData || !supabase) {
-      const novoId = `mock-${Date.now()}`;
-      const novo: Patrocinador = {
-        id: novoId,
-        nome: nome.trim(),
-        slug: gerarSlug(nome.trim()),
-        telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : undefined, // ✅ NOVO
-        ownerId: userId,
-        criadoEm: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString()
-      };
-      setPatrocinadores(prev => [novo, ...prev]);
-      return novoId;
-    }
+    if (!supabase) throw new Error('Supabase não configurado');
 
-    // Supabase
     const dados = {
       nome: nome.trim(),
       slug: gerarSlug(nome.trim()),
-      telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null, // ✅ NOVO
+      telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null,
       ownerId: userId
     };
-
-    console.log('📤 Inserindo dados:', dados);
 
     const { data, error: supabaseError } = await supabase
       .from('patrocinadores')
@@ -276,15 +192,13 @@ export const usePatrocinadores = () => {
       .single();
 
     if (supabaseError) {
-      console.error('❌ Erro ao inserir:', supabaseError);
       if (supabaseError.code === '23505') throw new Error('Nome já existe');
       throw new Error(`Erro: ${supabaseError.message}`);
     }
 
-    console.log('✅ Patrocinador criado:', data);
     await loadPatrocinadores();
     return data.id;
-  }, [validatePatrocinador, gerarSlug, formatarTelefone, loadPatrocinadores, useMockData]);
+  }, [validatePatrocinador, gerarSlug, formatarTelefone, loadPatrocinadores]);
 
   const updatePatrocinador = useCallback(async (id: string, nome: string, telefone?: string): Promise<void> => {
     setError(null);
@@ -292,27 +206,12 @@ export const usePatrocinadores = () => {
     const validation = validatePatrocinador(nome, telefone, id);
     if (!validation.valid) throw new Error(validation.error);
 
-    // Mock
-    if (useMockData || !supabase) {
-      setPatrocinadores(prev => prev.map(p => 
-        p.id === id 
-          ? { 
-              ...p, 
-              nome: nome.trim(), 
-              slug: gerarSlug(nome.trim()),
-              telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : undefined, // ✅ NOVO
-              atualizadoEm: new Date().toISOString()
-            }
-          : p
-      ));
-      return;
-    }
+    if (!supabase) throw new Error('Supabase não configurado');
 
-    // Supabase
     const dados = {
       nome: nome.trim(),
       slug: gerarSlug(nome.trim()),
-      telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null // ✅ NOVO
+      telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null
     };
 
     const { error: supabaseError } = await supabase
@@ -326,30 +225,23 @@ export const usePatrocinadores = () => {
     }
 
     await loadPatrocinadores();
-  }, [validatePatrocinador, gerarSlug, formatarTelefone, loadPatrocinadores, useMockData]);
+  }, [validatePatrocinador, gerarSlug, formatarTelefone, loadPatrocinadores]);
 
   const deletePatrocinador = useCallback(async (id: string): Promise<void> => {
     setError(null);
 
-    // Mock
-    if (useMockData || !supabase) {
-      setPatrocinadores(prev => prev.filter(p => p.id !== id));
-      return;
-    }
+    if (!supabase) throw new Error('Supabase não configurado');
 
-    // Supabase
     const { error: supabaseError } = await supabase
       .from('patrocinadores')
       .delete()
       .eq('id', id);
-    
+
     if (supabaseError) throw new Error(`Erro: ${supabaseError.message}`);
     await loadPatrocinadores();
-  }, [loadPatrocinadores, useMockData]);
+  }, [loadPatrocinadores]);
 
-  // ========================
   // CONSULTAS
-  // ========================
   const getPatrocinadorById = useCallback((id: string): Patrocinador | undefined => {
     return patrocinadores.find(p => p.id === id);
   }, [patrocinadores]);
@@ -361,13 +253,13 @@ export const usePatrocinadores = () => {
     return patrocinadores.filter(p => 
       p.nome?.toLowerCase().includes(search) ||
       p.slug?.toLowerCase().includes(search) ||
-      p.telefone?.toLowerCase().includes(search) // ✅ NOVO: Buscar por telefone
+      p.telefone?.toLowerCase().includes(search) 
     );
   }, [patrocinadores]);
 
   const getStats = useCallback((): PatrocinadoresStats => {
     const total = patrocinadores.length;
-    const comTelefone = patrocinadores.filter(p => p.telefone).length; // ✅ ALTERADO
+    const comTelefone = patrocinadores.filter(p => p.telefone).length;
     const thisMonth = patrocinadores.filter(p => {
       if (!p.criadoEm) return false;
       const created = new Date(p.criadoEm);
@@ -379,36 +271,14 @@ export const usePatrocinadores = () => {
     return { total, comTelefone, thisMonth };
   }, [patrocinadores]);
 
-  // ========================
   // UTILITÁRIOS
-  // ========================
   const clearError = useCallback(() => setError(null), []);
   
-  const switchToMockMode = useCallback(() => {
-    setUseMockData(true);
-    setPatrocinadores(mockData);
-    setError('Modo mock ativado');
-  }, []);
-
-  const switchToSupabaseMode = useCallback(() => {
-    if (isSupabaseConfigured) {
-      setUseMockData(false);
-      loadPatrocinadores();
-    } else {
-      alert('Supabase não configurado');
-    }
-  }, [loadPatrocinadores]);
-
-  // ========================
   // EFEITO INICIAL
-  // ========================
   useEffect(() => {
     loadPatrocinadores();
   }, [loadPatrocinadores]);
 
-  // ========================
-  // API ATUALIZADA
-  // ========================
   return {
     // Estados
     patrocinadores,
@@ -420,7 +290,6 @@ export const usePatrocinadores = () => {
     createPatrocinador,
     updatePatrocinador,
     deletePatrocinador,
-    // ❌ REMOVIDO: updatePatrocinadorBanner
     
     // Consultas
     getPatrocinadorById,
@@ -430,17 +299,14 @@ export const usePatrocinadores = () => {
     // Validações
     validatePatrocinador,
     gerarSlug,
-    validarTelefone, // ✅ NOVO
-    formatarTelefone, // ✅ NOVO
+    validarTelefone,
+    formatarTelefone,
     
     // Controles
     clearError,
-    switchToMockMode,
-    switchToSupabaseMode,
     
     // Info
     isConfigured: isSupabaseConfigured,
-    isUsingMockData: useMockData,
     stats: getStats()
   } as const;
 };

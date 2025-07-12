@@ -115,10 +115,7 @@ export default function ImoveisCategoriaPage() {
       const imoveisFinais = aplicarFiltroLocal(imoveisBrutos, filtros);
       setImoveis(imoveisFinais);
 
-      console.log(`✅ Encontrados ${imoveisFinais.length} imóveis para ${categoriaParam}/${tipoNegocioParam}`);
-
-    } catch (error) {
-      console.error('❌ Erro ao buscar imóveis:', error);
+    } catch {
       setImoveis([]);
     } finally {
       setCarregando(false);
@@ -161,7 +158,7 @@ export default function ImoveisCategoriaPage() {
               </button>
             </div>
 
-            {/* ✅ FILTRO EXPANSÍVEL */}
+            {/* FILTRO EXPANSÍVEL */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden
                           ${mostrarFiltro ? 'max-h-350 opacity-100' : 'max-h-0 opacity-0'}`}>
 
@@ -179,7 +176,7 @@ export default function ImoveisCategoriaPage() {
             </div>
           </div>
 
-          {/* ✅ RESULTADOS */}
+          {/* RESULTADOS */}
           {carregando ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>

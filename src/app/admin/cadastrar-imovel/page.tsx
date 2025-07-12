@@ -12,8 +12,8 @@ import type { ImovelEdicao } from '@/types/formularios';
 import type { Patrocinador } from '@/types/cadastrar-patrocinador';
 import { createBrowserClient } from "@supabase/ssr";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
 const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 export default function CadastrarImovel() {
@@ -47,7 +47,6 @@ export default function CadastrarImovel() {
         const { data: imoveisData, error: imoveisError } = await query;
         
         if (imoveisError) {
-          console.error('Erro ao buscar imóveis:', imoveisError);
           setImoveis([]);
         } else {
           setImoveis(imoveisData as Imovel[] || []);
@@ -63,8 +62,7 @@ export default function CadastrarImovel() {
           setPatrocinadores(patrocinadoresData || []);
         }
         
-      } catch (error) {
-        console.error('Erro geral:', error);
+      } catch {
         setImoveis([]);
         setPatrocinadores([]);
       } finally {
@@ -82,7 +80,6 @@ export default function CadastrarImovel() {
           .eq('id', id);
         
         if (error) {
-          console.error('Erro ao excluir:', error);
           alert('Erro ao excluir imóvel: ' + error.message);
         } else {
           setImoveis(imoveis => imoveis.filter(imovel => imovel.id !== id));
@@ -91,8 +88,7 @@ export default function CadastrarImovel() {
           }
           alert('Imóvel excluído com sucesso!');
         }
-      } catch (error) {
-        console.error('Erro geral ao excluir:', error);
+      } catch {
         alert('Erro inesperado ao excluir imóvel.');
       }
     }
@@ -142,16 +138,14 @@ export default function CadastrarImovel() {
         .order('datacadastro', { ascending: false });
       
       if (error) {
-        console.error('Erro ao atualizar lista:', error);
         setImoveis([]);
       } else {
         setImoveis(data as Imovel[] || []);
       }
       
       setImovelEditando(null);
-      
-    } catch (error) {
-      console.error('Erro geral ao atualizar:', error);
+
+    } catch {
       setImoveis([]);
     } finally {
       setCarregando(false);

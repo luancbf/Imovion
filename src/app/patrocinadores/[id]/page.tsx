@@ -19,8 +19,8 @@ interface Patrocinador {
   ownerid?: string;
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
 const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 export default function PatrocinadorPage() {
@@ -36,7 +36,6 @@ export default function PatrocinadorPage() {
     const fetchPatrocinador = async () => {
       if (!patrocinadorSlug) return;
       
-      console.log('🔍 Buscando patrocinador com slug:', patrocinadorSlug);
       setCarregandoPatrocinador(true);
       try {
         const { data, error } = await supabase
@@ -46,17 +45,13 @@ export default function PatrocinadorPage() {
           .single();
 
         if (error) {
-          console.error("❌ Erro ao buscar patrocinador:", error);
           setPatrocinador(null);
         } else if (data) {
-          console.log('✅ Patrocinador encontrado:', data);
           setPatrocinador(data as Patrocinador);
         } else {
-          console.log('❌ Nenhum patrocinador encontrado');
           setPatrocinador(null);
         }
-      } catch (error) {
-        console.error("❌ Erro inesperado:", error);
+      } catch {
         setPatrocinador(null);
       } finally {
         setCarregandoPatrocinador(false);
@@ -69,11 +64,9 @@ export default function PatrocinadorPage() {
   useEffect(() => {
     const fetchImoveis = async () => {
       if (!patrocinador) {
-        console.log('⚠️ Patrocinador não definido, pulando busca de imóveis');
         return;
       }
       
-      console.log('🔍 Buscando TODOS os imóveis para patrocinador:', patrocinador.id);
       setCarregando(true);
       try {
         const { data, error } = await supabase
@@ -84,15 +77,12 @@ export default function PatrocinadorPage() {
           .order("datacadastro", { ascending: false });
 
         if (error) {
-          console.error("❌ Erro ao buscar imóveis:", error);
           setImoveis([]);
         } else {
           const todosImoveis = (data as Imovel[]) || [];
-          console.log('✅ Imóveis encontrados:', todosImoveis.length, todosImoveis);
           setImoveis(todosImoveis);
         }
-      } catch (error) {
-        console.error("❌ Erro inesperado:", error);
+      } catch {
         setImoveis([]);
       } finally {
         setCarregando(false);

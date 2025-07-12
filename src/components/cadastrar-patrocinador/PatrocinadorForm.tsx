@@ -12,7 +12,6 @@ interface PatrocinadorFormProps {
   onCancelEdit?: () => void;
 }
 
-// ✅ NOVO: Interface para o ref
 export interface PatrocinadorFormRef {
   scrollToForm: () => void;
 }
@@ -23,10 +22,8 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
   onCancelEdit 
 }, ref) => {
   const { user } = useAuth();
-  // ✅ CORRIGIDO: Removido 'formatarTelefone' da importação pois não é usado
   const { validatePatrocinador, gerarSlug, loadPatrocinadores } = usePatrocinadores();
   
-  // ✅ NOVO: Ref para o formulário
   const formRef = useRef<HTMLElement>(null);
   
   // Estados
@@ -39,15 +36,11 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
   const isEditing = !!editingPatrocinador;
   const isDisabled = saving || !user?.id;
 
-  // ✅ NOVO: Função para formatação em tempo real do telefone
   const formatTelefoneRealTime = useCallback((value: string): string => {
-    // Remove tudo que não é número
     const numeros = value.replace(/\D/g, '');
     
-    // Limita a 11 dígitos
     const limitedNumeros = numeros.slice(0, 11);
     
-    // Aplica a formatação conforme o usuário digita
     if (limitedNumeros.length === 0) {
       return '';
     } else if (limitedNumeros.length <= 2) {
@@ -57,12 +50,10 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     } else if (limitedNumeros.length <= 10) {
       return `(${limitedNumeros.slice(0, 2)}) ${limitedNumeros.slice(2, 6)}-${limitedNumeros.slice(6)}`;
     } else {
-      // Para 11 dígitos (celular com 9)
       return `(${limitedNumeros.slice(0, 2)}) ${limitedNumeros.slice(2, 7)}-${limitedNumeros.slice(7, 11)}`;
     }
   }, []);
 
-  // ✅ NOVO: Função para fazer scroll suave para o formulário
   const scrollToForm = useCallback(() => {
     if (formRef.current) {
       formRef.current.scrollIntoView({ 
@@ -70,7 +61,6 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
         block: 'start',
         inline: 'nearest'
       });
-      // ✅ Adicionar um pequeno delay para garantir que o scroll aconteça
       setTimeout(() => {
         if (formRef.current) {
           formRef.current.focus();
@@ -78,13 +68,10 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
       }, 500);
     }
   }, []);
-
-  // ✅ NOVO: Expor a função através do ref
   useImperativeHandle(ref, () => ({
     scrollToForm
   }), [scrollToForm]);
 
-  // Resetar formulário
   const resetForm = useCallback(() => {
     setNome('');
     setTelefone('');
@@ -92,13 +79,10 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     onCancelEdit?.();
   }, [onCancelEdit]);
 
-  // Carregar dados para edição
   useEffect(() => {
     if (editingPatrocinador) {
       setNome(editingPatrocinador.nome);
-      // ✅ CORRIGIDO: Aplicar formatação no telefone quando carregar para edição
       setTelefone(editingPatrocinador.telefone ? formatTelefoneRealTime(editingPatrocinador.telefone) : '');
-      // ✅ NOVO: Fazer scroll quando carregar dados para edição
       setTimeout(() => {
         scrollToForm();
       }, 100);
@@ -107,7 +91,6 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     }
   }, [editingPatrocinador, resetForm, scrollToForm, formatTelefoneRealTime]);
 
-  // Validar formulário
   const validateForm = (): boolean => {
     const newErrors: {[key: string]: string} = {};
     
@@ -124,19 +107,15 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ CORRIGIDO: Manipular mudança do telefone com formatação em tempo real
   const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    // Aplicar formatação em tempo real
     const formatted = formatTelefoneRealTime(value);
     setTelefone(formatted);
     
-    // Limpar erro se existir
     setErrors(prev => ({ ...prev, telefone: '' }));
   };
 
-  // Tratamento de erro otimizado
   const getErrorMessage = (error: Error): string => {
     const msg = error.message.toLowerCase();
     
@@ -156,7 +135,6 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     return error.message;
   };
 
-  // Submeter formulário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -167,8 +145,8 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!
       );
 
       const dados = {
@@ -210,7 +188,6 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     }
   };
 
-  // Botão de ação dinâmico
   const renderActionButton = () => {
     if (saving) {
       return (
@@ -245,11 +222,11 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
 
   return (
     <section 
-      ref={formRef} // ✅ NOVO: Ref para scroll
-      tabIndex={-1} // ✅ NOVO: Permite focar no elemento
+      ref={formRef}
+      tabIndex={-1}
       className={`bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-blue-100 transition-all duration-500 ${
         isEditing ? 'ring-2 ring-blue-300 ring-opacity-50' : ''
-      }`} // ✅ NOVO: Destaque visual quando editando
+      }`}
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -325,7 +302,6 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
           )}
         </div>
         
-        {/* ✅ CORRIGIDO: Campo Telefone com formatação em tempo real */}
         <div>
           <label htmlFor="telefone" className={`block text-sm font-semibold mb-2 transition-colors ${
             isEditing ? 'text-amber-900' : 'text-blue-900'
@@ -351,7 +327,7 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
                   : 'border-blue-200 focus:ring-blue-500 focus:border-blue-500 bg-blue-50'
               }`}
               disabled={isDisabled}
-              maxLength={15} // ✅ NOVO: Limitar caracteres para evitar telefones muito grandes
+              maxLength={15}
             />
           </div>
           {errors.telefone && (

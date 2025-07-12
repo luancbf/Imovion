@@ -122,7 +122,6 @@ export function FiltroImovel({
   const handleFiltroChange = useCallback((novosFiltros: Record<string, string>): void => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
-      // Processa valor/metragem para min/max
       const filtrosProcessados = { ...novosFiltros };
       if (filtrosProcessados.valor && filtrosProcessados.valor.includes('-')) {
         const [min, max] = filtrosProcessados.valor.split('-');
@@ -180,7 +179,6 @@ export function FiltroImovel({
     setMostrarItens(prev => !prev);
   }, []);
 
-  // RESET FILTROS AO TROCAR SETOR/TIPO
   useEffect(() => {
     const novosFiltrosIniciais = {
       tipoImovel: "",
@@ -225,14 +223,13 @@ export function FiltroImovel({
     </div>
   );
 
-  // Ajuste: Evita scroll automático ao clicar nos itens quantitativos/booleanos
   const ItemQuantitativo = ({ item }: ItemComponentProps) => {
     const valorAtual = Number(filtros[item.chave] || 0);
     return (
       <div
         className="bg-white rounded-xl border-2 border-indigo-200 p-4 hover:border-indigo-300 transition-all duration-200 hover:shadow-md flex flex-col items-center"
-        tabIndex={-1} // <-- Adicionado para evitar foco e scroll
-        onMouseDown={e => e.preventDefault()} // <-- Evita foco do mouse
+        tabIndex={-1} 
+        onMouseDown={e => e.preventDefault()}
       >
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xl">{item.icone}</span>
@@ -242,7 +239,7 @@ export function FiltroImovel({
           <button
             type="button"
             tabIndex={-1}
-            onMouseDown={e => e.preventDefault()} // <-- Evita foco do mouse
+            onMouseDown={e => e.preventDefault()}
             onClick={() => handleItemQuantChange(item.chave, valorAtual - 1)}
             className="w-8 h-8 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={valorAtual <= 0}
@@ -258,7 +255,7 @@ export function FiltroImovel({
           <button
             type="button"
             tabIndex={-1}
-            onMouseDown={e => e.preventDefault()} // <-- Evita foco do mouse
+            onMouseDown={e => e.preventDefault()} 
             onClick={() => handleItemQuantChange(item.chave, valorAtual + 1)}
             className="w-8 h-8 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200"
             aria-label={`Aumentar ${item.nome}`}
@@ -276,7 +273,7 @@ export function FiltroImovel({
       <button
         type="button"
         tabIndex={-1}
-        onMouseDown={e => e.preventDefault()} // <-- Evita foco do mouse
+        onMouseDown={e => e.preventDefault()} 
         onClick={() => handleItemQuantChange(item.chave, isAtivo ? 0 : 1)}
         className={`relative p-3 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02] flex flex-col items-center w-full
           ${isAtivo

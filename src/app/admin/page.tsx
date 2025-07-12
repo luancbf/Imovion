@@ -11,10 +11,9 @@ export default function AdminRedirect() {
 
   useEffect(() => {
     if (!carregando) {
-      // Redirecionamento imediato após verificação de auth
       const timer = setTimeout(() => {
         router.replace('/admin/cadastrar-imovel');
-      }, 1000); // 1 segundo para mostrar a tela
+      }, 1000);
 
       return () => clearTimeout(timer);
     }

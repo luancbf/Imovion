@@ -33,7 +33,6 @@ export default function ItensImovel({
     handleItemChange(chave, (itens[chave] || 0) - 1);
   };
 
-  // Separar itens quantitativos dos booleanos
   const itensQuantitativos = itensDisponiveis.filter(item => 
     ITENS_QUANTITATIVOS.includes(item.chave)
   );
@@ -58,7 +57,6 @@ export default function ItensImovel({
       {/* Itens Quantitativos */}
       {itensQuantitativos.length > 0 && (
         <div>
-          {/* Grid responsivo para itens quantitativos */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {itensQuantitativos.map((item) => (
               <div
@@ -107,7 +105,6 @@ export default function ItensImovel({
       {/* Itens Booleanos (Sim/Não) */}
       {itensBooleanos.length > 0 && (
         <div>
-          {/* Grid responsivo para itens booleanos - mais colunas por serem menores */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {itensBooleanos.map((item) => {
               const isAtivo = (itens[item.chave] || 0) > 0;

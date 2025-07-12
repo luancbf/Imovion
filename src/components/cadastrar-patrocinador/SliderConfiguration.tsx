@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react'; // Adicione o import do React e useState
+import React, { useEffect, useState } from 'react';
 import { FiSettings, FiX, FiImage, FiUpload, FiMousePointer, FiHome, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
 import { useSliderConfig } from '@/hooks/cadastrar-patrocinador/useSliderConfig';
 import { useFileUpload } from '@/hooks/cadastrar-patrocinador/useFileUpload';
@@ -23,8 +23,8 @@ interface BannerCardProps {
   onUpdate: (imageName: string, field: keyof SliderBanner, value: SliderBannerUpdateValue) => void;
   patrocinadores: Array<{ id: string; nome: string }>;
   isUploading: boolean;
-  saveSliderBanner: (imageName: string) => Promise<void>; // ADICIONE
-  loading: boolean; // ADICIONE
+  saveSliderBanner: (imageName: string) => Promise<void>;
+  loading: boolean;
 }
 
 function BannerCard({
@@ -35,8 +35,8 @@ function BannerCard({
   onUpdate,
   patrocinadores,
   isUploading,
-  saveSliderBanner, // ADICIONE
-  loading // ADICIONE
+  saveSliderBanner,
+  loading
 }: BannerCardProps) {
   const isClickable = banner.is_clickable === true;
   const [saving, setSaving] = useState(false);
@@ -229,7 +229,6 @@ function BannerCard({
   );
 }
 
-// Componente para seção de banners
 interface BannerSectionProps {
   title: string;
   banners: SliderBanner[];
@@ -238,8 +237,8 @@ interface BannerSectionProps {
   onUpdate: (imageName: string, field: keyof SliderBanner, value: SliderBannerUpdateValue) => void;
   patrocinadores: Array<{ id: string; nome: string }>;
   uploadingImages: Record<string, boolean>;
-  saveSliderBanner: (imageName: string) => Promise<void>; // ADICIONE
-  loading: boolean; // ADICIONE
+  saveSliderBanner: (imageName: string) => Promise<void>;
+  loading: boolean;
 }
 
 function BannerSection({
@@ -250,8 +249,8 @@ function BannerSection({
   onUpdate,
   patrocinadores,
   uploadingImages,
-  saveSliderBanner, // ADICIONE
-  loading // ADICIONE
+  saveSliderBanner,
+  loading
 }: BannerSectionProps & { saveSliderBanner: (imageName: string) => Promise<void>; loading: boolean }) {
   return (
     <div>
@@ -269,8 +268,8 @@ function BannerSection({
             onUpdate={onUpdate}
             patrocinadores={patrocinadores}
             isUploading={uploadingImages[banner.image_name] || false}
-            saveSliderBanner={saveSliderBanner} // ADICIONE
-            loading={loading} // ADICIONE
+            saveSliderBanner={saveSliderBanner}
+            loading={loading}
           />
         ))}
       </div>
@@ -305,8 +304,7 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
       updateSliderBanner(imageName, 'image_url', imageUrl);
       updateSliderBanner(imageName, 'image_alt', `Banner ${imageName}`);
       updateSliderBanner(imageName, 'is_active', true);
-    } catch (error) {
-      console.error('Erro no upload:', error);
+    } catch {
       alert('Erro ao fazer upload da imagem. Tente novamente.');
     } finally {
       setImageUploading(imageName, false);
@@ -317,8 +315,7 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
     if (confirm('Deseja excluir este banner permanentemente?')) {
       try {
         await deleteSliderBanner(imageName);
-      } catch (error) {
-        console.error('Erro ao excluir banner:', error);
+      } catch {
         alert('Erro ao excluir banner. Tente novamente.');
       }
     }
@@ -386,8 +383,8 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
             onUpdate={handleUpdate}
             patrocinadores={patrocinadores}
             uploadingImages={uploadingImages}
-            saveSliderBanner={saveSliderBanner} // ADICIONE
-            loading={loading} // ADICIONE
+            saveSliderBanner={saveSliderBanner}
+            loading={loading}
           />
 
           <BannerSection
@@ -398,8 +395,8 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
             onUpdate={handleUpdate}
             patrocinadores={patrocinadores}
             uploadingImages={uploadingImages}
-            saveSliderBanner={saveSliderBanner} // ADICIONE
-            loading={loading} // ADICIONE
+            saveSliderBanner={saveSliderBanner}
+            loading={loading}
           />
         </div>
       )}

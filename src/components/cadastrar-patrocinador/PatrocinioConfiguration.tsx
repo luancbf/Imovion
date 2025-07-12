@@ -8,17 +8,14 @@ import { usePatrocinadores } from '@/hooks/cadastrar-patrocinador/usePatrocinado
 import Image from "next/image";
 import { PatrocinioConfig } from '@/types/cadastrar-patrocinador';
 
-// Tipagem para patrocinador
 interface Patrocinador {
   id: string;
   nome: string;
   slug?: string;
 }
 
-// Tipagem para o valor de atualização
 type PatrocinioUpdateValue = string | boolean | number | null;
 
-// Tipagem para config do card (ajuste image_alt para aceitar null)
 interface PatrocinioCardProps {
   config: {
     position: number;
@@ -246,8 +243,7 @@ export default function PatrocinioConfiguration({ isVisible, onClose }: Patrocin
       updatePatrocinioConfig(position, 'image_alt', `Patrocínio ${getPatrocinioPositionInfo(position).name}`);
       updatePatrocinioConfig(position, 'image_name', fileName);
       updatePatrocinioConfig(position, 'is_active', true);
-    } catch (error) {
-      console.error('Erro ao enviar imagem:', error);
+    } catch {
     } finally {
       setPositionUploading(position, false);
     }
@@ -296,7 +292,6 @@ export default function PatrocinioConfiguration({ isVisible, onClose }: Patrocin
           <span className="ml-3 text-blue-700 font-medium">Carregando...</span>
         </div>
       ) : (
-        /* Grid das Posições - Otimizado para 6 colunas */
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {patrocinioConfigs.map((config) => (
             <PatrocinioCard
