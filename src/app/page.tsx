@@ -3,7 +3,7 @@ import FiltrosExpansivos from "@/components/home/FiltrosExpansiveis";
 import Patrocinios from "@/components/home/Patrocinios";
 import Footer from "@/components/home/Footer";
 import Header from "@/components/home/Header";
-
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function Home() {
   return (
@@ -31,7 +31,7 @@ export default function Home() {
           showControls={true}
         />
       </section>
-
+      <SpeedInsights />
       <Footer />
     </div>
   );
