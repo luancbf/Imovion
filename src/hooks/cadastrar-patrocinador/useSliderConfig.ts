@@ -40,8 +40,8 @@ export const useSliderConfig = () => {
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
       const { data, error } = await supabase
@@ -142,8 +142,8 @@ export const useSliderConfig = () => {
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
       const saveData = {
@@ -221,8 +221,8 @@ export const useSliderConfig = () => {
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
       const { error } = await supabase

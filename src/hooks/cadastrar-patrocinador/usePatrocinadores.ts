@@ -4,8 +4,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Patrocinador } from '@/types/cadastrar-patrocinador';
 
 // CONFIGURAÇÃO
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
 
 let supabase: SupabaseClient | null = null;

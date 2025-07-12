@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import useAuthGuard from '@/hooks/useAuthGuard';
 import { Patrocinador } from '@/types/cadastrar-patrocinador';
-
-// Componentes refatorados
 import AdminHeader from '@/components/cadastrar-patrocinador/AdminHeader';
 import PatrocinadorForm from '@/components/cadastrar-patrocinador/PatrocinadorForm';
 import PatrocinadoresList from '@/components/cadastrar-patrocinador/PatrocinadoresList';
@@ -14,13 +12,11 @@ import PatrocinioConfiguration from '@/components/cadastrar-patrocinador/Patroci
 export default function CadastrarPatrocinador() {
   useAuthGuard();
 
-  // Estados principais da página
   const [showSliderConfig, setShowSliderConfig] = useState(false);
   const [showPatrocinioConfig, setShowPatrocinioConfig] = useState(false);
   const [editingPatrocinador, setEditingPatrocinador] = useState<Patrocinador | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Handlers para comunicação entre componentes
   const handleFormSuccess = () => {
     setEditingPatrocinador(null);
     setRefreshTrigger(prev => prev + 1);
@@ -28,7 +24,6 @@ export default function CadastrarPatrocinador() {
 
   const handleEditPatrocinador = (patrocinador: Patrocinador) => {
     setEditingPatrocinador(patrocinador);
-    // Scroll suave para o topo (formulário)
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -38,7 +33,6 @@ export default function CadastrarPatrocinador() {
 
   const handleToggleSlider = () => {
     setShowSliderConfig(!showSliderConfig);
-    // Fechar a outra seção se estiver aberta
     if (showPatrocinioConfig) {
       setShowPatrocinioConfig(false);
     }
@@ -46,7 +40,6 @@ export default function CadastrarPatrocinador() {
 
   const handleTogglePatrocinio = () => {
     setShowPatrocinioConfig(!showPatrocinioConfig);
-    // Fechar a outra seção se estiver aberta
     if (showSliderConfig) {
       setShowSliderConfig(false);
     }
@@ -129,8 +122,8 @@ export default function CadastrarPatrocinador() {
           </div>
         )}
 
-        {/* Loading Overlay Global (se necessário) */}
-        {false && ( // Placeholder para loading global
+        {/* Loading Overlay Global */}
+        {false && ( 
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-200 max-w-sm w-full mx-4">
               <div className="flex flex-col items-center gap-4">

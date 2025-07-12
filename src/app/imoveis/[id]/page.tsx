@@ -13,8 +13,8 @@ import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import ImovelModal from "@/components/imovel/ImovelModal";
 import type { Imovel } from "@/types/Imovel";
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 function formatarTexto(texto?: string) {

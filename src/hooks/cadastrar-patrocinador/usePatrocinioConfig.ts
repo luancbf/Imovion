@@ -100,8 +100,8 @@ export const usePatrocinioConfig = () => {
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
       let selectFields = `
@@ -210,8 +210,7 @@ export const usePatrocinioConfig = () => {
       allConfigs.sort((a, b) => a.position - b.position);
       setPatrocinioConfigs(allConfigs);
       
-    } catch (error) {
-      console.error('❌ [PATROCINIO] Erro no carregamento:', error);
+    } catch {
       const mockConfigs = createMockConfigs();
       setPatrocinioConfigs(mockConfigs);
     } finally {
@@ -219,7 +218,7 @@ export const usePatrocinioConfig = () => {
     }
   }, [createMockConfigs]);
 
-  // ✅ ATUALIZAR CONFIGURAÇÃO NO ESTADO
+  // ATUALIZAR CONFIGURAÇÃO NO ESTADO
   const updatePatrocinioConfig = useCallback((position: number, field: keyof PatrocinioConfig, value: string | boolean | number | null) => {
     setPatrocinioConfigs(prev => 
       prev.map(config => 
@@ -230,12 +229,12 @@ export const usePatrocinioConfig = () => {
     );
   }, []);
 
-  // ✅ CONTROLE DE UPLOAD
+  // CONTROLE DE UPLOAD
   const setPositionUploading = useCallback((position: number, uploading: boolean) => {
     setUploadingPositions(prev => ({ ...prev, [position]: uploading }));
   }, []);
 
-  // ✅ SALVAR CONFIGURAÇÃO
+  // SALVAR CONFIGURAÇÃO
   const savePatrocinioConfig = useCallback(async (position: number): Promise<void> => {
     const config = patrocinioConfigs.find(c => c.position === position);
     if (!config) {
@@ -253,8 +252,8 @@ export const usePatrocinioConfig = () => {
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
       const saveData: SavePatrocinioData = {
@@ -367,8 +366,8 @@ export const usePatrocinioConfig = () => {
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
       const { error } = await supabase

@@ -12,8 +12,8 @@ import { formatarParaMoeda, formatarMetragem, formatarTelefone } from "@/utils/f
 import type { FormularioImovelProps, ImovelEdicao } from "@/types/formularios";
 
 const supabase = createBrowserClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 const FORMULARIO_INICIAL = {
