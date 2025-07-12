@@ -130,12 +130,6 @@ export async function buscarImoveisPorCategoria(
   
   const setorCapitalizado = capitalizarString(categoria);
   const tipoCapitalizado = capitalizarString(tipoNegocio);
-  
-  console.log('🔍 [CATEGORIA]:', {
-    categoria: `${categoria} → ${setorCapitalizado}`,
-    tipoNegocio: `${tipoNegocio} → ${tipoCapitalizado}`,
-    filtros: Object.keys(filtros).filter(k => filtros[k]).length
-  });
 
   return buscarImoveis(filtros, setorCapitalizado, tipoCapitalizado);
 }
@@ -150,14 +144,12 @@ export async function buscarImoveisDestaque(limite: number = 8): Promise<Imovel[
       .limit(limite);
 
     if (error) {
-      console.error("❌ [ERRO DESTAQUE]:", error.message);
       return [];
     }
 
     return (data as ImovelBanco[])?.map(mapearImovelDoBanco) ?? [];
     
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO DESTAQUE]:", error);
+  } catch {
     return [];
   }
 }
@@ -174,14 +166,12 @@ export async function buscarImovelPorId(id: string): Promise<Imovel | null> {
       .single();
 
     if (error) {
-      console.error("❌ [ERRO BUSCA ID]:", error.message);
       return null;
     }
 
     return data ? mapearImovelDoBanco(data as ImovelBanco) : null;
-    
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO ID]:", error);
+
+  } catch {
     return null;
   }
 }
@@ -195,15 +185,13 @@ export async function buscarCidadesDisponiveis(): Promise<string[]> {
       .not("cidade", "is", null);
 
     if (error) {
-      console.error("❌ [ERRO CIDADES]:", error.message);
       return [];
     }
 
     const cidades = [...new Set(data?.map(item => item.cidade).filter(Boolean))] as string[];
     return cidades.sort();
-    
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO CIDADES]:", error);
+
+  } catch {
     return [];
   }
 }
@@ -220,15 +208,13 @@ export async function buscarBairrosPorCidade(cidade: string): Promise<string[]> 
       .not("bairro", "is", null);
 
     if (error) {
-      console.error("❌ [ERRO BAIRROS]:", error.message);
       return [];
     }
 
     const bairros = [...new Set(data?.map(item => item.bairro).filter(Boolean))] as string[];
     return bairros.sort();
-    
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO BAIRROS]:", error);
+
+  } catch {
     return [];
   }
 }
@@ -270,9 +256,8 @@ export async function buscarEstatisticas(): Promise<{
       porTipo,
       cidadesAtendidas: cidades.size
     };
-    
-  } catch (error) {
-    console.error("❌ [ERRO ESTATÍSTICAS]:", error);
+
+  } catch {
     return { total: 0, porSetor: {}, porTipo: {}, cidadesAtendidas: 0 };
   }
 }
