@@ -34,8 +34,8 @@ export default function Footer() {
           <Image
             src="/imovion.png"
             alt="Imovion Logo"
-            width={1000}
-            height={48}
+            width={320}
+            height={80}
             className="h-12 w-auto mb-2"
             priority
           />

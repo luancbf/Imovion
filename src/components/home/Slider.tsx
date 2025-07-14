@@ -183,7 +183,7 @@ export default function Slider({
                     fill
                     className="object-cover transition-transform duration-500 hover:scale-105"
                     priority={idx === 0 && type === 'principal'}
-                    sizes="100vw"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
                     quality={90}
                     style={{ objectFit: 'cover' }}
                   />

@@ -11,8 +11,8 @@ export default function Header() {
           <Image
             src="/imovion.png"
             alt="Imovion Logo"
-            width={900}
-            height={10}
+            width={320}
+            height={80}
             priority
             className="h-9 sm:h-11 w-auto"
           />
