@@ -122,6 +122,10 @@ export default function CadastrarImovel() {
     };
 
     setImovelEditando(imovelParaEdicao);
+
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const handleLimparEdicao = () => {

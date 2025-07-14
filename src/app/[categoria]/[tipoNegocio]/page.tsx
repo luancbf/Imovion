@@ -35,7 +35,7 @@ export default function ImoveisCategoriaPage() {
   const [carregando, setCarregando] = useState(true);
   const [mostrarFiltro, setMostrarFiltro] = useState(false);
   const [filtros, setFiltros] = useState<Record<string, string>>(() => ({
-    tipoImovel: "",
+    tipoimovel: "",
     cidade: "",
     bairro: "",
     ...Object.fromEntries(
@@ -61,13 +61,15 @@ export default function ImoveisCategoriaPage() {
   }, []);
 
   const aplicarFiltroLocal = useCallback((imoveis: Imovel[], filtros: Record<string, string>): Imovel[] => {
+    const normalize = (str: string) => (str || "").trim().toLowerCase();
+
     return imoveis.filter(imovel => {
       // Tipo de imóvel
-      if (filtros.tipoImovel && imovel.tipoimovel !== filtros.tipoImovel) return false;
+      if (filtros.tipoimovel && normalize(imovel.tipoimovel) !== normalize(filtros.tipoimovel)) return false;
       // Cidade
-      if (filtros.cidade && imovel.cidade !== filtros.cidade) return false;
+      if (filtros.cidade && normalize(imovel.cidade) !== normalize(filtros.cidade)) return false;
       // Bairro
-      if (filtros.bairro && imovel.bairro !== filtros.bairro) return false;
+      if (filtros.bairro && normalize(imovel.bairro) !== normalize(filtros.bairro)) return false;
       // Valor
       if (filtros.valorMin && Number(imovel.valor) < Number(filtros.valorMin)) return false;
       if (filtros.valorMax && Number(imovel.valor) > Number(filtros.valorMax)) return false;
@@ -85,7 +87,7 @@ export default function ImoveisCategoriaPage() {
         }
         for (const [chave, valor] of Object.entries(filtros)) {
           if (
-            !['tipoImovel', 'cidade', 'bairro', 'valorMin', 'valorMax', 'metragemMin', 'metragemMax'].includes(chave) &&
+            !['tipoimovel', 'cidade', 'bairro', 'valorMin', 'valorMax', 'metragemMin', 'metragemMax'].includes(chave) &&
             valor !== ""
           ) {
             const valorFiltro = Number(valor);
@@ -107,10 +109,12 @@ export default function ImoveisCategoriaPage() {
 
     try {
       const imoveisBrutos = await buscarImoveisPorCategoria(
-        categoriaParam,
-        tipoNegocioParam,
+        setorCapitalizado,
+        obterTipoNegocio(tipoNegocioParam),
         filtros
       );
+
+      console.log("Imóveis do Supabase:", imoveisBrutos);
 
       const imoveisFinais = aplicarFiltroLocal(imoveisBrutos, filtros);
       setImoveis(imoveisFinais);
@@ -120,7 +124,7 @@ export default function ImoveisCategoriaPage() {
     } finally {
       setCarregando(false);
     }
-  }, [categoriaParam, tipoNegocioParam, filtros, aplicarFiltroLocal]);
+  }, [setorCapitalizado, tipoNegocioParam, filtros, aplicarFiltroLocal, obterTipoNegocio]);
 
   const limparFiltros = useCallback(() => {
     setFiltros({

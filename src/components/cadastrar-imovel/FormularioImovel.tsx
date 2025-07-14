@@ -270,22 +270,25 @@ export default function FormularioImovel({
     try {
       const totalImagens = imagensExistentes.length + imagensNovas.length;
       if (totalImagens === 0) throw new Error("Por favor, adicione pelo menos uma imagem");
+      const capitalizar = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
       const dadosImovel = {
-        cidade: formulario.cidade,
-        bairro: formulario.bairro,
+        cidade: formulario.cidade.trim(),
+        bairro: formulario.bairro.trim(),
         enderecodetalhado: formulario.enderecoDetalhado,
         valor: Number(formulario.valor.replace(/\D/g, "")) / 100,
         metragem: Number(formulario.metragem.replace(/\D/g, "")),
         descricao: formulario.descricao,
-        tipoimovel: formulario.tipoImovel,
-        tiponegocio: formulario.tipoNegocio,
-        setornegocio: formulario.setorNegocio,
+        tipoimovel: formulario.tipoImovel.trim(),
+        tiponegocio: capitalizar(formulario.tipoNegocio.trim()),
+        setornegocio: capitalizar(formulario.setorNegocio.trim()),
         whatsapp: formulario.whatsapp.replace(/\D/g, ""),
         patrocinadorid: formulario.patrocinador || null,
         itens: Object.fromEntries(
           itensDisponiveis.map(item => [item.chave, itens[item.chave] || 0])
         ),
       };
+      
       if (modoEdicao && dadosIniciais?.id) {
         let urlsFinais = [...imagensExistentes];
         if (imagensNovas.length > 0) {

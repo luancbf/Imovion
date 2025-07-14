@@ -77,7 +77,7 @@ export async function buscarImoveis(
       const valor = filtros[campo];
       if (valor) {
         const campoDb = campo === "tipoImovel" ? "tipoimovel" : campo;
-        query = query.eq(campoDb, valor);
+        query = query.eq(campoDb, valor.trim().toLowerCase());
       }
     });
 
@@ -110,6 +110,7 @@ export async function buscarImoveis(
     query = query.order('datacadastro', { ascending: false });
 
     const { data, error } = await query;
+    console.log("🔎 [BUSCA SUPABASE]:", { setor, tipoNegocio, filtros, resultado: data });
     if (error) {
       console.error("❌ [ERRO BUSCA]:", error.message);
       return [];

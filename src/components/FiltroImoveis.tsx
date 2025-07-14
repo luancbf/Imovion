@@ -123,6 +123,11 @@ export function FiltroImovel({
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       const filtrosProcessados = { ...novosFiltros };
+      Object.keys(filtrosProcessados).forEach(key => {
+        if (typeof filtrosProcessados[key] === "string") {
+          filtrosProcessados[key] = filtrosProcessados[key].trim().toLowerCase();
+        }
+      });
       if (filtrosProcessados.valor && filtrosProcessados.valor.includes('-')) {
         const [min, max] = filtrosProcessados.valor.split('-');
         filtrosProcessados.valorMin = min;
@@ -135,7 +140,12 @@ export function FiltroImovel({
         filtrosProcessados.metragemMax = max;
         delete filtrosProcessados.metragem;
       }
-      onFiltroChange(filtrosProcessados);
+      onFiltroChange({
+        ...filtrosProcessados,
+        tipoimovel: filtrosProcessados.tipoimovel.trim().toLowerCase(),
+        cidade: filtrosProcessados.cidade.trim().toLowerCase(),
+        bairro: filtrosProcessados.bairro.trim().toLowerCase(),
+      });
     }, 300);
   }, [onFiltroChange]);
 
