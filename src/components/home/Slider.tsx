@@ -180,12 +180,12 @@ export default function Slider({
                   <Image
                     src={banner.image_url}
                     alt={banner.image_alt}
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
+                    width={1200}
+                    height={320}
                     priority={idx === 0 && type === 'principal'}
+                    className="object-cover w-full h-full transition-transform duration-500 hover:scale-105"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
                     quality={90}
-                    style={{ objectFit: 'cover' }}
                   />
                 </Link>
               </SwiperSlide>

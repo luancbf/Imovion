@@ -128,8 +128,9 @@ export default function Patrocinios() {
                 <Image
                   src={patrocinio.image_url}
                   alt={patrocinio.image_alt}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                  width={160}
+                  height={160}
+                  className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out w-full h-full"
                   sizes="(max-width: 640px) 128px, (max-width: 1024px) 160px, 200px"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
