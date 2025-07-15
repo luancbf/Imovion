@@ -23,13 +23,24 @@ export function useAuth() {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    // Logout automático após 30 minutos (1800000 ms)
+    let logoutTimer: NodeJS.Timeout;
+    if (user) {
+      logoutTimer = setTimeout(() => {
+        supabase.auth.signOut();
+        setUser(null);
+      }, 1800000); // 30 minutos
+    }
+
+    return () => {
+      subscription.unsubscribe();
+      if (logoutTimer) clearTimeout(logoutTimer);
+    };
+  }, [user]);
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-    }
+    if (!error) setUser(null);
   };
 
   return { 
