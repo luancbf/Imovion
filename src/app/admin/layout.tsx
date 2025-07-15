@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import useAuthGuard from '@/hooks/useAuthGuard';
-import { FiPlusSquare, FiUsers, FiHome } from "react-icons/fi";
+import useAuth from '@/hooks/useAuth';
+import { FiPlusSquare, FiUsers, FiHome, FiLogOut } from "react-icons/fi";
 
 const menuLinks = [
   {
@@ -24,6 +25,8 @@ const menuLinks = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const carregando = useAuthGuard();
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuth();
 
   if (carregando) return null;
 
@@ -91,8 +94,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <FiHome size={20} className="mr-3" />
                 Voltar ao Site
               </Link>
-              
-              <div className="text-xs text-gray-400 text-center">
+              <button
+                onClick={async () => {
+                  await logout();
+                  router.replace('/login');
+                }}
+                className="flex items-center px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-800 transition-all duration-200 font-medium w-full"
+              >
+                <FiLogOut size={20} className="mr-3" />
+                Sair da conta
+              </button>
+              <div className="text-xs text-gray-400 text-center mt-4">
                 &copy; {new Date().getFullYear()} Imovion
               </div>
             </div>
@@ -136,6 +148,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <FiHome size={20} className="mb-1" />
             <span className="text-xs font-medium leading-tight">Site</span>
           </Link>
+          {/* Botão Logout */}
+          <button
+            onClick={async () => {
+              await logout();
+              router.replace('/login');
+            }}
+            className="flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 flex-1 mx-1 text-red-600 hover:text-red-800 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-opacity-50"
+          >
+            <FiLogOut size={20} className="mb-1" />
+            <span className="text-xs font-medium leading-tight">Sair</span>
+          </button>
         </div>
       </nav>
     </div>
