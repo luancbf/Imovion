@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { FiHome, FiSave, FiUpload, FiMapPin, FiDollarSign, FiEdit3, FiX } from "react-icons/fi";
 import UploadImages from "./formulario/UploadImages";
-import SelectCidadeBairro from "./formulario/SelectCidadeBairro";
 import ItensImovel from "./formulario/ItensImovel";
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import { formatarParaMoeda, formatarMetragem, formatarTelefone } from "@/utils/formatters";
@@ -87,12 +86,6 @@ export default function FormularioImovel({
       typeof valor === 'number' ? valor.toString() : "";
   }, []);
 
-  const formatarValor = useCallback((valor: unknown): string => {
-    if (typeof valor === 'number' && !isNaN(valor)) return formatarParaMoeda(valor.toString());
-    if (typeof valor === 'string' && valor.trim().length > 0) return valor;
-    return "";
-  }, []);
-
   const formatarMetragemValor = useCallback((metragem: unknown): string => {
     if (typeof metragem === 'number' && !isNaN(metragem)) return formatarMetragem(metragem.toString());
     if (typeof metragem === 'string' && metragem.trim().length > 0) return metragem;
@@ -119,15 +112,18 @@ export default function FormularioImovel({
       cidade: getDadoInicial('cidade', dadosIniciais),
       bairro: getDadoInicial('bairro', dadosIniciais),
       enderecoDetalhado: getDadoInicial('enderecoDetalhado', dadosIniciais) || getDadoInicial('enderecodetalhado', dadosIniciais),
-      valor: formatarValor(dadosIniciais.valor),
+      valor: formatarParaMoeda(dadosIniciais.valor?.toString() ?? ""), // <-- ajuste simples aqui!
       metragem: formatarMetragemValor(dadosIniciais.metragem),
       descricao: getDadoInicial('descricao', dadosIniciais),
       tipoImovel: getDadoInicial('tipoImovel', dadosIniciais) || getDadoInicial('tipoimovel', dadosIniciais),
       setorNegocio: getDadoInicial('setorNegocio', dadosIniciais) || getDadoInicial('setornegocio', dadosIniciais),
       tipoNegocio: getDadoInicial('tipoNegocio', dadosIniciais) || getDadoInicial('tiponegocio', dadosIniciais),
       whatsapp: getDadoInicial('whatsapp', dadosIniciais),
-      patrocinador: getDadoInicial('patrocinador', dadosIniciais) || getDadoInicial('patrocinadorid', dadosIniciais),
-    });
+      patrocinador: 
+        getDadoInicial('patrocinadorid', dadosIniciais) || 
+        getDadoInicial('patrocinador', dadosIniciais) ||  
+          "", 
+      });
     if (dadosIniciais.itens) {
       try {
         const itensObj = typeof dadosIniciais.itens === 'string'
@@ -149,7 +145,7 @@ export default function FormularioImovel({
       setPreviews([...imagensValidas]);
     }
     setEtapaAtual(1);
-  }, [dadosIniciais, limparFormulario, inicializarItens, getDadoInicial, formatarValor, formatarMetragemValor]);
+  }, [dadosIniciais, limparFormulario, inicializarItens, getDadoInicial, formatarMetragemValor]);
 
   useEffect(() => {
     if (formulario.patrocinador) {
@@ -264,6 +260,15 @@ export default function FormularioImovel({
     return validacoes[etapa]?.() ?? true;
   }, [formulario, imagensExistentes.length, imagensNovas.length]);
 
+  const parseValor = (valorStr: string): number => {
+  // Remove pontos de milhares
+  const semPontos = valorStr.replace(/\./g, "");
+  // Troca vírgula por ponto
+  const normalizado = semPontos.replace(",", ".");
+  // Converte para float
+  return parseFloat(normalizado) || 0;
+};
+
   const enviarFormulario = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setCarregando(true);
@@ -276,7 +281,7 @@ export default function FormularioImovel({
         cidade: formulario.cidade.trim(),
         bairro: formulario.bairro.trim(),
         enderecodetalhado: formulario.enderecoDetalhado,
-        valor: Number(formulario.valor.replace(/\D/g, "")) / 100,
+        valor: parseValor(formulario.valor),
         metragem: Number(formulario.metragem.replace(/\D/g, "")),
         descricao: formulario.descricao,
         tipoimovel: formulario.tipoImovel.trim(),
@@ -505,13 +510,40 @@ export default function FormularioImovel({
                 <FiMapPin size={20} />
                 Localização do Imóvel
               </h3>
-              <SelectCidadeBairro
-                cidadesComBairros={cidadesComBairros}
-                cidade={formulario.cidade}
-                bairro={formulario.bairro}
-                onChange={handleChange}
-                selectClass={CLASSES.select}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-green-900">
+                    Cidade
+                  </label>
+                  <select
+                    name="cidade"
+                    value={formulario.cidade}
+                    onChange={handleChange}
+                    className={CLASSES.select}
+                    required
+                  >
+                    <option value="">🏙️ Selecione a cidade</option>
+                    {Object.keys(cidadesComBairros).map((cidade) => (
+                      <option key={cidade} value={cidade}>
+                        {cidade.replace(/_/g, ' ')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-green-900">
+                    Bairro
+                  </label>
+                  <input
+                    name="bairro"
+                    placeholder="Digite o bairro"
+                    value={formulario.bairro}
+                    onChange={handleChange}
+                    className={CLASSES.input}
+                    required
+                  />
+                </div>
+              </div>
               <div className="mt-6 space-y-2">
                 <label className="block text-sm font-semibold text-green-900">
                   Endereço Completo
@@ -570,19 +602,6 @@ export default function FormularioImovel({
               </div>
               <div className="mt-6 space-y-2">
                 <label className="block text-sm font-semibold text-purple-900">
-                  WhatsApp para Contato
-                </label>
-                <input
-                  name="whatsapp"
-                  placeholder="(00) 00000-0000"
-                  value={formulario.whatsapp}
-                  onChange={handleChange}
-                  className={CLASSES.input}
-                  required
-                />
-              </div>
-              <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900">
                   Descrição do Imóvel
                 </label>
                 <textarea
@@ -598,27 +617,37 @@ export default function FormularioImovel({
                   💡 Uma boa descrição atrai mais interessados
                 </p>
               </div>
-              {/* Patrocinador */}
-              {patrocinadores.length > 0 && (
-                <div className="mt-6 space-y-2">
-                  <label className="block text-sm font-semibold text-purple-900">
-                    Patrocinador (Opcional)
-                  </label>
-                  <select
-                    name="patrocinador"
-                    value={formulario.patrocinador}
-                    onChange={handleChange}
-                    className={CLASSES.select}
-                  >
-                    <option value="">🏢 Selecionar patrocinador</option>
-                    {patrocinadores.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              <div className="mt-6 space-y-2">
+                <label className="block text-sm font-semibold text-purple-900">
+                  Patrocinador (Opcional)
+                </label>
+                <select
+                  name="patrocinador"
+                  value={formulario.patrocinador || ''}
+                  onChange={handleChange}
+                  className={CLASSES.select}
+                >
+                  <option value="">🏢 Selecionar patrocinador</option>
+                  {patrocinadores.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mt-6 space-y-2">
+                <label className="block text-sm font-semibold text-purple-900">
+                  WhatsApp para Contato
+                </label>
+                <input
+                  name="whatsapp"
+                  placeholder="(00) 00000-0000"
+                  value={formulario.whatsapp}
+                  onChange={handleChange}
+                  className={CLASSES.input}
+                  required
+                />
+              </div>
             </div>
           </div>
         )}

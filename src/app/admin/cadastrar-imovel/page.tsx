@@ -54,12 +54,17 @@ export default function CadastrarImovel() {
         
         const { data: patrocinadoresData, error: patrocinadorError } = await supabase
           .from('patrocinadores')
-          .select('id, nome, slug, telefone, whatsapp, celular');
+          .select('id, nome, slug, telefone'); // Remova whatsapp, celular
         
         if (patrocinadorError) {
           setPatrocinadores([]);
         } else {
-          setPatrocinadores(patrocinadoresData || []);
+          // Garante que só patrocinadores válidos são usados
+          setPatrocinadores(
+            (patrocinadoresData || []).filter(
+              (p: { id?: string; nome?: string }) => !!p && !!p.id && !!p.nome
+            )
+          );
         }
         
       } catch {

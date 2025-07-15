@@ -20,6 +20,8 @@ interface FiltroImovelProps {
   opcoesTipoImovel: Record<string, string[]>;
   setor: 'Residencial' | 'Comercial' | 'Rural';
   tipoNegocio: 'Aluguel' | 'Venda';
+  onSetorChange?: (novoSetor: 'Residencial' | 'Comercial' | 'Rural') => void;
+  onTipoNegocioChange?: (novoTipo: 'Aluguel' | 'Venda') => void;
   onFiltroChange: (filtros: Record<string, string>) => void;
   filtrosIniciais?: Record<string, string>;
 }
@@ -75,6 +77,8 @@ export function FiltroImovel({
   opcoesTipoImovel,
   setor,
   tipoNegocio,
+  onSetorChange,
+  onTipoNegocioChange,
   onFiltroChange,
   filtrosIniciais: filtrosExternos = {}
 }: FiltroImovelProps) {
@@ -338,7 +342,34 @@ export function FiltroImovel({
     <div className="w-full bg-white rounded-2xl shadow p-4 sm:p-6 mb-8 flex flex-col gap-6 max-w-7xl mx-auto border border-blue-100">
       {/* FILTROS PRINCIPAIS */}
       <div className="flex flex-col items-center gap-4 w-full">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 w-full">
+        {/* Linha responsiva com todos os selects principais */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+          {/* Categoria */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Categoria</label>
+            <select
+              value={setor}
+              onChange={e => onSetorChange?.(e.target.value as 'Residencial' | 'Comercial' | 'Rural')}
+              className="p-3 border border-gray-300 rounded-lg bg-white text-black w-full"
+            >
+              <option value="Residencial">Residencial</option>
+              <option value="Comercial">Comercial</option>
+              <option value="Rural">Rural</option>
+            </select>
+          </div>
+          {/* Tipo de Negócio */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Negócio</label>
+            <select
+              value={tipoNegocio}
+              onChange={e => onTipoNegocioChange?.(e.target.value as 'Aluguel' | 'Venda')}
+              className="p-3 border border-gray-300 rounded-lg bg-white text-black w-full"
+            >
+              <option value="Aluguel">Aluguel</option>
+              <option value="Venda">Venda</option>
+            </select>
+          </div>
+          {/* Tipo de imóvel */}
           <SelectField
             label="Tipo de imóvel"
             name="tipoImovel"
@@ -347,6 +378,7 @@ export function FiltroImovel({
             placeholder="Todos os tipos"
             icon="🏠"
           />
+          {/* Cidade */}
           <SelectField
             label="Cidade"
             name="cidade"
@@ -355,15 +387,21 @@ export function FiltroImovel({
             placeholder="Todas as cidades"
             icon="📍"
           />
-          <SelectField
-            label="Bairro"
-            name="bairro"
-            value={filtros.bairro}
-            options={opcoesFormatadas.bairros}
-            placeholder="Todos os bairros"
-            disabled={!filtros.cidade}
-            icon="🏘️"
-          />
+          {/* Bairro */}
+          <div className="flex flex-col w-full">
+            <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              🏘️ Bairro
+            </label>
+            <input
+              type="text"
+              name="bairro"
+              value={filtros.bairro}
+              onChange={handleChange}
+              placeholder="Digite o bairro"
+              className="p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+            />
+          </div>
+          {/* Faixa de valor */}
           <SelectField
             label="Faixa de valor"
             name="valor"
@@ -372,6 +410,7 @@ export function FiltroImovel({
             placeholder="Qualquer valor"
             icon="💰"
           />
+          {/* Faixa de metragem */}
           <SelectField
             label="Faixa de metragem"
             name="metragem"
