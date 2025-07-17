@@ -144,7 +144,15 @@ export default function Slider({
     );
   }
 
-  if (!shuffledBanners.length) return null;
+  if (!shuffledBanners.length) {
+    return (
+      <div className={`w-full ${className}`}>
+        <div className="relative w-full h-30 flex items-center justify-center bg-gray-100 border border-gray-200 rounded-xl">
+          <span className="text-gray-500 text-sm">Nenhum banner configurado para exibição.</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`w-full ${className}`}>

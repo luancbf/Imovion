@@ -7,6 +7,8 @@ import { useFileUpload } from '@/hooks/cadastrar-patrocinador/useFileUpload';
 import { usePatrocinadores } from '@/hooks/cadastrar-patrocinador/usePatrocinadores';
 import { SliderBanner } from '@/types/cadastrar-patrocinador';
 import Image from "next/image";
+import ConfirmModal from '@/components/common/ConfirmModal';
+import AlertModal from '@/components/common/AlertModal';
 
 interface SliderConfigurationProps {
   isVisible: boolean;
@@ -40,14 +42,15 @@ function BannerCard({
 }: BannerCardProps) {
   const isClickable = banner.is_clickable === true;
   const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState<{ open: boolean; type: "success" | "error"; message: string }>({ open: false, type: "success", message: "" });
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await saveSliderBanner(banner.image_name);
-      alert('Banner salvo com sucesso!');
+      setAlert({ open: true, type: "success", message: "Banner salvo com sucesso!" });
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erro ao salvar banner.');
+      setAlert({ open: true, type: "error", message: error instanceof Error ? error.message : "Erro ao salvar banner." });
     } finally {
       setSaving(false);
     }
@@ -225,6 +228,13 @@ function BannerCard({
           </button>
         </div>
       </div>
+
+      <AlertModal
+        open={alert.open}
+        type={alert.type}
+        message={alert.message}
+        onClose={() => setAlert({ ...alert, open: false })}
+      />
     </div>
   );
 }
@@ -288,8 +298,11 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
     updateSliderBanner,
     setImageUploading,
     deleteSliderBanner,
-    saveSliderBanner
+    saveSliderBanner,
+    saveAllSliderBanners
   } = useSliderConfig();
+
+  const [confirmDelete, setConfirmDelete] = useState<{ imageName: string } | null>(null);
 
   useEffect(() => {
     if (isVisible) {
@@ -312,11 +325,17 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
   };
 
   const handleDeleteBanner = async (imageName: string) => {
-    if (confirm('Deseja excluir este banner permanentemente?')) {
+    setConfirmDelete({ imageName });
+  };
+
+  const confirmDeleteBanner = async () => {
+    if (confirmDelete) {
       try {
-        await deleteSliderBanner(imageName);
+        await deleteSliderBanner(confirmDelete.imageName);
       } catch {
         alert('Erro ao excluir banner. Tente novamente.');
+      } finally {
+        setConfirmDelete(null);
       }
     }
   };
@@ -325,6 +344,21 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
     updateSliderBanner(imageName, field, value);
     if (field === 'image_url' && value) {
       updateSliderBanner(imageName, 'is_active', true);
+    }
+  };
+
+  // Adicione estado para controle de salvamento em lote
+  const [savingAll, setSavingAll] = useState(false);
+
+  const handleSaveAll = async () => {
+    setSavingAll(true);
+    try {
+      await saveAllSliderBanners();
+      alert('Todos os banners foram salvos com sucesso!');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Erro ao salvar todos os banners.');
+    } finally {
+      setSavingAll(false);
     }
   };
 
@@ -348,6 +382,7 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
           </div>
         </div>
         
+        {/* Botões de ação alinhados */}
         <div className="flex items-center gap-2">
           <button
             onClick={loadSliderBanners}
@@ -356,6 +391,20 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
             title="Recarregar configurações"
           >
             <FiRefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveAll}
+            disabled={loading || savingAll}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-green-600 hover:bg-green-700 text-white transition-all disabled:opacity-60"
+            title="Salvar todos os banners"
+          >
+            {savingAll ? (
+              <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+            ) : (
+              <FiUpload size={16} />
+            )}
+            <span>Salvar Todos</span>
           </button>
           <button
             onClick={onClose}
@@ -400,6 +449,17 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
           />
         </div>
       )}
+
+      {/* Adicione o modal no JSX principal */}
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Excluir Banner"
+        message="Deseja excluir este banner permanentemente?"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onConfirm={confirmDeleteBanner}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </section>
   );
 }
