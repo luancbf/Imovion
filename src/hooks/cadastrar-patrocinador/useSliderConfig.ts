@@ -197,10 +197,13 @@ export const useSliderConfig = () => {
   // SALVAR TODOS OS BANNERS EDITADOS
   const saveAllSliderBanners = useCallback(async () => {
     for (const banner of sliderBanners) {
-      if (banner.image_url || banner.patrocinador_id || banner.is_clickable) {
+      // Salve todos os banners que tenham imagem
+      if (banner.image_url && banner.image_url.trim() !== '') {
         try {
+          // Garanta que is_active seja true ao salvar
           await saveSliderBanner(banner.image_name);
         } catch {
+          // Você pode adicionar um tratamento de erro aqui se quiser
         }
       }
     }
