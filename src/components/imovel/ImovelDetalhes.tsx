@@ -9,6 +9,8 @@ interface ImovelDetalhesProps {
   metragem: number;
   enderecoDetalhado: string;
   descricao: string;
+  patrocinadorNome?: string;
+  patrocinadorCreci?: string;
 }
 
 const fallback = {
@@ -20,6 +22,8 @@ const fallback = {
   metragem: 0,
   enderecoDetalhado: "Não informado",
   descricao: "Sem descrição.",
+  patrocinadorNome: "",
+  patrocinadorCreci: "",
 };
 
 const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
@@ -31,6 +35,8 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
   metragem,
   enderecoDetalhado,
   descricao,
+  patrocinadorNome,
+  patrocinadorCreci,
 }) => {
   const formatarValor = (valor: number) =>
     valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -61,6 +67,14 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
         <div className="font-inter text-normal sm:text-xl text-gray-600">
           <span className="font-poppins font-semibold">Descrição:</span> {descricao || fallback.descricao}
         </div>
+        {(patrocinadorNome || patrocinadorCreci) && (
+          <div className="font-inter text-normal sm:text-xl text-blue-700 mt-2">
+            <span className="font-poppins font-semibold">Anunciado por:</span> {patrocinadorNome}
+            {patrocinadorCreci && (
+              <span className="ml-2">| CRECI: <strong>{patrocinadorCreci}</strong></span>
+            )}
+          </div>
+        )}
       </div>
       <div className="mt-3">
         

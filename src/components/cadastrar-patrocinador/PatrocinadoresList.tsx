@@ -165,7 +165,13 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
                   <h3 className="font-bold text-blue-900 text-lg truncate mb-1 group-hover:text-blue-700 transition-colors">
                     {patrocinador.nome}
                   </h3>
-                  
+
+                  {/* CRECI sempre abaixo do nome */}
+                  <div className="flex items-center gap-1 text-blue-600 text-sm mb-1">
+                    <span className="font-semibold">CRECI:</span>
+                    <span>{patrocinador.creci || 'Não informado'}</span>
+                  </div>
+
                   {/* Mostrar telefone */}
                   {patrocinador.telefone && (
                     <div className="flex items-center gap-1 text-blue-600 text-sm mb-1">
@@ -173,7 +179,7 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
                       <span>{patrocinador.telefone}</span>
                     </div>
                   )}
-                  
+
                   <span className="text-gray-500 text-xs">
                     {formatDate(patrocinador.criadoEm)}
                   </span>

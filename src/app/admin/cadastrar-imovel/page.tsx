@@ -54,7 +54,7 @@ export default function CadastrarImovel() {
         
         const { data: patrocinadoresData, error: patrocinadorError } = await supabase
           .from('patrocinadores')
-          .select('id, nome, slug, telefone'); // Remova whatsapp, celular
+          .select('id, nome, slug, telefone, creci');
         
         if (patrocinadorError) {
           setPatrocinadores([]);
@@ -101,29 +101,10 @@ export default function CadastrarImovel() {
 
   const handleEditarNoFormulario = (imovel: Imovel) => {
     const imovelParaEdicao: ImovelEdicao = {
-      id: imovel.id,
-      cidade: imovel.cidade,
-      bairro: imovel.bairro,
-      enderecodetalhado: imovel.enderecodetalhado,
-      valor: imovel.valor,
-      metragem: imovel.metragem,
-      descricao: imovel.descricao,
-      tipoimovel: imovel.tipoimovel,
-      tiponegocio: imovel.tiponegocio,
-      setornegocio: imovel.setornegocio,
-      whatsapp: imovel.whatsapp,
-      patrocinadorid: imovel.patrocinadorid,
-      datacadastro: imovel.datacadastro,
-      ativo: imovel.ativo,
-      imagens: imovel.imagens,
-      itens: imovel.itens,
-      
+      ...imovel,
       tipoImovel: imovel.tipoimovel,
-      enderecoDetalhado: imovel.enderecodetalhado,
-      tipoNegocio: imovel.tiponegocio,
       setorNegocio: imovel.setornegocio,
-      dataCadastro: imovel.datacadastro,
-      patrocinador: imovel.patrocinadorid,
+      tipoNegocio: imovel.tiponegocio,
     };
 
     setImovelEditando(imovelParaEdicao);

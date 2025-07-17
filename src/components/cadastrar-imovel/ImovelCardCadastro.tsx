@@ -20,6 +20,7 @@ interface ImovelComItens extends Imovel {
   tipoNegocio?: string;
   setorNegocio?: string;
   dataCadastro?: Date | string;
+  creci?: string;
 }
 
 interface ImovelCardProps {
@@ -85,13 +86,25 @@ export default function ImovelCardCadastro({
   };
 
   const handleEditar = () => {
-    const dadosParaFormulario = {
+    const dadosParaFormulario: ImovelComItens = {
       ...imovel,
-      tipoImovel,
-      enderecoDetalhado,
-      tipoNegocio,
-      setorNegocio,
-      dataCadastro,
+      tipoImovel: imovel.tipoImovel || imovel.tipoimovel || "",
+      enderecoDetalhado: imovel.enderecoDetalhado || imovel.enderecodetalhado,
+      tipoNegocio: imovel.tipoNegocio || imovel.tiponegocio || "",
+      setorNegocio: imovel.setorNegocio || imovel.setornegocio || "",
+      patrocinador: imovel.patrocinador || imovel.patrocinadorid || "",
+      creci: imovel.creci || "",
+      whatsapp: imovel.whatsapp || "",
+      valor: typeof imovel.valor === "number"
+      ? imovel.valor
+      : Number(imovel.valor) || 0, // <-- Corrigido!
+      metragem: imovel.metragem,
+      descricao: imovel.descricao,
+      imagens: imovel.imagens || [],
+      itens: imovel.itens || {},
+      dataCadastro: imovel.dataCadastro || imovel.datacadastro,
+      bairro: imovel.bairro,
+      cidade: imovel.cidade,
     };
     onEdit(dadosParaFormulario);
     const formulario = document.querySelector('[data-formulario-imovel]');

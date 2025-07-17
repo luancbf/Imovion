@@ -27,6 +27,7 @@ const FORMULARIO_INICIAL = {
   tipoNegocio: "",
   whatsapp: "",
   patrocinador: "",
+  creci: "",
 };
 
 const ETAPAS = [
@@ -103,6 +104,7 @@ export default function FormularioImovel({
   }, [inicializarItens]);
 
   useEffect(() => {
+
     if (!dadosIniciais?.id) {
       limparFormulario();
       return;
@@ -112,18 +114,18 @@ export default function FormularioImovel({
       cidade: getDadoInicial('cidade', dadosIniciais),
       bairro: getDadoInicial('bairro', dadosIniciais),
       enderecoDetalhado: getDadoInicial('enderecoDetalhado', dadosIniciais) || getDadoInicial('enderecodetalhado', dadosIniciais),
-      valor: formatarParaMoeda(dadosIniciais.valor?.toString() ?? ""), // <-- ajuste simples aqui!
+      valor: typeof dadosIniciais.valor === "number"
+    ? formatarParaMoeda(dadosIniciais.valor.toString())
+    : formatarParaMoeda(String(dadosIniciais.valor || "")),
       metragem: formatarMetragemValor(dadosIniciais.metragem),
       descricao: getDadoInicial('descricao', dadosIniciais),
-      tipoImovel: getDadoInicial('tipoImovel', dadosIniciais) || getDadoInicial('tipoimovel', dadosIniciais),
-      setorNegocio: getDadoInicial('setorNegocio', dadosIniciais) || getDadoInicial('setornegocio', dadosIniciais),
-      tipoNegocio: getDadoInicial('tipoNegocio', dadosIniciais) || getDadoInicial('tiponegocio', dadosIniciais),
+      tipoImovel: dadosIniciais.tipoImovel || "",    
+      setorNegocio: dadosIniciais.setorNegocio || "",
+      tipoNegocio: dadosIniciais.tipoNegocio || "",
       whatsapp: getDadoInicial('whatsapp', dadosIniciais),
-      patrocinador: 
-        getDadoInicial('patrocinadorid', dadosIniciais) || 
-        getDadoInicial('patrocinador', dadosIniciais) ||  
-          "", 
-      });
+      patrocinador: getDadoInicial('patrocinadorid', dadosIniciais) || getDadoInicial('patrocinador', dadosIniciais) || "",
+      creci: getDadoInicial('creci', dadosIniciais) || "",
+    });
     if (dadosIniciais.itens) {
       try {
         const itensObj = typeof dadosIniciais.itens === 'string'
@@ -153,22 +155,22 @@ export default function FormularioImovel({
         (p) => p.id === formulario.patrocinador
       );
       let telefonePatrocinador = "";
+      let creciPatrocinador = "";
       if (patrocinadorSelecionado) {
         if (typeof patrocinadorSelecionado.telefone === "string" && patrocinadorSelecionado.telefone.trim().length > 0) {
           telefonePatrocinador = patrocinadorSelecionado.telefone;
         }
+        if (typeof patrocinadorSelecionado.creci === "string" && patrocinadorSelecionado.creci.trim().length > 0) {
+          creciPatrocinador = patrocinadorSelecionado.creci;
+        }
       }
-      if (
-        telefonePatrocinador &&
-        (formulario.whatsapp === "" || formulario.whatsapp !== telefonePatrocinador)
-      ) {
-        setFormulario(prev => ({
-          ...prev,
-          whatsapp: telefonePatrocinador
-        }));
-      }
+      setFormulario(prev => ({
+        ...prev,
+        whatsapp: telefonePatrocinador ? telefonePatrocinador : prev.whatsapp,
+        creci: creciPatrocinador,
+      }));
     }
-  }, [formulario.patrocinador, formulario.whatsapp, patrocinadores]);
+  }, [formulario.patrocinador, patrocinadores]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -261,12 +263,14 @@ export default function FormularioImovel({
   }, [formulario, imagensExistentes.length, imagensNovas.length]);
 
   const parseValor = (valorStr: string): number => {
+  // Remove prefixo R$ e espaços
+  let limpo = valorStr.replace(/^R\$\s*/, "");
   // Remove pontos de milhares
-  const semPontos = valorStr.replace(/\./g, "");
+  limpo = limpo.replace(/\./g, "");
   // Troca vírgula por ponto
-  const normalizado = semPontos.replace(",", ".");
+  limpo = limpo.replace(",", ".");
   // Converte para float
-  return parseFloat(normalizado) || 0;
+  return parseFloat(limpo) || 0;
 };
 
   const enviarFormulario = useCallback(async (e: React.FormEvent) => {
@@ -613,9 +617,6 @@ export default function FormularioImovel({
                   rows={4}
                   required
                 />
-                <p className="text-xs text-purple-600">
-                  💡 Uma boa descrição atrai mais interessados
-                </p>
               </div>
               <div className="mt-6 space-y-2">
                 <label className="block text-sm font-semibold text-purple-900">
@@ -646,6 +647,18 @@ export default function FormularioImovel({
                   onChange={handleChange}
                   className={CLASSES.input}
                   required
+                />
+              </div>
+              <div className="mt-6 space-y-2">
+                <label className="block text-sm font-semibold text-purple-900">
+                  CRECI
+                </label>
+                <input
+                  name="creci"
+                  placeholder="Digite o CRECI"
+                  value={formulario.creci || ""}
+                  onChange={handleChange}
+                  className={CLASSES.input}
                 />
               </div>
             </div>

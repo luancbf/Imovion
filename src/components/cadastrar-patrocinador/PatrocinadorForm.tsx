@@ -22,13 +22,14 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
   onCancelEdit 
 }, ref) => {
   const { user } = useAuth();
-  const { validatePatrocinador, gerarSlug, loadPatrocinadores } = usePatrocinadores();
+  const { gerarSlug, loadPatrocinadores } = usePatrocinadores();
   
   const formRef = useRef<HTMLElement>(null);
   
   // Estados
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [creci, setCreci] = useState('');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -75,6 +76,7 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
   const resetForm = useCallback(() => {
     setNome('');
     setTelefone('');
+    setCreci('');
     setErrors({});
     onCancelEdit?.();
   }, [onCancelEdit]);
@@ -83,6 +85,7 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     if (editingPatrocinador) {
       setNome(editingPatrocinador.nome);
       setTelefone(editingPatrocinador.telefone ? formatTelefoneRealTime(editingPatrocinador.telefone) : '');
+      setCreci(editingPatrocinador.creci ?? '');
       setTimeout(() => {
         scrollToForm();
       }, 100);
@@ -93,16 +96,10 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
 
   const validateForm = (): boolean => {
     const newErrors: {[key: string]: string} = {};
-    
     if (!nome.trim()) {
       newErrors.nome = 'Nome é obrigatório';
-    } else {
-      const validation = validatePatrocinador(nome.trim(), telefone.trim(), editingPatrocinador?.id);
-      if (!validation.valid) {
-        newErrors.nome = validation.error || 'Nome inválido';
-      }
     }
-    
+    // CRECI não obrigatório, mas pode validar formato se quiser
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -153,6 +150,7 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
         nome: nome.trim(),
         slug: gerarSlug(nome.trim()),
         telefone: telefone.trim() || null,
+        creci: creci.trim() || null,
         ownerId: user.id
       };
 
@@ -307,7 +305,6 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
             isEditing ? 'text-amber-900' : 'text-blue-900'
           }`}>
             Telefone
-            <span className="text-gray-500 font-normal text-xs ml-1">(opcional)</span>
           </label>
           <div className="relative">
             <FiPhone className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors ${
@@ -333,9 +330,30 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
           {errors.telefone && (
             <p className="text-red-600 text-sm mt-1">⚠️ {errors.telefone}</p>
           )}
-          <p className="text-gray-500 text-xs mt-1">
-            Formato automático: (65) 99999-1234 ou (65) 9999-1234
-          </p>
+        </div>
+        
+        <div>
+          <label htmlFor="creci" className={`block text-sm font-semibold mb-2 transition-colors ${
+            isEditing ? 'text-amber-900' : 'text-blue-900'
+          }`}>
+            CRECI
+          </label>
+          <div className="relative">
+            <input
+              id="creci"
+              type="text"
+              placeholder="Digite o CRECI"
+              value={creci}
+              onChange={(e) => setCreci(e.target.value)}
+              className={`w-full pl-4 pr-4 py-3 border rounded-xl transition-all ${
+                isEditing
+                  ? 'border-amber-200 focus:ring-amber-500 focus:border-amber-500 bg-amber-50'
+                  : 'border-blue-200 focus:ring-blue-500 focus:border-blue-500 bg-blue-50'
+              }`}
+              disabled={isDisabled}
+              maxLength={30}
+            />
+          </div>
         </div>
         
         {/* Botões */}

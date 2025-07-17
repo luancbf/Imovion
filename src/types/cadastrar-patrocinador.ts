@@ -3,6 +3,7 @@ export interface Patrocinador {
   nome: string;
   slug: string;
   telefone?: string;
+  creci?: string;
   criadoEm?: string;
   atualizadoEm?: string;
   ownerId?: string;

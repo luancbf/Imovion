@@ -25,6 +25,7 @@ interface PatrocinadorDB {
   nome: string;
   slug: string;
   telefone?: string;
+  creci?: string;
   ownerId: string;
   criadoEm: string;
   atualizadoEm: string;
@@ -36,7 +37,8 @@ interface SupabaseRowUnknown {
   nome?: unknown;
   slug?: unknown;
   telefone?: unknown;
-  ownerId?: unknown;  
+  creci?: unknown;
+  ownerId?: unknown;
   criadoEm?: unknown;
   atualizadoEm?: unknown;
 }
@@ -96,6 +98,7 @@ export const usePatrocinadores = () => {
     nome: item.nome,
     slug: item.slug,
     telefone: item.telefone || undefined,
+    creci: item.creci || undefined,
     ownerId: item.ownerId,
     criadoEm: item.criadoEm,
     atualizadoEm: item.atualizadoEm
@@ -127,7 +130,7 @@ export const usePatrocinadores = () => {
     try {
       const { data, error: supabaseError } = await supabase
         .from('patrocinadores')
-        .select('*')
+        .select('id, nome, slug, telefone, creci, ownerId, criadoEm, atualizadoEm')
         .order('criadoEm', { ascending: false });
 
       if (supabaseError) {
@@ -170,62 +173,66 @@ export const usePatrocinadores = () => {
   }, [patrocinadores, gerarSlug, validarTelefone]);
 
   // OPERAÇÕES CRUD ATUALIZADAS
-  const createPatrocinador = useCallback(async (nome: string, telefone?: string, userId = 'system'): Promise<string> => {
-    setError(null);
+  const createPatrocinador = useCallback(
+    async (nome: string, telefone?: string, creci?: string, userId = 'system'): Promise<string> => {
+      setError(null);
 
-    const validation = validatePatrocinador(nome, telefone);
-    if (!validation.valid) throw new Error(validation.error);
+      const validation = validatePatrocinador(nome, telefone);
+      if (!validation.valid) throw new Error(validation.error);
 
-    if (!supabase) throw new Error('Supabase não configurado');
+      if (!supabase) throw new Error('Supabase não configurado');
 
-    const dados = {
-      nome: nome.trim(),
-      slug: gerarSlug(nome.trim()),
-      telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null,
-      ownerId: userId
-    };
+      const dados = {
+        nome: nome.trim(),
+        slug: gerarSlug(nome.trim()),
+        telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null,
+        creci: creci?.trim() || null, // <-- Agora funciona!
+        ownerId: userId
+      };
 
-    const { data, error: supabaseError } = await supabase
-      .from('patrocinadores')
-      .insert([dados])
-      .select()
-      .single();
+      const { data, error: supabaseError } = await supabase
+        .from('patrocinadores')
+        .insert([dados])
+        .select()
+        .single();
 
-    if (supabaseError) {
-      if (supabaseError.code === '23505') throw new Error('Nome já existe');
-      throw new Error(`Erro: ${supabaseError.message}`);
-    }
+      if (supabaseError) {
+        if (supabaseError.code === '23505') throw new Error('Nome já existe');
+        throw new Error(`Erro: ${supabaseError.message}`);
+      }
 
-    await loadPatrocinadores();
-    return data.id;
-  }, [validatePatrocinador, gerarSlug, formatarTelefone, loadPatrocinadores]);
+      await loadPatrocinadores();
+      return data.id;
+    }, [validatePatrocinador, gerarSlug, formatarTelefone, loadPatrocinadores]);
 
-  const updatePatrocinador = useCallback(async (id: string, nome: string, telefone?: string): Promise<void> => {
-    setError(null);
+  const updatePatrocinador = useCallback(
+    async (id: string, nome: string, telefone?: string, creci?: string): Promise<void> => {
+      setError(null);
 
-    const validation = validatePatrocinador(nome, telefone, id);
-    if (!validation.valid) throw new Error(validation.error);
+      const validation = validatePatrocinador(nome, telefone, id);
+      if (!validation.valid) throw new Error(validation.error);
 
-    if (!supabase) throw new Error('Supabase não configurado');
+      if (!supabase) throw new Error('Supabase não configurado');
 
-    const dados = {
-      nome: nome.trim(),
-      slug: gerarSlug(nome.trim()),
-      telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null
-    };
+      const dados = {
+        nome: nome.trim(),
+        slug: gerarSlug(nome.trim()),
+        telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null,
+        creci: creci?.trim() || null // <-- Adicione aqui
+      };
 
-    const { error: supabaseError } = await supabase
-      .from('patrocinadores')
-      .update(dados)
-      .eq('id', id);
+      const { error: supabaseError } = await supabase
+        .from('patrocinadores')
+        .update(dados)
+        .eq('id', id);
 
-    if (supabaseError) {
-      if (supabaseError.code === '23505') throw new Error('Nome já existe');
-      throw new Error(`Erro: ${supabaseError.message}`);
-    }
+      if (supabaseError) {
+        if (supabaseError.code === '23505') throw new Error('Nome já existe');
+        throw new Error(`Erro: ${supabaseError.message}`);
+      }
 
-    await loadPatrocinadores();
-  }, [validatePatrocinador, gerarSlug, formatarTelefone, loadPatrocinadores]);
+      await loadPatrocinadores();
+    }, [validatePatrocinador, gerarSlug, formatarTelefone, loadPatrocinadores]);
 
   const deletePatrocinador = useCallback(async (id: string): Promise<void> => {
     setError(null);

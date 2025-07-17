@@ -22,6 +22,7 @@ interface Patrocinador {
   criadoem?: string;
   atualizadoem?: string;
   ownerid?: string;
+  creci?: string;
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -230,6 +231,11 @@ export default function PatrocinadorPage() {
             >
               🏢 {patrocinador.nome}
             </h1>
+            {patrocinador.creci && (
+              <p className="font-inter text-base md:text-lg text-blue-800 mb-2">
+                CRECI: <strong>{patrocinador.creci}</strong>
+              </p>
+            )}
             <p
               className="font-inter text-sm md:text-xl text-blue-900 mb-4"
               style={{ userSelect: "none" }}
