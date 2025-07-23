@@ -12,6 +12,7 @@ import ImoveisPatrocinadorList from "@/components/imovel/ImoveisPatrocinadorList
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import ImovelModal from "@/components/imovel/ImovelModal";
 import type { Imovel } from "@/types/Imovel";
+import { FaWhatsapp } from "react-icons/fa"; // adicione este import no topo
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -33,19 +34,19 @@ function negocioFormatado(tipoNegocio?: string) {
 
 function determinarSetor(imovel: Imovel): string {
   const tipo = imovel.tipoimovel?.toLowerCase() || "";
-  
+
   if (tipo.includes("casa") || tipo.includes("apartamento") || tipo.includes("residencial")) {
     return "Residencial";
   }
-  
+
   if (tipo.includes("comercial") || tipo.includes("loja") || tipo.includes("escritorio") || tipo.includes("ponto")) {
     return "Comercial";
   }
-  
+
   if (tipo.includes("fazenda") || tipo.includes("sitio") || tipo.includes("rural") || tipo.includes("chacara")) {
     return "Rural";
   }
-  
+
   return "Residencial";
 }
 
@@ -55,6 +56,7 @@ export default function ImovelPage() {
   const [loading, setLoading] = useState(true);
   const [imoveisPatrocinador, setImoveisPatrocinador] = useState<Imovel[]>([]);
   const [patrocinadorNome, setPatrocinadorNome] = useState<string | null>(null);
+  const [patrocinadorCreci, setPatrocinadorCreci] = useState<string | undefined>(undefined);
   const [modalAberto, setModalAberto] = useState(false);
   const [imagemIndex, setImagemIndex] = useState(0);
 
@@ -102,25 +104,28 @@ export default function ImovelPage() {
   useEffect(() => {
     async function buscarNomePatrocinador() {
       if (!imovel?.patrocinadorid) return;
-      
+
       try {
         const { data, error } = await supabase
           .from("patrocinadores")
-          .select("nome")
+          .select("nome, creci") // <-- inclua o campo creci aqui
           .eq("id", imovel.patrocinadorid)
           .single();
-        
+
         if (error) {
           setPatrocinadorNome('Patrocinador não encontrado');
+          setPatrocinadorCreci(undefined);
           return;
         }
-        
+
         setPatrocinadorNome(data?.nome || 'Nome não disponível');
+        setPatrocinadorCreci(data?.creci || undefined); // <-- salve o creci aqui
       } catch {
         setPatrocinadorNome('Erro ao carregar');
+        setPatrocinadorCreci(undefined);
       }
     }
-    
+
     buscarNomePatrocinador();
   }, [imovel?.patrocinadorid]);
 
@@ -269,7 +274,7 @@ export default function ImovelPage() {
             imagens={imovel.imagens || ["/imoveis/sem-imagem.jpg"]}
             cidade={imovel.cidade}
             tipo={imovel.tipoimovel}
-            altura="h-60 sm:h-95"
+            altura="h-60 sm:h-110"
             onImageClick={abrirModal}
           />
 
@@ -278,7 +283,8 @@ export default function ImovelPage() {
             <div className="mb-6 flex justify-start">
               <PatrocinadorBadge 
                 patrocinador={imovel.patrocinadorid} 
-                nome={patrocinadorNome} 
+                nome={patrocinadorNome}
+                creci={patrocinadorCreci}
               />
             </div>
           )}
@@ -296,55 +302,57 @@ export default function ImovelPage() {
           />
 
           {/* Características do imóvel */}
-          <section className="mt-8">
-            <h4 className="font-poppins font-semibold text-blue-700 mb-6 text-lg sm:text-2xl text-center flex items-center justify-center gap-2">
-              🏠 Características do Imóvel
-            </h4>
-            {itensDisponiveis.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
-                <div className="text-4xl mb-3">📋</div>
-                <p className="text-gray-600 font-medium">
-                  Características não definidas para este tipo de imóvel.
-                </p>
-              </div>
-            ) : itensComValor.length === 0 ? (
-              <div className="text-center py-8 bg-blue-50 rounded-xl border border-blue-200">
-                <div className="text-4xl mb-3">ℹ️</div>
-                <p className="text-blue-700 font-medium">
-                  Nenhuma característica específica foi informada para este imóvel.
-                </p>
-                <p className="text-sm text-blue-600 mt-2">
-                  Entre em contato para mais informações sobre as características.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {itensComValor.map((item) => {
-                  const valor = itensImovel[item.chave];
-                  const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
-                  const valorNumerico = typeof valor === 'number' ? valor : Number(valor) || 0;
-                  return (
-                    <div
-                      key={item.chave}
-                      className={`rounded-xl p-4 border transition-all duration-200 text-center flex flex-col items-center
-                        ${isQuant
-                          ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-md"
-                          : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-md"
-                        }`}
-                    >
-                      <div className={isQuant ? "text-3xl" : "text-2xl"}>{item.icone}</div>
-                      <span className={`font-medium block leading-tight ${isQuant ? "text-blue-900 text-sm" : "text-green-900 text-xs"}`}>
-                        {item.nome}
-                      </span>
-                      <div className={`${isQuant ? "bg-blue-600 text-white px-3 py-1 rounded-lg font-bold text-lg" : "bg-green-600 text-white px-2 py-1 rounded-lg font-bold text-sm"}`}>
-                        {isQuant ? valorNumerico : "✓"}
+          {imovel.tipoimovel?.toLowerCase() !== "terreno" && (
+            <section className="mt-8">
+              <h4 className="font-poppins font-semibold text-blue-700 mb-6 text-lg sm:text-2xl text-center flex items-center justify-center gap-2">
+                🏠 Características do Imóvel
+              </h4>
+              {itensDisponiveis.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
+                  <div className="text-4xl mb-3">📋</div>
+                  <p className="text-gray-600 font-medium">
+                    Características não definidas para este tipo de imóvel.
+                  </p>
+                </div>
+              ) : itensComValor.length === 0 ? (
+                <div className="text-center py-8 bg-blue-50 rounded-xl border border-blue-200">
+                  <div className="text-4xl mb-3">ℹ️</div>
+                  <p className="text-blue-700 font-medium">
+                    Nenhuma característica específica foi informada para este imóvel.
+                  </p>
+                  <p className="text-sm text-blue-600 mt-2">
+                    Entre em contato para mais informações sobre as características.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {itensComValor.map((item) => {
+                    const valor = itensImovel[item.chave];
+                    const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
+                    const valorNumerico = typeof valor === 'number' ? valor : Number(valor) || 0;
+                    return (
+                      <div
+                        key={item.chave}
+                        className={`rounded-xl p-4 border transition-all duration-200 text-center flex flex-col items-center
+                          ${isQuant
+                            ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-md"
+                            : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-md"
+                          }`}
+                      >
+                        <div className={isQuant ? "text-3xl" : "text-2xl"}>{item.icone}</div>
+                        <span className={`font-medium block leading-tight ${isQuant ? "text-blue-900 text-sm" : "text-green-900 text-xs"}`}>
+                          {item.nome}
+                        </span>
+                        <div className={`${isQuant ? "bg-blue-600 text-white px-3 py-1 rounded-lg font-bold text-lg" : "bg-green-600 text-white px-2 py-1 rounded-lg font-bold text-sm"}`}>
+                          {isQuant ? valorNumerico : "✓"}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Botão WhatsApp */}
           <div className="flex justify-center mt-8">
@@ -355,6 +363,7 @@ export default function ImovelPage() {
                 rel="noopener noreferrer"
                 className="font-poppins inline-flex items-center justify-center gap-3 w-full sm:w-auto text-center bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-2xl font-bold text-lg sm:text-xl shadow-lg hover:scale-105 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer font-poppins"
               >
+                <FaWhatsapp className="text-2xl text-white" />
                 Falar no WhatsApp
               </a>
             ) : (

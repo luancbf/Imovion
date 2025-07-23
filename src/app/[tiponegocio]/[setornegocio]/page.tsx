@@ -20,7 +20,11 @@ export default function ImoveisCategoriaPage() {
   const params = useParams();
 
   const categoriaParam = String(params.categoria || "").toLowerCase();
-  const tipoNegocioParam = String(params.tipoNegocio || "").toLowerCase();
+  const tiponegocioParam = String(params.tiponegocio || "").toLowerCase();
+  const setornegocioParam = String(params.setornegocio || "").toLowerCase();
+
+  const tiponegocioCapitalizado = tiponegocioParam.charAt(0).toUpperCase() + tiponegocioParam.slice(1).toLowerCase();
+  const setornegocioCapitalizado = setornegocioParam.charAt(0).toUpperCase() + setornegocioParam.slice(1).toLowerCase();
 
   const setorCapitalizado = categoriaParam.charAt(0).toUpperCase() + categoriaParam.slice(1).toLowerCase();
 
@@ -109,12 +113,10 @@ export default function ImoveisCategoriaPage() {
 
     try {
       const imoveisBrutos = await buscarImoveisPorCategoria(
-        setorCapitalizado,
-        obterTipoNegocio(tipoNegocioParam),
+        setornegocioCapitalizado,
+        tiponegocioCapitalizado,
         filtros
       );
-
-      console.log("Imóveis do Supabase:", imoveisBrutos);
 
       const imoveisFinais = aplicarFiltroLocal(imoveisBrutos, filtros);
       setImoveis(imoveisFinais);
@@ -124,7 +126,12 @@ export default function ImoveisCategoriaPage() {
     } finally {
       setCarregando(false);
     }
-  }, [setorCapitalizado, tipoNegocioParam, filtros, aplicarFiltroLocal, obterTipoNegocio]);
+  }, [
+    tiponegocioCapitalizado,
+    setornegocioCapitalizado,
+    filtros,
+    aplicarFiltroLocal
+  ]);
 
   const limparFiltros = useCallback(() => {
     setFiltros({
@@ -171,9 +178,10 @@ export default function ImoveisCategoriaPage() {
                   <FiltroImovel
                     cidadesComBairros={cidadesComBairros}
                     opcoesTipoImovel={opcoesTipoImovel}
-                    setor={obterSetor(categoriaParam)}
-                    tipoNegocio={obterTipoNegocio(tipoNegocioParam)}
+                    setor={obterSetor(tiponegocioParam)} // "Residencial", "Comercial", "Rural"
+                    tipoNegocio={obterTipoNegocio(setornegocioParam)} // "Aluguel", "Venda"
                     onFiltroChange={setFiltros}
+                    mostrarCategoriaNegocio={false}
                   />
                 </div>
               )}

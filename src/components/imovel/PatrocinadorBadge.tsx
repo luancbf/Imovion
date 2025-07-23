@@ -5,19 +5,26 @@ import Link from 'next/link';
 interface PatrocinadorBadgeProps {
   patrocinador: string;
   nome: string;
+  creci?: string;
 }
 
-const PatrocinadorBadge: React.FC<PatrocinadorBadgeProps> = ({ patrocinador, nome }) => {
+const PatrocinadorBadge: React.FC<PatrocinadorBadgeProps> = ({ patrocinador, nome, creci }) => {
   if (!patrocinador || !nome) return null;
 
   return (
-    <div className="flex justify-center">
+    <div className="flex flex-col items-center">
       <Link
         href={`/patrocinadores/${encodeURIComponent(patrocinador)}`}
-        className="inline-block bg-blue-100 font-poppins text-normal text-blue-700 font-semibold px-5 py-2 rounded-xl shadow hover:bg-blue-200 transition cursor-pointer"
+        className="inline-block font-poppins font-semibold text-normal lg:text-xl text-blue-900 transition cursor-pointer"
       >
-        Anunciado por:{" "}
-        <span className="font-bold">{nome}</span>
+        <span className="flex items-center">
+          {nome}
+          {creci && (
+            <span className="ml-1 align-middle">
+              | CRECI: {creci}
+            </span>
+          )}
+        </span>
       </Link>
     </div>
   );

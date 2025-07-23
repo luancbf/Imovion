@@ -35,8 +35,6 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
   metragem,
   enderecoDetalhado,
   descricao,
-  patrocinadorNome,
-  patrocinadorCreci,
 }) => {
   const formatarValor = (valor: number) =>
     valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -56,25 +54,17 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
           </span>
         </div>
         <div className="font-inter text-normal sm:text-xl text-gray-600">
-          <span className="font-poppins font-semibold">Local:</span> {(cidade || fallback.cidade)}, {(bairro || fallback.bairro)}
+          <span className="font-poppins font-semibold text-black">Local:</span> {(cidade || fallback.cidade)}, {(bairro || fallback.bairro)}
         </div>
         <div className="font-inter text-normal sm:text-xl text-gray-600">
-          <span className="font-poppins font-semibold">Endereço:</span> {(enderecoDetalhado || fallback.enderecoDetalhado)}
+          <span className="font-poppins font-semibold text-black">Endereço:</span> {(enderecoDetalhado || fallback.enderecoDetalhado)}
         </div>
         <div className="font-inter text-normal sm:text-xl text-gray-600">
-          <span className="font-poppins font-semibold">Área:</span> {(metragem || fallback.metragem)}m²
+          <span className="font-poppins font-semibold text-black">Área:</span> {(metragem || fallback.metragem)}m²
         </div>
         <div className="font-inter text-normal sm:text-xl text-gray-600">
-          <span className="font-poppins font-semibold">Descrição:</span> {descricao || fallback.descricao}
+          <span className="font-poppins font-semibold text-black">Descrição:</span> {descricao || fallback.descricao}
         </div>
-        {(patrocinadorNome || patrocinadorCreci) && (
-          <div className="font-inter text-normal sm:text-xl text-blue-700 mt-2">
-            <span className="font-poppins font-semibold">Anunciado por:</span> {patrocinadorNome}
-            {patrocinadorCreci && (
-              <span className="ml-2">| CRECI: <strong>{patrocinadorCreci}</strong></span>
-            )}
-          </div>
-        )}
       </div>
       <div className="mt-3">
         

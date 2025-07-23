@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FaBed, FaBath, FaCar, FaRulerCombined, FaWarehouse } from "react-icons/fa";
+import { FaBed, FaBath, FaCar, FaRulerCombined, FaWarehouse, FaWhatsapp } from "react-icons/fa";
 import { MdMeetingRoom } from "react-icons/md";
 import { GiFarmTractor } from "react-icons/gi";
 import type { Imovel } from "@/types/Imovel";
@@ -40,56 +40,72 @@ type ImovelCardProps = {
 export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCardProps) {
   const imagens = imovel.imagens?.length ? imovel.imagens : ["/imoveis/sem-imagem.jpg"];
 
+  // Corrija aqui: parse seguro do campo itens
+  let itens: Record<string, unknown> = {};
+  if (typeof imovel.itens === "string") {
+    try {
+      itens = JSON.parse(imovel.itens);
+    } catch {
+      itens = {};
+    }
+  } else if (typeof imovel.itens === "object" && imovel.itens !== null) {
+    itens = imovel.itens;
+  }
+
+  // Adicione estes logs para depuração
+  console.log("imovel recebido:", imovel);
+  console.log("itens parseados:", itens);
+
   const quartos =
-    typeof imovel.itens?.quartos === "number"
-      ? imovel.itens.quartos
-      : Number(imovel.itens?.quartos) || 0;
+    typeof itens?.quartos === "number"
+      ? itens.quartos
+      : Number(itens?.quartos) || 0;
 
   const banheiros =
-    typeof imovel.itens?.banheiros === "number"
-      ? imovel.itens.banheiros
-      : Number(imovel.itens?.banheiros) || 0;
+    typeof itens?.banheiros === "number"
+      ? itens.banheiros
+      : Number(itens?.banheiros) || 0;
 
   const garagens =
-    typeof imovel.itens?.garagens === "number"
-      ? imovel.itens.garagens
-      : Number(imovel.itens?.garagens) || 0;
+    typeof itens?.garagens === "number"
+      ? itens.garagens
+      : Number(itens?.garagens) || 0;
 
   const salas =
-    typeof imovel.itens?.salas === "number"
-      ? imovel.itens.salas
-      : Number(imovel.itens?.salas) || 0;
+    typeof itens?.salas === "number"
+      ? itens.salas
+      : Number(itens?.salas) || 0;
 
   const hectares =
-    typeof imovel.itens?.hectares === "number"
-      ? imovel.itens.hectares
-      : Number(imovel.itens?.hectares) || 0;
+    typeof itens?.hectares === "number"
+      ? itens.hectares
+      : Number(itens?.hectares) || 0;
 
   const galpoes =
-    typeof imovel.itens?.galpoes === "number"
-      ? imovel.itens.galpoes
-      : Number(imovel.itens?.galpoes) || 0;
+    typeof itens?.galpoes === "number"
+      ? itens.galpoes
+      : Number(itens?.galpoes) || 0;
 
   let itensPrincipais: ItemPrincipal[] = [];
 
-  if (imovel.setornegocio === "Residencial") {
+  if (imovel.tiponegocio === "Residencial") {
     itensPrincipais = [
       { icon: <FaRulerCombined className="text-lg" title="Área" />, label: "Área", value: `${imovel.metragem || 0} m²` },
       { icon: <FaBed className="text-lg" title="Quartos" />, label: "Quartos", value: quartos },
       { icon: <FaBath className="text-lg" title="Banheiros" />, label: "Banheiros", value: banheiros },
       { icon: <FaCar className="text-lg" title="Garagens" />, label: "Garagens", value: garagens },
     ];
-  } else if (imovel.setornegocio === "Comercial") {
+  } else if (imovel.tiponegocio === "Comercial") {
     itensPrincipais = [
       { icon: <FaRulerCombined className="text-lg" title="Área" />, label: "Área", value: `${imovel.metragem || 0} m²` },
       { icon: <MdMeetingRoom className="text-lg" title="Salas" />, label: "Salas", value: salas },
       { icon: <FaCar className="text-lg" title="Garagens" />, label: "Garagens", value: garagens },
       { icon: <FaBath className="text-lg" title="Banheiros" />, label: "Banheiros", value: banheiros },
     ];
-  } else if (imovel.setornegocio === "Rural") {
+  } else if (imovel.tiponegocio === "Rural") {
     itensPrincipais = [
       { icon: <FaRulerCombined className="text-lg" title="Área" />, label: "Área", value: `${imovel.metragem || 0} m²` },
-      { icon: <GiFarmTractor className="text-lg" title="Hectares" />, label: "Hectares", value: hectares },
+      { icon: <GiFarmTractor className="text-lg" title="Hectares" />, label: "Hectares", value: `${hectares || 0} ha` },
       { icon: <FaWarehouse className="text-lg" title="Galpões" />, label: "Galpões", value: galpoes },
     ];
   }
@@ -135,9 +151,9 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
       </div>
       
       <div className="p-4 flex-1 flex flex-col gap-2">
-        <h3 className="font-poppins text-lg md:text-xl font-bold text-blue-900">
+        <h3 className="font-poppins text-lg md:text-xl font-bold text-blue-800">
           {contexto === "patrocinador"
-            ? `${formatarTexto(imovel.setornegocio)} - ${negocioFormatado(imovel.tiponegocio)} - ${formatarTexto(imovel.tipoimovel)}`
+            ? `${negocioFormatado(imovel.tiponegocio)} - ${formatarTexto(imovel.setornegocio)} - ${formatarTexto(imovel.tipoimovel)}`
             : formatarTexto(imovel.tipoimovel)}
         </h3>
         
@@ -149,7 +165,7 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
         
         <div className="font-inter text-normal text-gray-600 space-y-1">
           <p>
-            <span className="font-poppins font-bold">Local:</span> {formatarTexto(imovel.bairro)}, {formatarTexto(imovel.cidade)}
+            <span className="font-poppins font-bold">Local:</span> {formatarTexto(imovel.cidade)}, {formatarTexto(imovel.bairro)}
           </p>
           <p>
             <span className="font-poppins font-bold">Endereço:</span> {formatarTexto(imovel.enderecodetalhado)}
@@ -161,10 +177,10 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           {itensPrincipais
             .filter(item => {
               if (typeof item.value === "string") {
-                const num = Number(item.value.toString().replace(/[^\d.]/g, ""));
-                return num > 0;
+                const match = item.value.match(/^(\d+)/);
+                return match ? Number(match[1]) > 0 : false;
               }
-              return typeof item.value === "number" ? item.value > 0 : true;
+              return typeof item.value === "number" ? item.value > 0 : false;
             })
             .map((item, idx) => (
               <div key={item.label + idx} className="flex items-center gap-1 text-blue-900">
@@ -194,10 +210,11 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105"
+              className="flex items-center justify-center bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-all duration-200 hover:scale-105"
+              style={{ minWidth: "48px", minHeight: "48px" }}
               aria-label="Entrar em contato via WhatsApp"
             >
-              WhatsApp
+              <FaWhatsapp className="text-2xl" />
             </a>
           )}
         </div>

@@ -42,22 +42,21 @@ export default function PatrocinadorPage() {
   const [mostrarFiltro, setMostrarFiltro] = useState(false);
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   
-  const [setor, setSetor] = useState<"Residencial" | "Comercial" | "Rural">("Residencial");
-  const [tipoNegocio, setTipoNegocio] = useState<"Aluguel" | "Venda">("Aluguel");
-
-  // Itens quantitativos para filtros iniciais
-  const itensQuantitativos = useMemo(
-    () =>
-      (ITENS_POR_SETOR[setor] || []).filter((item) =>
-        ITENS_QUANTITATIVOS.includes(item.chave)
-      ),
-    [setor]
-  );
+  const [setor, setSetor] = useState<"" | "Residencial" | "Comercial" | "Rural">("");
+  const [tipoNegocio, setTipoNegocio] = useState<"" | "Aluguel" | "Venda">("");
 
   // Função para aplicar filtro local (igual categoria/tiponegocio)
   const aplicarFiltroLocal = useCallback(
     (imoveis: Imovel[], filtros: Record<string, string>): Imovel[] => {
       const normalize = (str: string) => (str || "").trim().toLowerCase();
+
+      function determinarSetor(imovel: Imovel): "Residencial" | "Comercial" | "Rural" {
+        const tipo = imovel.tipoimovel?.toLowerCase() || "";
+        if (tipo.includes("casa") || tipo.includes("apartamento") || tipo.includes("residencial")) return "Residencial";
+        if (tipo.includes("comercial") || tipo.includes("loja") || tipo.includes("escritorio") || tipo.includes("ponto")) return "Comercial";
+        if (tipo.includes("fazenda") || tipo.includes("sitio") || tipo.includes("rural") || tipo.includes("chacara") || tipo.includes("terreno")) return "Rural";
+        return "Residencial";
+      }
 
       return imoveis.filter((imovel) => {
         if (filtros.tipoimovel && normalize(imovel.tipoimovel) !== normalize(filtros.tipoimovel))
@@ -69,6 +68,11 @@ export default function PatrocinadorPage() {
         if (filtros.metragemMin && Number(imovel.metragem) < Number(filtros.metragemMin)) return false;
         if (filtros.metragemMax && Number(imovel.metragem) > Number(filtros.metragemMax)) return false;
 
+        // Corrigido: filtra por setor usando função
+        if (setor && determinarSetor(imovel) !== setor) return false;
+
+        // Corrigido: filtra por tipoNegocio
+        if (tipoNegocio && normalize(imovel.setornegocio ?? "") !== normalize(tipoNegocio)) return false;
         if (imovel.itens) {
           let itensImovel: Record<string, string | number | boolean | null | undefined> = {};
           try {
@@ -96,19 +100,8 @@ export default function PatrocinadorPage() {
         return true;
       });
     },
-    []
+    [setor, tipoNegocio]
   );
-
-  const limparFiltros = useCallback(() => {
-    setFiltros({
-      tipoimovel: "",
-      cidade: "",
-      bairro: "",
-      ...Object.fromEntries(
-        itensQuantitativos.map((item) => [item.chave, ""])
-      )
-    });
-  }, [itensQuantitativos]);
 
   useEffect(() => {
     const fetchPatrocinador = async () => {
@@ -225,41 +218,44 @@ export default function PatrocinadorPage() {
         <div className="w-full max-w-7xl mx-auto">
           {/* Cabeçalho do Patrocinador */}
           <div className="text-center mb-8">
-            <h1
-              className="font-poppins text-3xl md:text-5xl font-extrabold text-blue-700 mb-4 drop-shadow"
-              style={{ userSelect: "none" }}
-            >
-              🏢 {patrocinador.nome}
-            </h1>
-            {patrocinador.creci && (
-              <p className="font-inter text-base md:text-lg text-blue-800 mb-2">
-                CRECI: <strong>{patrocinador.creci}</strong>
-              </p>
-            )}
-            <p
-              className="font-inter text-sm md:text-xl text-blue-900 mb-4"
-              style={{ userSelect: "none" }}
-            >
-              Confira todos os imóveis exclusivos de <strong>{patrocinador.nome}</strong>.
-              Encontre sua próxima oportunidade!
-            </p>
-            {/* Banner do Patrocinador */}
-            {patrocinador.bannerurl && (
-              <div className="w-full max-w-4xl mx-auto mb-6 relative">
-                <Image
-                  src={patrocinador.bannerurl}
-                  alt={`Banner do ${patrocinador.nome}`}
-                  width={1024}
-                  height={256}
-                  className="w-full h-48 md:h-64 object-cover rounded-xl shadow-lg"
-                  priority
-                  onError={(e) => {
-                    console.error("Erro ao carregar banner:", patrocinador.bannerurl);
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
+            {/* Hero do Patrocinador */}
+            <div className="relative text-center mb-8">
+              <div className="absolute inset-0 -z-10 flex justify-center items-center pointer-events-none">
+                <div className="w-full h-full bg-gradient-to-r from-blue-100 via-white to-blue-100 opacity-60 rounded-3xl blur-lg"></div>
               </div>
-            )}
+              <h1
+                className="font-poppins text-3xl md:text-5xl font-extrabold text-blue-900 mb-2 drop-shadow"
+                style={{ userSelect: "none" }}
+              >
+                {patrocinador.nome}
+              </h1>
+              {patrocinador.creci && (
+                <p className="font-inter text-base md:text-lg text-blue-800 mb-2">
+                  CRECI: <strong>{patrocinador.creci}</strong>
+                </p>
+              )}
+              <p className="font-inter text-base text-gray-600 max-w-xl mx-auto">
+                Explore os imóveis disponíveis e conte com o atendimento especializado do patrocinador para realizar o seu sonho. 
+                <span className="ml-1 text-blue-700 font-bold">Encontre, negocie e conquiste!</span>
+              </p>
+              {/* Banner do Patrocinador */}
+              {patrocinador.bannerurl && (
+                <div className="w-full max-w-4xl mx-auto mt-6 relative">
+                  <Image
+                    src={patrocinador.bannerurl}
+                    alt={`Banner do ${patrocinador.nome}`}
+                    width={1024}
+                    height={256}
+                    className="w-full h-48 md:h-64 object-cover rounded-xl shadow-lg"
+                    priority
+                    onError={(e) => {
+                      console.error("Erro ao carregar banner:", patrocinador.bannerurl);
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* FILTRO DE IMÓVEIS */}
@@ -288,13 +284,8 @@ export default function PatrocinadorPage() {
                     onSetorChange={setSetor}
                     onTipoNegocioChange={setTipoNegocio}
                     onFiltroChange={setFiltros}
+                    mostrarCategoriaNegocio={true}
                   />
-                  <button
-                    onClick={limparFiltros}
-                    className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
-                  >
-                    Limpar filtros
-                  </button>
                 </div>
               )}
             </div>
@@ -319,38 +310,11 @@ export default function PatrocinadorPage() {
             </div>
           ) : (
             <>
-              {/* Indicador de resultados */}
-              <div className="mb-6 bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-                  <p className="text-gray-700 font-inter font-medium">
-                    🏠 Exibindo todos os <strong>{imoveisFiltrados.length}</strong> imóveis disponíveis
-                  </p>
-                  <div className="text-sm text-gray-500">
-                    Portfólio completo de <strong>{patrocinador.nome}</strong>
-                  </div>
-                </div>
-              </div>
-
               {/* Grid de imóveis */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                 {imoveisFiltrados.map((imovel) => (
                   <ImovelCard key={imovel.id} imovel={imovel} contexto="patrocinador" />
                 ))}
-              </div>
-
-              {/* Footer da listagem */}
-              <div className="text-center text-gray-600 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
-                <p className="font-medium text-lg mb-2">
-                  ✨ Portfólio completo de <strong>{patrocinador.nome}</strong>
-                </p>
-                <p className="text-sm">
-                  Entre em contato diretamente através dos imóveis para mais informações e agendamento de visitas.
-                </p>
-                <div className="flex justify-center items-center gap-4 mt-4 text-xs text-gray-500">
-                  <span>📅 Atualizado em {new Date().toLocaleDateString("pt-BR")}</span>
-                  <span>•</span>
-                  <span>🔄 Dados em tempo real</span>
-                </div>
               </div>
             </>
           )}

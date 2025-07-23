@@ -19,7 +19,7 @@ export default function ImovelCarousel({
   imagens,
   cidade,
   tipo,
-  altura = "h-60 md:h-90",
+  altura = "h-60 md:h-110",
   onImageClick,
 }: ImovelCarouselProps) {
   return (

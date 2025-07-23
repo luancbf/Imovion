@@ -18,12 +18,13 @@ interface SelectOption {
 interface FiltroImovelProps {
   cidadesComBairros: Record<string, string[]>;
   opcoesTipoImovel: Record<string, string[]>;
-  setor: 'Residencial' | 'Comercial' | 'Rural';
-  tipoNegocio: 'Aluguel' | 'Venda';
-  onSetorChange?: (novoSetor: 'Residencial' | 'Comercial' | 'Rural') => void;
-  onTipoNegocioChange?: (novoTipo: 'Aluguel' | 'Venda') => void;
+  setor: "" | "Residencial" | "Comercial" | "Rural";
+  tipoNegocio: "" | "Aluguel" | "Venda";
+  onSetorChange?: (novoSetor: "" | "Residencial" | "Comercial" | "Rural") => void;
+  onTipoNegocioChange?: (novoTipo: "" | "Aluguel" | "Venda") => void;
   onFiltroChange: (filtros: Record<string, string>) => void;
   filtrosIniciais?: Record<string, string>;
+  mostrarCategoriaNegocio?: boolean; // <-- Adicione esta linha!
 }
 interface SelectFieldProps {
   label: string;
@@ -33,6 +34,7 @@ interface SelectFieldProps {
   placeholder?: string;
   disabled?: boolean;
   icon?: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 }
 interface ItemComponentProps {
   item: ItemImovel;
@@ -80,7 +82,8 @@ export function FiltroImovel({
   onSetorChange,
   onTipoNegocioChange,
   onFiltroChange,
-  filtrosIniciais: filtrosExternos = {}
+  filtrosIniciais: filtrosExternos = {},
+  mostrarCategoriaNegocio = false // <-- Adicione aqui também!
 }: FiltroImovelProps) {
 
   // ITENS DISPONÍVEIS
@@ -88,14 +91,8 @@ export function FiltroImovel({
     ITENS_POR_SETOR[setor] || [],
     [setor]
   );
-  const chaveOpcoes = useMemo((): string =>
-    `${setor}-${tipoNegocio}`,
-    [setor, tipoNegocio]
-  );
-  const tiposDisponiveis = useMemo((): string[] =>
-    opcoesTipoImovel[chaveOpcoes] || [],
-    [opcoesTipoImovel, chaveOpcoes]
-  );
+  const chaveOpcoes = useMemo(() => `${setor}-${tipoNegocio}`, [setor, tipoNegocio]);
+  const tiposDisponiveis = useMemo(() => opcoesTipoImovel[chaveOpcoes] || [], [opcoesTipoImovel, chaveOpcoes]);
   const itensQuantitativos = useMemo((): ItemImovel[] =>
     itensDisponiveis.filter(item => ITENS_QUANTITATIVOS.includes(item.chave)),
     [itensDisponiveis]
@@ -107,6 +104,7 @@ export function FiltroImovel({
 
   // FILTROS INICIAIS
   const filtrosIniciais = useMemo((): Record<string, string> => ({
+    setornegocio: "", // <-- campo correto!
     tipoImovel: "",
     cidade: "",
     bairro: "",
@@ -129,7 +127,11 @@ export function FiltroImovel({
       const filtrosProcessados = { ...novosFiltros };
       Object.keys(filtrosProcessados).forEach(key => {
         if (typeof filtrosProcessados[key] === "string") {
-          filtrosProcessados[key] = filtrosProcessados[key].trim().toLowerCase();
+          if (["tipoimovel", "cidade", "bairro"].includes(key)) {
+            filtrosProcessados[key] = filtrosProcessados[key].trim().toLowerCase();
+          } else {
+            filtrosProcessados[key] = filtrosProcessados[key].trim();
+          }
         }
       });
       if (filtrosProcessados.valor && filtrosProcessados.valor.includes('-')) {
@@ -146,25 +148,26 @@ export function FiltroImovel({
       }
       onFiltroChange({
         ...filtrosProcessados,
-        tipoimovel: filtrosProcessados.tipoimovel.trim().toLowerCase(),
-        cidade: filtrosProcessados.cidade.trim().toLowerCase(),
-        bairro: filtrosProcessados.bairro.trim().toLowerCase(),
+        setornegocio: (filtrosProcessados.setornegocio ?? "").trim(),
+        tipoimovel: (filtrosProcessados.tipoimovel ?? "").trim().toLowerCase(),
+        cidade: (filtrosProcessados.cidade ?? "").trim().toLowerCase(),
+        bairro: (filtrosProcessados.bairro ?? "").trim().toLowerCase(),
       });
     }, 300);
   }, [onFiltroChange]);
 
   // HANDLERS
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
-    const { name, value, type } = e.target;
-    let novoValor = value;
-    if (type === "checkbox") {
-      novoValor = (e.target as HTMLInputElement).checked ? "1" : "";
-    }
-    const novosFiltros = { ...filtros, [name]: novoValor };
+    const { name, value } = e.target;
+    const novosFiltros = { ...filtros, [name]: value };
     if (name === "cidade") novosFiltros.bairro = "";
     setFiltros(novosFiltros);
     handleFiltroChange(novosFiltros);
-  }, [filtros, handleFiltroChange]);
+
+    // Atualize setor/tipoNegocio no componente pai
+    if (name === "setor" && onSetorChange) onSetorChange(value as "" | "Residencial" | "Comercial" | "Rural");
+    if (name === "setornegocio" && onTipoNegocioChange) onTipoNegocioChange(value as "" | "Aluguel" | "Venda");
+  }, [filtros, handleFiltroChange, onSetorChange, onTipoNegocioChange]);
 
   const handleItemQuantChange = useCallback((chave: string, valor: number): void => {
     const valorNormalizado = Math.max(0, valor);
@@ -176,6 +179,7 @@ export function FiltroImovel({
 
   const limparFiltros = useCallback((): void => {
     const filtrosLimpos = {
+      setornegocio: "", // <-- adicione aqui!
       tipoImovel: "",
       cidade: "",
       bairro: "",
@@ -195,6 +199,7 @@ export function FiltroImovel({
 
   useEffect(() => {
     const novosFiltrosIniciais = {
+      setornegocio: "", // <-- adicione aqui!
       tipoImovel: "",
       cidade: "",
       bairro: "",
@@ -215,7 +220,7 @@ export function FiltroImovel({
   }, []);
 
   // COMPONENTES AUXILIARES
-  const SelectField = ({ label, name, value, options, placeholder = "Todos", disabled = false, icon }: SelectFieldProps) => (
+  const SelectField = ({ label, name, value, options = [], disabled = false, icon }: SelectFieldProps) => (
     <div className="flex flex-col w-full">
       <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
         {icon && <span className="text-lg">{icon}</span>} {label}
@@ -227,7 +232,6 @@ export function FiltroImovel({
         disabled={disabled}
         className="p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
       >
-        <option value="">{placeholder}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -322,15 +326,11 @@ export function FiltroImovel({
       label: cidade.replace(/_/g, " "),
       value: cidade
     })),
-    bairros: (cidadesComBairros[filtros.cidade] || []).map((bairro): SelectOption => ({
-      label: bairro.replace(/_/g, " "),
-      value: bairro
-    })),
     valores: tipoNegocio === "Aluguel"
       ? VALORES_FILTRO.valor as readonly SelectOption[]
       : VALORES_FILTRO.valorVenda as readonly SelectOption[],
     metragens: VALORES_FILTRO.metragem as readonly SelectOption[]
-  }), [tiposDisponiveis, cidadesComBairros, filtros.cidade, tipoNegocio]);
+  }), [tiposDisponiveis, cidadesComBairros, tipoNegocio]);
 
   // FILTROS ATIVOS
   const filtrosAtivos = useMemo(() => {
@@ -340,52 +340,62 @@ export function FiltroImovel({
   // RENDER
   return (
     <div className="w-full bg-white rounded-2xl shadow p-4 sm:p-6 mb-8 flex flex-col gap-6 max-w-7xl mx-auto border border-blue-100">
-      {/* FILTROS PRINCIPAIS */}
       <div className="flex flex-col items-center gap-4 w-full">
-        {/* Linha responsiva com todos os selects principais */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
           {/* Categoria */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Categoria</label>
-            <select
-              value={setor}
-              onChange={e => onSetorChange?.(e.target.value as 'Residencial' | 'Comercial' | 'Rural')}
-              className="p-3 border border-gray-300 rounded-lg bg-white text-black w-full"
-            >
-              <option value="Residencial">Residencial</option>
-              <option value="Comercial">Comercial</option>
-              <option value="Rural">Rural</option>
-            </select>
-          </div>
-          {/* Tipo de Negócio */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Negócio</label>
-            <select
-              value={tipoNegocio}
-              onChange={e => onTipoNegocioChange?.(e.target.value as 'Aluguel' | 'Venda')}
-              className="p-3 border border-gray-300 rounded-lg bg-white text-black w-full"
-            >
-              <option value="Aluguel">Aluguel</option>
-              <option value="Venda">Venda</option>
-            </select>
-          </div>
+          {mostrarCategoriaNegocio && (
+            <>
+              <SelectField
+                label="Categoria"
+                name="setor"
+                value={setor}
+                options={[
+                  { label: "Todas as categorias", value: "" },
+                  { label: "Residencial", value: "Residencial" },
+                  { label: "Comercial", value: "Comercial" },
+                  { label: "Rural", value: "Rural" },
+                ]}
+                icon="🏷️"
+                onChange={handleChange}
+              />
+              {/* Tipo de Negócio */}
+              <SelectField
+                label="Tipo de Negócio"
+                name="setornegocio"
+                value={tipoNegocio}
+                options={[
+                  { label: "Todos os tipos de negócio", value: "" },
+                  { label: "Aluguel", value: "Aluguel" },
+                  { label: "Venda", value: "Venda" },
+                ]}
+                icon="💼"
+                onChange={handleChange}
+              />
+            </>
+          )}
           {/* Tipo de imóvel */}
           <SelectField
             label="Tipo de imóvel"
             name="tipoImovel"
             value={filtros.tipoImovel}
-            options={opcoesFormatadas.tipos}
-            placeholder="Todos os tipos"
+            options={[
+              { label: "Todos os tipos de imóvel", value: "" },
+              ...opcoesFormatadas.tipos
+            ]}
             icon="🏠"
+            onChange={handleChange}
           />
           {/* Cidade */}
           <SelectField
             label="Cidade"
             name="cidade"
             value={filtros.cidade}
-            options={opcoesFormatadas.cidades}
-            placeholder="Todas as cidades"
+            options={[
+              { label: "Todas as cidades", value: "" },
+              ...opcoesFormatadas.cidades
+            ]}
             icon="📍"
+            onChange={handleChange}
           />
           {/* Bairro */}
           <div className="flex flex-col w-full">
@@ -398,6 +408,7 @@ export function FiltroImovel({
               value={filtros.bairro}
               onChange={handleChange}
               placeholder="Digite o bairro"
+              autoComplete="off"
               className="p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 transition-all duration-200"
             />
           </div>
@@ -406,18 +417,24 @@ export function FiltroImovel({
             label="Faixa de valor"
             name="valor"
             value={filtros.valor}
-            options={opcoesFormatadas.valores as SelectOption[]}
-            placeholder="Qualquer valor"
+            options={[
+              { label: "Qualquer valor", value: "" },
+              ...opcoesFormatadas.valores
+            ]}
             icon="💰"
+            onChange={handleChange}
           />
           {/* Faixa de metragem */}
           <SelectField
             label="Faixa de metragem"
             name="metragem"
             value={filtros.metragem}
-            options={opcoesFormatadas.metragens as SelectOption[]}
-            placeholder="Qualquer tamanho"
+            options={[
+              { label: "Qualquer tamanho", value: "" },
+              ...opcoesFormatadas.metragens
+            ]}
             icon="📐"
+            onChange={handleChange}
           />
         </div>
         {/* BOTÕES DE AÇÃO */}
