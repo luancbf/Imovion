@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import Script from "next/script";
 import "./globals.css";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -32,7 +34,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${poppins.variable} ${inter.variable}`}>
+      <head>
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-Z52XQ13ERH"
+          strategy="afterInteractive"
+        />
+        <Script id="ga-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-Z52XQ13ERH', {
+              page_path: window.location.pathname,
+            });
+          `}
+        </Script>
+      </head>
       <body className="font-sans">
+        <AnalyticsTracker />
         {children}
         <SpeedInsights />
       </body>

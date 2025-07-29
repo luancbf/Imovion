@@ -42,6 +42,17 @@ export default function Footer() {
           <p className="font-inter text-sm text-blue-700">
             © {new Date().getFullYear()} Todos os direitos reservados.
           </p>
+          <p className="font-inter text-xs text-blue-600 mt-1">
+            Desenvolvido por{" "}
+            <a
+              href="https://capistranodev.com.br"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-blue-900 font-semibold"
+            >
+              CapistranoDev
+            </a>
+          </p>
         </div>
       </div>
     </footer>

@@ -91,11 +91,11 @@ export default function Patrocinios() {
     return (
       <section className="py-8 px-6 bg-gradient-to-b from-gray-50 to-white">
         <div className="mx-auto w-fit">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-2 sm:gap-5">
             {[...Array(24)].map((_, index) => (
               <div 
                 key={`loading-${index}`}
-                className="w-32 h-32 lg:w-40 lg:h-40 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl shadow-sm animate-pulse"
+                className="w-22 h-22 sm:w-40 sm:h-40 lg:w-50 lg:h-50 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl shadow-sm animate-pulse"
               />
             ))}
           </div>
@@ -149,6 +149,20 @@ export default function Patrocinios() {
                   href={`/patrocinadores/${patrocinio.patrocinadores.slug}`}
                   className="block"
                   title={`Ver mais sobre ${patrocinio.patrocinadores.nome}`}
+                  onClick={() => {
+                    if (
+                      typeof window !== "undefined" &&
+                      window.gtag &&
+                      patrocinio.patrocinadores
+                    ) {
+                      window.gtag("event", "click_patrocinador", {
+                        patrocinador_id: patrocinio.patrocinadores.id,
+                        patrocinador_nome: patrocinio.patrocinadores.nome,
+                        patrocinador_slug: patrocinio.patrocinadores.slug,
+                        page_path: window.location.pathname,
+                      });
+                    }
+                  }}
                 >
                   {PatrocinioCard}
                 </Link>

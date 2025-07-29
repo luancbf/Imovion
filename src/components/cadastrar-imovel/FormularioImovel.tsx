@@ -16,6 +16,7 @@ const supabase = createBrowserClient(
 );
 
 const FORMULARIO_INICIAL = {
+  codigoImovel: "",
   cidade: "",
   bairro: "",
   enderecoDetalhado: "",
@@ -31,11 +32,11 @@ const FORMULARIO_INICIAL = {
 };
 
 const ETAPAS = [
-  { numero: 1, titulo: "Tipo & Categoria", icone: FiHome },
-  { numero: 2, titulo: "Localização", icone: FiMapPin },
-  { numero: 3, titulo: "Detalhes & Valor", icone: FiDollarSign },
-  { numero: 4, titulo: "Imagens", icone: FiUpload },
-  { numero: 5, titulo: "Características", icone: FiEdit3 },
+  { numero: 1, icone: FiHome },
+  { numero: 2, icone: FiMapPin },
+  { numero: 3, icone: FiDollarSign },
+  { numero: 4, icone: FiUpload },
+  { numero: 5, icone: FiEdit3 },
 ];
 
 const CLASSES = {
@@ -111,6 +112,7 @@ export default function FormularioImovel({
     }
     setModoEdicao(true);
     setFormulario({
+      codigoImovel: getDadoInicial('codigoImovel', dadosIniciais) || "",
       cidade: getDadoInicial('cidade', dadosIniciais),
       bairro: getDadoInicial('bairro', dadosIniciais),
       enderecoDetalhado: getDadoInicial('enderecoDetalhado', dadosIniciais) || getDadoInicial('enderecodetalhado', dadosIniciais),
@@ -282,6 +284,7 @@ export default function FormularioImovel({
       const capitalizar = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
       const dadosImovel = {
+        codigoImovel: formulario.codigoImovel?.trim() || "",
         cidade: formulario.cidade.trim(),
         bairro: formulario.bairro.trim(),
         enderecodetalhado: formulario.enderecoDetalhado,
@@ -315,6 +318,23 @@ export default function FormularioImovel({
           .eq("id", dadosIniciais.id);
         if (error) throw new Error(`Erro ao atualizar: ${error.message}`);
         alert("✅ Imóvel atualizado com sucesso!");
+
+        // URLs antes da edição
+        const imagensAntigas = Array.isArray(dadosIniciais.imagens) ? dadosIniciais.imagens : [];
+        // URLs após edição
+        const imagensAtuais = urlsFinais;
+
+        // Imagens removidas
+        const imagensRemovidas = imagensAntigas.filter(url => !imagensAtuais.includes(url));
+
+        // Exclui do storage
+        for (const url of imagensRemovidas) {
+          // Extrai o caminho relativo do arquivo no storage
+          const path = url.split('/storage/v1/object/public/imagens/')[1];
+          if (path) {
+            await supabase.storage.from('imagens').remove([path]);
+          }
+        }
       } else {
         const dadosInsert = {
           ...dadosImovel,
@@ -358,7 +378,7 @@ export default function FormularioImovel({
   ]);
 
   return (
-    <section className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-blue-100">
+    <section className="bg-white rounded-3xl shadow-xl p-4 sm:p-8 border border-blue-100">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -366,22 +386,16 @@ export default function FormularioImovel({
             <FiHome className="text-blue-600" size={24} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-blue-900">
+            <h1 className="font-poppins text-xl sm:text-3xl font-bold text-blue-900">
               {modoEdicao ? "✏️ Editando Imóvel" : "🏠 Cadastrar Novo Imóvel"}
             </h1>
-            <p className="text-blue-600 text-sm">
-              {modoEdicao
-                ? `Atualizando ${formulario.tipoImovel || 'imóvel'} em ${formulario.cidade}`
-                : "Preencha os dados para cadastrar um novo imóvel"
-              }
-            </p>
           </div>
         </div>
         {modoEdicao && (
           <button
             type="button"
             onClick={cancelarEdicao}
-            className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-semibold transition-colors"
+            className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-semibold transition-colors font-inter"
           >
             <FiX size={18} />
             <span className="hidden sm:inline">Cancelar</span>
@@ -391,35 +405,36 @@ export default function FormularioImovel({
 
       {/* Indicador de Progresso */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-row items-center justify-between mb-4 gap-1 overflow-x-auto">
           {ETAPAS.map((etapa, index) => {
             const Icone = etapa.icone;
             const isAtual = etapaAtual === etapa.numero;
-            const isConcluida = etapaValida(etapa.numero);
-            const isAcessivel = index === 0 || etapaValida(etapa.numero - 1);
+            const isConcluida = etapaValida(etapa.numero) && etapaAtual > etapa.numero;
+            const isAcessivel = index === 0 || ETAPAS.slice(0, index).every((_, i) => etapaValida(i + 1));
+            // O último só é concluído se etapaAtual for maior que ele e todas anteriores válidas
+            const isUltimo = index === ETAPAS.length - 1;
+            const isFinalizado = isUltimo
+              ? ETAPAS.every((_, i) => etapaValida(i + 1)) && etapaAtual > etapa.numero
+              : isConcluida;
+
             return (
-              <div key={etapa.numero} className="flex flex-col items-center flex-1">
+              <div key={etapa.numero} className="flex flex-col items-center flex-1 min-w-[70px]">
                 <button
                   type="button"
                   onClick={() => isAcessivel && setEtapaAtual(etapa.numero)}
                   disabled={!isAcessivel}
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 mb-2 cursor-pointer ${
-                    isAtual
-                      ? "bg-blue-600 text-white shadow-lg scale-110"
-                      : isConcluida
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 mb-2 cursor-pointer font-poppins
+                    ${isAtual
+                      ? "bg-blue-600 text-white"
+                      : isFinalizado
                       ? "bg-green-500 text-white"
                       : isAcessivel
                       ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
                       : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
-                  {isConcluida && !isAtual ? "✓" : <Icone size={20} />}
+                  {isFinalizado && !isAtual ? "✓" : <Icone size={20} />}
                 </button>
-                <span className={`text-xs font-medium text-center ${
-                  isAtual ? "text-blue-600" : isConcluida ? "text-green-600" : "text-gray-500"
-                }`}>
-                  {etapa.titulo}
-                </span>
               </div>
             );
           })}
@@ -427,7 +442,9 @@ export default function FormularioImovel({
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
             className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${(ETAPAS.filter((_, i) => etapaValida(i + 1)).length / ETAPAS.length) * 100}%` }}
+            style={{
+              width: `${(ETAPAS.filter((_, i) => etapaValida(i + 1) && etapaAtual > i + 1).length / ETAPAS.length) * 100}%`
+            }}
           />
         </div>
       </div>
@@ -438,13 +455,13 @@ export default function FormularioImovel({
         {etapaAtual === 1 && (
           <div className="space-y-6">
             <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2 font-poppins">
                 <FiHome size={20} />
                 Classificação do Imóvel
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-blue-900">
+                  <label className="block text-sm font-semibold text-blue-900 font-inter">
                     Setor de Negociação
                   </label>
                   <select
@@ -462,7 +479,7 @@ export default function FormularioImovel({
                 </div>
                 {formulario.tipoNegocio && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-blue-900">
+                    <label className="block text-sm font-semibold text-blue-900 font-inter">
                       Tipo de Negócio
                     </label>
                     <select
@@ -481,7 +498,7 @@ export default function FormularioImovel({
               </div>
               {formulario.tipoNegocio && formulario.setorNegocio && (
                 <div className="mt-6 space-y-2">
-                  <label className="block text-sm font-semibold text-blue-900">
+                  <label className="block text-sm font-semibold text-blue-900 font-inter">
                     Tipo de Imóvel
                   </label>
                   <select
@@ -510,13 +527,13 @@ export default function FormularioImovel({
         {etapaAtual === 2 && (
           <div className="space-y-6">
             <div className="bg-green-50 rounded-2xl p-6 border border-green-200">
-              <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2 font-poppins">
                 <FiMapPin size={20} />
                 Localização do Imóvel
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-green-900">
+                  <label className="block text-sm font-semibold text-green-900 font-inter">
                     Cidade
                   </label>
                   <select
@@ -535,7 +552,7 @@ export default function FormularioImovel({
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-green-900">
+                  <label className="block text-sm font-semibold text-green-900 font-inter">
                     Bairro
                   </label>
                   <input
@@ -549,7 +566,7 @@ export default function FormularioImovel({
                 </div>
               </div>
               <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-green-900">
+                <label className="block text-sm font-semibold text-green-900 font-inter">
                   Endereço Completo
                 </label>
                 <input
@@ -572,13 +589,13 @@ export default function FormularioImovel({
         {etapaAtual === 3 && (
           <div className="space-y-6">
             <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200">
-              <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2 font-poppins">
                 <FiDollarSign size={20} />
                 Detalhes Comerciais
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-purple-900">
+                  <label className="block text-sm font-semibold text-purple-900 font-inter">
                     Valor do Imóvel
                   </label>
                   <input
@@ -591,7 +608,7 @@ export default function FormularioImovel({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-purple-900">
+                  <label className="block text-sm font-semibold text-purple-900 font-inter">
                     Metragem
                   </label>
                   <input
@@ -605,7 +622,7 @@ export default function FormularioImovel({
                 </div>
               </div>
               <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900">
+                <label className="block text-sm font-semibold text-purple-900 font-inter">
                   Descrição do Imóvel
                 </label>
                 <textarea
@@ -618,8 +635,23 @@ export default function FormularioImovel({
                   required
                 />
               </div>
+              {/* CÓDIGO DO IMÓVEL */}
               <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900">
+                <label className="block text-sm font-semibold text-purple-900 font-inter">
+                  Código do Imóvel
+                </label>
+                <input
+                  name="codigoImovel"
+                  placeholder="Digite o código do imóvel"
+                  value={formulario.codigoImovel || ""}
+                  onChange={handleChange}
+                  className={CLASSES.input}
+                  autoComplete="off"
+                />
+              </div>
+              {/* Patrocinador */}
+              <div className="mt-6 space-y-2">
+                <label className="block text-sm font-semibold text-purple-900 font-inter">
                   Patrocinador (Opcional)
                 </label>
                 <select
@@ -637,7 +669,7 @@ export default function FormularioImovel({
                 </select>
               </div>
               <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900">
+                <label className="block text-sm font-semibold text-purple-900 font-inter">
                   WhatsApp para Contato
                 </label>
                 <input
@@ -650,7 +682,7 @@ export default function FormularioImovel({
                 />
               </div>
               <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900">
+                <label className="block text-sm font-semibold text-purple-900 font-inter">
                   CRECI
                 </label>
                 <input
@@ -669,7 +701,7 @@ export default function FormularioImovel({
         {etapaAtual === 4 && (
           <div className="space-y-6">
             <div className="bg-orange-50 rounded-2xl p-6 border border-orange-200">
-              <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center gap-2 font-poppins">
                 <FiUpload size={20} />
                 Galeria de Imagens
                 {modoEdicao && (
@@ -697,7 +729,7 @@ export default function FormularioImovel({
         {etapaAtual === 5 && formulario.tipoNegocio && (
           <div className="space-y-6">
             <div className="bg-indigo-50 rounded-2xl p-6 border border-indigo-200">
-              <h3 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center gap-2 font-poppins">
                 <FiEdit3 size={20} />
                 Características Específicas
               </h3>

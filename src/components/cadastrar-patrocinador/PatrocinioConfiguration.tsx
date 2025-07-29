@@ -7,6 +7,12 @@ import { useFileUpload } from '@/hooks/cadastrar-patrocinador/useFileUpload';
 import { usePatrocinadores } from '@/hooks/cadastrar-patrocinador/usePatrocinadores';
 import Image from "next/image";
 import { PatrocinioConfig } from '@/types/cadastrar-patrocinador';
+import { createBrowserClient } from "@supabase/ssr";
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface Patrocinador {
   id: string;
@@ -235,15 +241,29 @@ export default function PatrocinioConfiguration({ isVisible, onClose }: Patrocin
   const handleImageUpload = async (position: number, file: File) => {
     setPositionUploading(position, true);
     try {
+      // 1. Busque a URL antiga antes de atualizar
+      const config = patrocinioConfigs.find(c => c.position === position);
+      const oldUrl = config?.image_url;
+
+      // 2. Faça o upload da nova imagem
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(2, 8);
       const fileName = `patrocinio-pos-${position + 1}-${timestamp}-${randomId}`;
       const imageUrl = await uploadPatrocinioImage(file, fileName);
+
+      // 3. Atualize a config com a nova URL
       updatePatrocinioConfig(position, 'image_url', imageUrl);
       updatePatrocinioConfig(position, 'image_alt', `Patrocínio ${getPatrocinioPositionInfo(position).name}`);
       updatePatrocinioConfig(position, 'image_name', fileName);
       updatePatrocinioConfig(position, 'is_active', true);
-    } catch {
+
+      // 4. Remova a imagem antiga do storage, se existir
+      if (oldUrl && oldUrl !== imageUrl) {
+        const path = oldUrl.split('/storage/v1/object/public/')[1];
+        if (path) {
+          await supabase.storage.from('patrocinio_configs').remove([path]);
+        }
+      }
     } finally {
       setPositionUploading(position, false);
     }

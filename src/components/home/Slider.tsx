@@ -184,6 +184,16 @@ export default function Slider({
                   aria-label={isClickable
                     ? `Ver detalhes do ${banner.patrocinador_nome}`
                     : "Ir para página inicial"}
+                  onClick={() => {
+                    if (typeof window !== "undefined" && window.gtag && isClickable) {
+                      window.gtag("event", "click_banner_patrocinador", {
+                        patrocinador_slug: banner.patrocinador_slug,
+                        patrocinador_nome: banner.patrocinador_nome,
+                        banner_id: banner.id,
+                        page_path: window.location.pathname,
+                      });
+                    }
+                  }}
                 >
                   <Image
                     src={banner.image_url}

@@ -93,15 +93,7 @@ export function FiltroImovel({
   );
   const chaveOpcoes = useMemo(() => `${setor}-${tipoNegocio}`, [setor, tipoNegocio]);
   const tiposDisponiveis = useMemo(() => opcoesTipoImovel[chaveOpcoes] || [], [opcoesTipoImovel, chaveOpcoes]);
-  const itensQuantitativos = useMemo((): ItemImovel[] =>
-    itensDisponiveis.filter(item => ITENS_QUANTITATIVOS.includes(item.chave)),
-    [itensDisponiveis]
-  );
-  const itensBooleanos = useMemo((): ItemImovel[] =>
-    itensDisponiveis.filter(item => !ITENS_QUANTITATIVOS.includes(item.chave)),
-    [itensDisponiveis]
-  );
-
+  
   // FILTROS INICIAIS
   const filtrosIniciais = useMemo((): Record<string, string> => ({
     setornegocio: "", // <-- campo correto!
@@ -241,81 +233,70 @@ export function FiltroImovel({
     </div>
   );
 
-  const ItemQuantitativo = ({ item }: ItemComponentProps) => {
+  const ItemImovelComponent = ({ item }: ItemComponentProps) => {
+    const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
     const valorAtual = Number(filtros[item.chave] || 0);
+    const isAtivo = isQuant ? valorAtual > 0 : Number(filtros[item.chave]) > 0;
+
     return (
       <div
-        className="bg-white rounded-xl border-2 border-indigo-200 p-4 hover:border-indigo-300 transition-all duration-200 hover:shadow-md flex flex-col items-center"
-        tabIndex={-1} 
+        className={`bg-white rounded-lg border border-indigo-200 p-2 flex flex-col items-center justify-center transition-all duration-200 hover:shadow-md w-full min-h-[70px] select-none`}
+        tabIndex={-1}
         onMouseDown={e => e.preventDefault()}
       >
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xl">{item.icone}</span>
-          <span className="font-medium text-indigo-900 text-sm">{item.nome}</span>
+        <div className="flex items-center gap-2 mb-1 select-none">
+          <span className="text-xl select-none">{item.icone}</span>
+          <span className="font-medium text-indigo-900 text-xs select-none">{item.nome}</span>
         </div>
-        <div className="flex items-center gap-3">
+        {isQuant ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              tabIndex={-1}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => handleItemQuantChange(item.chave, valorAtual - 1)}
+              className="w-7 h-7 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-full flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              disabled={valorAtual <= 0}
+              aria-label={`Diminuir ${item.nome}`}
+            >
+              <FaMinus size={10} />
+            </button>
+            <div className="bg-indigo-50 rounded px-2 py-1 min-w-[32px] text-center select-none">
+              <span className="text-base font-bold text-indigo-900 select-none">
+                {valorAtual}
+              </span>
+            </div>
+            <button
+              type="button"
+              tabIndex={-1}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => handleItemQuantChange(item.chave, valorAtual + 1)}
+              className="w-7 h-7 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer"
+              aria-label={`Aumentar ${item.nome}`}
+            >
+              <FaPlus size={10} />
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
             tabIndex={-1}
             onMouseDown={e => e.preventDefault()}
-            onClick={() => handleItemQuantChange(item.chave, valorAtual - 1)}
-            className="w-8 h-8 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={valorAtual <= 0}
-            aria-label={`Diminuir ${item.nome}`}
+            onClick={() => handleItemQuantChange(item.chave, isAtivo ? 0 : 1)}
+            className={`mt-1 w-5 h-5 rounded-full border-4 flex items-center justify-center transition-colors duration-200 cursor-pointer ${
+              isAtivo
+                ? 'bg-green-500 border-green-600'
+                : 'bg-gray-100 border-gray-300'
+            }`}
+            aria-pressed={isAtivo}
+            aria-label={item.nome}
           >
-            <FaMinus size={12} />
+            {isAtivo && (
+              <span className="w-3 h-3 bg-white rounded-full block select-none" />
+            )}
           </button>
-          <div className="bg-indigo-50 rounded-lg px-4 py-2 min-w-[48px] text-center">
-            <span className="text-lg font-bold text-indigo-900">
-              {valorAtual}
-            </span>
-          </div>
-          <button
-            type="button"
-            tabIndex={-1}
-            onMouseDown={e => e.preventDefault()} 
-            onClick={() => handleItemQuantChange(item.chave, valorAtual + 1)}
-            className="w-8 h-8 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg flex items-center justify-center transition-colors duration-200"
-            aria-label={`Aumentar ${item.nome}`}
-          >
-            <FaPlus size={12} />
-          </button>
-        </div>
+        )}
       </div>
-    );
-  };
-
-  const ItemBooleano = ({ item }: ItemComponentProps) => {
-    const isAtivo = Number(filtros[item.chave]) > 0;
-    return (
-      <button
-        type="button"
-        tabIndex={-1}
-        onMouseDown={e => e.preventDefault()} 
-        onClick={() => handleItemQuantChange(item.chave, isAtivo ? 0 : 1)}
-        className={`relative p-3 rounded-xl border-2 transition-all duration-200 hover:scale-[1.02] flex flex-col items-center w-full
-          ${isAtivo
-            ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 shadow-md'
-            : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-sm'
-        }`}
-        aria-pressed={isAtivo}
-        aria-label={item.nome}
-      >
-        <div className={`absolute top-2 right-2 w-3 h-3 rounded-full transition-colors duration-200 ${
-          isAtivo ? 'bg-green-500' : 'bg-gray-300'
-        }`} />
-        <span className="text-2xl mb-1">{item.icone}</span>
-        <span className={`text-xs font-medium text-center leading-tight ${
-          isAtivo ? 'text-green-800' : 'text-gray-700'
-        }`}>
-          {item.nome}
-        </span>
-        <span className={`mt-1 text-xs font-bold ${
-          isAtivo ? 'text-green-600' : 'text-gray-400'
-        }`}>
-          {isAtivo ? 'SIM' : 'NÃO'}
-        </span>
-      </button>
     );
   };
 
@@ -341,7 +322,14 @@ export function FiltroImovel({
   return (
     <div className="w-full bg-white rounded-2xl shadow p-4 sm:p-6 mb-8 flex flex-col gap-6 max-w-7xl mx-auto border border-blue-100">
       <div className="flex flex-col items-center gap-4 w-full">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+        <div
+          className={
+            // Se mostrarCategoriaNegocio, use grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4, senão grid padrão com 3 colunas em telas grandes
+            mostrarCategoriaNegocio
+              ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full"
+              : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full"
+          }
+        >
           {/* Categoria */}
           {mostrarCategoriaNegocio && (
             <>
@@ -398,7 +386,7 @@ export function FiltroImovel({
             onChange={handleChange}
           />
           {/* Bairro */}
-          <div className="flex flex-col w-full">
+          <div className="flex flex-col justify-end h-full w-full">
             <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               🏘️ Bairro
             </label>
@@ -410,6 +398,7 @@ export function FiltroImovel({
               placeholder="Digite o bairro"
               autoComplete="off"
               className="p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+              style={{ minHeight: "48px" }}
             />
           </div>
           {/* Faixa de valor */}
@@ -475,9 +464,7 @@ export function FiltroImovel({
         }}
       >
         {mostrarItens && (
-          <div
-            className="max-h-100 bg-indigo-50 border border-indigo-200 rounded-xl p-4 sm:p-6 space-y-6 overflow-y-auto"
-          >
+          <div className="max-h-100 bg-indigo-50 border border-indigo-200 rounded-xl p-4 sm:p-6 space-y-6 overflow-y-auto">
             <h3 className="font-poppins text-xl font-bold text-indigo-900 mb-4 flex items-center gap-2">
               🔧 Características {setor}s
             </h3>
@@ -488,39 +475,10 @@ export function FiltroImovel({
                 <p className="text-sm mt-2">Selecione outro setor para ver as opções</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* ITENS QUANTITATIVOS */}
-                {itensQuantitativos.length > 0 && (
-                  <div>
-                    <h4 className="text-lg font-semibold text-indigo-800 mb-4 flex items-center gap-2">
-                      🔢 Características Quantitativas
-                      <span className="text-sm bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
-                        {itensQuantitativos.length} itens
-                      </span>
-                    </h4>
-                    <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                      {itensQuantitativos.map((item) => (
-                        <ItemQuantitativo key={item.chave} item={item} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {/* ITENS BOOLEANOS */}
-                {itensBooleanos.length > 0 && (
-                  <div>
-                    <h4 className="text-lg font-semibold text-indigo-800 mb-4 flex items-center gap-2">
-                      ✅ Características Opcionais
-                      <span className="text-sm bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
-                        {itensBooleanos.length} itens
-                      </span>
-                    </h4>
-                    <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
-                      {itensBooleanos.map((item) => (
-                        <ItemBooleano key={item.chave} item={item} />
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+                {itensDisponiveis.map((item) => (
+                  <ItemImovelComponent key={item.chave} item={item} />
+                ))}
               </div>
             )}
           </div>

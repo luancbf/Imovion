@@ -9,6 +9,12 @@ import { SliderBanner } from '@/types/cadastrar-patrocinador';
 import Image from "next/image";
 import ConfirmModal from '@/components/common/ConfirmModal';
 import AlertModal from '@/components/common/AlertModal';
+import { createBrowserClient } from "@supabase/ssr";
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface SliderConfigurationProps {
   isVisible: boolean;
@@ -313,10 +319,25 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
   const handleImageUpload = async (imageName: string, file: File) => {
     setImageUploading(imageName, true);
     try {
+      // 1. Busque a URL antiga antes de atualizar
+      const banner = sliderBanners.find(b => b.image_name === imageName);
+      const oldUrl = banner?.image_url;
+
+      // 2. Faça o upload da nova imagem
       const imageUrl = await uploadSliderImage(file, imageName);
+
+      // 3. Atualize o banner com a nova URL
       updateSliderBanner(imageName, 'image_url', imageUrl);
       updateSliderBanner(imageName, 'image_alt', `Banner ${imageName}`);
       updateSliderBanner(imageName, 'is_active', true);
+
+      // 4. Remova a imagem antiga do storage, se existir
+      if (oldUrl && oldUrl !== imageUrl) {
+        const path = oldUrl.split('/storage/v1/object/public/')[1];
+        if (path) {
+          await supabase.storage.from('slider_banners').remove([path]);
+        }
+      }
     } catch {
       alert('Erro ao fazer upload da imagem. Tente novamente.');
     } finally {

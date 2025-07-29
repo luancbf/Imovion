@@ -47,6 +47,16 @@ export default function ImoveisCategoriaPage() {
     )
   }));
 
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 20;
+
+  const totalPaginas = Math.ceil(imoveis.length / itensPorPagina);
+
+  const imoveisPaginados = useMemo(() => {
+    const inicio = (paginaAtual - 1) * itensPorPagina;
+    return imoveis.slice(inicio, inicio + itensPorPagina);
+  }, [imoveis, paginaAtual]);
+
   const obterSetor = useCallback((categoria: string): SetorTipo => {
     const map: Record<string, SetorTipo> = {
       residencial: "Residencial",
@@ -133,26 +143,43 @@ export default function ImoveisCategoriaPage() {
     aplicarFiltroLocal
   ]);
 
-  const limparFiltros = useCallback(() => {
-    setFiltros({
-      tipoImovel: "",
-      cidade: "",
-      bairro: "",
-      ...Object.fromEntries(
-        itensQuantitativos.map((item: { chave: string }) => [item.chave, ""])
-      )
-    });
-  }, [itensQuantitativos]);
-
   useEffect(() => {
     buscarImoveis();
   }, [buscarImoveis]);
+
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [imoveis]);
+
+  function pluralizarCategoria(categoria: string) {
+    switch (categoria.toLowerCase()) {
+      case "residencial":
+        return "residenciais";
+      case "comercial":
+        return "comerciais";
+      case "rural":
+        return "rurais";
+      default:
+        return categoria;
+    }
+  }
+
+  const tituloPagina = `${setornegocioCapitalizado} de imóveis ${pluralizarCategoria(tiponegocioParam)}`;
+  const callToAction = "Encontre aqui o imóvel perfeito para você!";
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-white">
       <Header />
       <main className="flex-1 py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
+
+          {/* TÍTULO DINÂMICO */}
+          <h1 className="font-poppins text-2xl lg:text-4xl font-bold text-blue-800 text-center">
+            {tituloPagina}
+          </h1>
+          <p className="font-poppins text-md text-gray-600 mb-6 text-center">
+            {callToAction}
+          </p>
 
           {/* FILTROS */}
           <div className="mb-2 lg:mb-8">
@@ -198,35 +225,52 @@ export default function ImoveisCategoriaPage() {
             </div>
           ) : imoveis.length === 0 ? (
             <div className="text-center py-20">
-              <div className="text-6xl mb-6">🏠</div>
-              <h3 className="text-2xl font-bold text-gray-700 mb-4">
+              <div className="text-5xl mb-6">🏠</div>
+              <h3 className="text-2xl font-bold text-gray-700 mb-2">
                 Nenhum imóvel encontrado
               </h3>
-              <p className="text-gray-600 text-lg mb-8 max-w-md mx-auto">
+              <p className="text-gray-600 text-sm mb-8 max-w-md mx-auto">
                 Não encontramos imóveis que correspondam aos filtros selecionados.
                 Tente ajustar os critérios de busca.
               </p>
-              <button
-                onClick={limparFiltros}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold transition-opacity"
-              >
-                Limpar Filtros
-              </button>
             </div>
           ) : (
             <div>
               <div className="flex justify-between items-center mb-8">
                 <p className="font-inter text-gray-600 text-normal">
                   <span className="font-semibold">{imoveis.length}</span>
-                  {imoveis.length === 1 ? ' imóvel encontrado' : ' imóveis encontrados'}
+                  {imoveis.length === 1 ? ' imóvel encontrado' : ` ${pluralizarCategoria(setorCapitalizado)} encontrados`}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {imoveis.map((imovel) => (
+                {imoveisPaginados.map((imovel) => (
                   <ImovelCard key={imovel.id} imovel={imovel} />
                 ))}
               </div>
+
+              {/* PAGINAÇÃO */}
+              {totalPaginas > 1 && (
+                <div className="flex justify-center items-center gap-2 mb-6">
+                  <button
+                    onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))}
+                    disabled={paginaAtual === 1}
+                    className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold disabled:opacity-50"
+                  >
+                    Anterior
+                  </button>
+                  <span className="mx-2">
+                    Parte {paginaAtual} de {totalPaginas}
+                  </span>
+                  <button
+                    onClick={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
+                    disabled={paginaAtual === totalPaginas}
+                    className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold disabled:opacity-50"
+                  >
+                    Próxima
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

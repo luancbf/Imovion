@@ -161,6 +161,10 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           {imovel.valor && typeof imovel.valor === 'number'
             ? imovel.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
             : 'Consulte o valor'}
+          {/* Exibe "/por mês" se for aluguel */}
+          {imovel.setornegocio?.toLowerCase() === "aluguel" && imovel.valor && (
+            <span className="text-base font-normal text-gray-600"> /por mês</span>
+          )}
         </p>
         
         <div className="font-inter text-normal text-gray-600 space-y-1">

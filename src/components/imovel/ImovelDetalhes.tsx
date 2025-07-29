@@ -48,8 +48,8 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
         <div className="flex items-center gap-2 mb-2">
           <span className="font-poppins text-3xl sm:text-5xl font-extrabold text-green-700">
             {formatarValor(valor || fallback.valor)}
-            {(tipoNegocio || fallback.tipoNegocio) === 'Alugar' && (
-              <span className="text-lg font-normal text-green-800"> /por mês</span>
+            {tipoNegocio?.toLowerCase() === "aluguel" && (
+              <span className="text-2xl font-semibold text-gray-500"> /por mês</span>
             )}
           </span>
         </div>
@@ -65,9 +65,6 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
         <div className="font-inter text-normal sm:text-xl text-gray-600">
           <span className="font-poppins font-semibold text-black">Descrição:</span> {descricao || fallback.descricao}
         </div>
-      </div>
-      <div className="mt-3">
-        
       </div>
     </div>
   );

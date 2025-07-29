@@ -9,6 +9,7 @@ interface FiltroCadastroImoveisProps {
     tipoNegocio: string;
     setorNegocio: string;
     patrocinador: string;
+    codigoImovel: string; // <-- Adicione aqui
   }) => void;
 }
 
@@ -19,14 +20,15 @@ export default function FiltroCadastroImoveis({
   const [filtros, setFiltros] = useState({
     tipoNegocio: '',
     setorNegocio: '',
-    patrocinador: ''
+    patrocinador: '',
+    codigoImovel: '', // <-- Adicione aqui
   });
 
   useEffect(() => {
     onFiltroChange(filtros);
   }, [filtros, onFiltroChange]);
 
-  const handleFiltroChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFiltroChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const { name, value } = e.target;
     setFiltros(prev => ({
       ...prev,
@@ -38,11 +40,12 @@ export default function FiltroCadastroImoveis({
     setFiltros({
       tipoNegocio: '',
       setorNegocio: '',
-      patrocinador: ''
+      patrocinador: '',
+      codigoImovel: '', // <-- Adicione aqui
     });
   };
 
-  const hasActiveFilters = filtros.tipoNegocio || filtros.setorNegocio || filtros.patrocinador;
+  const hasActiveFilters = filtros.tipoNegocio || filtros.setorNegocio || filtros.patrocinador || filtros.codigoImovel;
 
   return (
     <section className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-blue-100">
@@ -53,12 +56,9 @@ export default function FiltroCadastroImoveis({
             <FiFilter className="text-blue-600" size={24} />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-blue-900">
+            <h2 className="font-poppins text-2xl font-bold text-blue-900">
               🔍 Filtros de Busca
             </h2>
-            <p className="text-blue-600 text-sm">
-              Refine sua busca por imóveis
-            </p>
           </div>
         </div>
 
@@ -75,10 +75,10 @@ export default function FiltroCadastroImoveis({
 
       {/* Formulário de Filtros */}
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Filtro Setor */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-blue-900">
+            <label className="font-poppins block text-sm font-semibold text-blue-900">
               Setor do Imóvel
             </label>
             <select
@@ -96,7 +96,7 @@ export default function FiltroCadastroImoveis({
 
           {/* Filtro Tipo de Negócio */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-blue-900">
+            <label className="font-poppins block text-sm font-semibold text-blue-900">
               Tipo de Negócio
             </label>
             <select
@@ -113,7 +113,7 @@ export default function FiltroCadastroImoveis({
 
           {/* Filtro Patrocinador */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-blue-900">
+            <label className="font-poppins block text-sm font-semibold text-blue-900">
               Patrocinador
             </label>
             <select
@@ -135,6 +135,22 @@ export default function FiltroCadastroImoveis({
                 Nenhum patrocinador encontrado
               </p>
             )}
+          </div>
+
+          {/* Filtro Código do Imóvel */}
+          <div className="space-y-2">
+            <label className="font-poppins block text-sm font-semibold text-blue-900">
+              Código do Imóvel
+            </label>
+            <input
+              type="text"
+              name="codigoImovel"
+              value={filtros.codigoImovel}
+              onChange={handleFiltroChange}
+              className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
+              placeholder="Buscar pelo código"
+              autoComplete="off"
+            />
           </div>
         </div>
 

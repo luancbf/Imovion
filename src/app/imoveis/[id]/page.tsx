@@ -12,7 +12,7 @@ import ImoveisPatrocinadorList from "@/components/imovel/ImoveisPatrocinadorList
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import ImovelModal from "@/components/imovel/ImovelModal";
 import type { Imovel } from "@/types/Imovel";
-import { FaWhatsapp } from "react-icons/fa"; // adicione este import no topo
+import { FaWhatsapp } from "react-icons/fa"; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -20,16 +20,6 @@ const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 function formatarTexto(texto?: string) {
   return texto ? texto.replace(/_/g, " ") : "";
-}
-
-function negocioFormatado(tipoNegocio?: string) {
-  if (!tipoNegocio) return "";
-  const txt = formatarTexto(tipoNegocio).toLowerCase();
-  if (txt === "comprar") return "Comprar";
-  if (txt === "alugar") return "Alugar";
-  if (txt === "venda") return "Venda";
-  if (txt === "aluguel") return "Aluguel";
-  return txt.charAt(0).toUpperCase() + txt.slice(1);
 }
 
 function determinarSetor(imovel: Imovel): string {
@@ -210,7 +200,6 @@ export default function ImovelPage() {
     : null;
 
   const setorReal = determinarSetor(imovel);
-  const negocio = negocioFormatado(imovel.tiponegocio);
   
   const itensDisponiveis = setorReal && ITENS_POR_SETOR[setorReal]
     ? ITENS_POR_SETOR[setorReal]
@@ -291,7 +280,7 @@ export default function ImovelPage() {
 
           {/* Detalhes do imóvel (valor, tipo, metragem, etc) */}
           <ImovelDetalhes
-            tipoNegocio={negocio}
+            tipoNegocio={imovel.setornegocio || ""}
             valor={imovel.valor || 0}
             cidade={formatarTexto(imovel.cidade)}
             bairro={formatarTexto(imovel.bairro)}

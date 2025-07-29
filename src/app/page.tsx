@@ -3,6 +3,7 @@ import FiltrosExpansivos from "@/components/home/FiltrosExpansiveis";
 import Patrocinios from "@/components/home/Patrocinios";
 import Footer from "@/components/home/Footer";
 import Header from "@/components/home/Header";
+import CookieConsent from "@/components/CookieConsent";
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next"
@@ -35,6 +36,7 @@ export default function Home() {
       </section>
       <Analytics/>
       <SpeedInsights />
+      <CookieConsent />
       <Footer />
     </div>
   );

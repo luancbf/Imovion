@@ -4,12 +4,10 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import useAuthGuard from '@/hooks/useAuthGuard';
-import useAuth from '@/hooks/useAuth';
 
 export default function AdminRedirect() {
   const router = useRouter();
   const carregando = useAuthGuard();
-  const { logout } = useAuth();
 
   useEffect(() => {
     if (!carregando) {
@@ -43,16 +41,6 @@ export default function AdminRedirect() {
         <p className="text-gray-600 font-medium">
           {carregando ? 'Verificando autenticação...' : 'Redirecionando para o painel...'}
         </p>
-
-        <button
-          onClick={async () => {
-            await logout();
-            router.replace('/login');
-          }}
-          className="mt-6 px-4 py-2 bg-red-600 text-white rounded"
-        >
-          Sair da conta
-        </button>
       </div>
     </div>
   );

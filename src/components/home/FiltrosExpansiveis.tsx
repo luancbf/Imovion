@@ -43,13 +43,29 @@ export default function FiltrosExpansiveis() {
           <div className="flex flex-row gap-1 sm:gap-3 bg-blue-50 p-1 sm:p-4 py-3 rounded-b shadow-inner animate-fade-in w-full">
             <button
               className={`${botaoSecundarioClasse} bg-blue-400 hover:bg-blue-500 text-white`}
-              onClick={() => router.push('/residencial/venda')}
+              onClick={() => {
+                if (typeof window !== "undefined" && window.gtag) {
+                  window.gtag("event", "click_filtro_residencial", {
+                    acao: "compra",
+                    page_path: window.location.pathname,
+                  });
+                }
+                router.push('/residencial/venda');
+              }}
             >
               Compra
             </button>
             <button
               className={`${botaoSecundarioClasse} bg-blue-400 hover:bg-blue-500 text-white`}
-              onClick={() => router.push('/residencial/aluguel')}
+              onClick={() => {
+                if (typeof window !== "undefined" && window.gtag) {
+                  window.gtag("event", "click_filtro_residencial", {
+                    acao: "aluguel",
+                    page_path: window.location.pathname,
+                  });
+                }
+                router.push('/residencial/aluguel');
+              }}
             >
               Aluguel
             </button>

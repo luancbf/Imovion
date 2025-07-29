@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import Image from "next/image";
 import Header from "@/components/home/Header";
@@ -178,6 +178,18 @@ export default function PatrocinadorPage() {
       ),
     });
   }, [setor, tipoNegocio]);
+
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.gtag && patrocinador) {
+      window.gtag("event", "view_patrocinador", {
+        patrocinador_id: patrocinador.id,
+        patrocinador_nome: patrocinador.nome,
+        page_path: pathname,
+      });
+    }
+  }, [patrocinador, pathname]);
 
   if (carregandoPatrocinador) {
     return (
