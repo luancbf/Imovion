@@ -43,7 +43,7 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
     <div className="mb-8">
       <div className="flex flex-col gap-2 mb-4">
         <h1 className="font-poppins text-2xl sm:text-4xl font-bold text-blue-900 leading-tight mb-2">
-          {tipoImovel || fallback.tipoImovel}
+          {tipoImovel || fallback.tipoImovel} - {tipoNegocio || fallback.tipoNegocio}
         </h1>
         <div className="flex items-center gap-2 mb-2">
           <span className="font-poppins text-3xl sm:text-5xl font-extrabold text-green-700">

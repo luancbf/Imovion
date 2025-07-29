@@ -293,7 +293,7 @@ export default function ImovelPage() {
           {/* Características do imóvel */}
           {imovel.tipoimovel?.toLowerCase() !== "terreno" && (
             <section className="mt-8">
-              <h4 className="font-poppins font-semibold text-blue-700 mb-6 text-lg sm:text-2xl text-center flex items-center justify-center gap-2">
+              <h4 className="font-poppins font-semibold text-blue-900 mb-6 text-lg sm:text-2xl text-center flex items-center justify-center gap-2">
                 🏠 Características do Imóvel
               </h4>
               {itensDisponiveis.length === 0 ? (
@@ -314,7 +314,7 @@ export default function ImovelPage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
                   {itensComValor.map((item) => {
                     const valor = itensImovel[item.chave];
                     const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
@@ -322,17 +322,24 @@ export default function ImovelPage() {
                     return (
                       <div
                         key={item.chave}
-                        className={`rounded-xl p-4 border transition-all duration-200 text-center flex flex-col items-center
+                        className={`rounded-lg p-2 border transition-all duration-200 text-center flex flex-col items-center justify-center
                           ${isQuant
-                            ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-md"
-                            : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-md"
+                            ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow"
+                            : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow"
                           }`}
+                        style={{ minHeight: 70, maxWidth: 110 }}
                       >
-                        <div className={isQuant ? "text-3xl" : "text-2xl"}>{item.icone}</div>
-                        <span className={`font-medium block leading-tight ${isQuant ? "text-blue-900 text-sm" : "text-green-900 text-xs"}`}>
+                        <div className={isQuant ? "text-lg mb-1" : "text-base mb-1"}>{item.icone}</div>
+                        <span
+                          className={`font-medium block leading-tight ${isQuant ? "text-blue-900 text-xs" : "text-green-900 text-xs"} mb-0.5`}
+                          style={{ marginBottom: '2px' }}
+                        >
                           {item.nome}
                         </span>
-                        <div className={`${isQuant ? "bg-blue-600 text-white px-3 py-1 rounded-lg font-bold text-lg" : "bg-green-600 text-white px-2 py-1 rounded-lg font-bold text-sm"}`}>
+                        <div
+                          className={`${isQuant ? "bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-base" : "bg-green-600 text-white px-2 py-0.5 rounded font-bold text-sm"}`}
+                          style={{ marginTop: '2px' }}
+                        >
                           {isQuant ? valorNumerico : "✓"}
                         </div>
                       </div>
