@@ -45,7 +45,7 @@ export default function Footer() {
           <p className="font-inter text-xs text-blue-600 mt-1">
             Desenvolvido por{" "}
             <a
-              href="https://capistranodev.com.br"
+              href="https://www.capistranodev.com.br"
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-blue-900 font-semibold"

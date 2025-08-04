@@ -240,19 +240,21 @@ export default function FormularioImovel({
     onLimpar?.();
   }, [limparFormulario, onLimpar]);
 
-  const uploadImagensSupabase = useCallback(async (imagens: File[], imovelId: string): Promise<string[]> => {
+  const uploadImagensSharp = async (imagens: File[]): Promise<string[]> => {
     const urls: string[] = [];
     for (const imagem of imagens) {
-      if (!imagem.type.startsWith("image/")) continue;
-      if (imagem.size > 5 * 1024 * 1024) throw new Error(`A imagem ${imagem.name} excede o limite de 5MB`);
-      const filePath = `imoveis/${imovelId}/${Date.now()}_${imagem.name}`;
-      const { error } = await supabase.storage.from("imagens").upload(filePath, imagem);
-      if (error) throw new Error(error.message);
-      const { data } = supabase.storage.from("imagens").getPublicUrl(filePath);
-      urls.push(data.publicUrl);
+      const formData = new FormData();
+      formData.append("imagem", imagem);
+      const res = await fetch("/api/upload-imagem", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) urls.push(data.url);
+      else throw new Error(data.error || "Erro ao enviar imagem");
     }
     return urls;
-  }, []);
+  };
 
   const etapaValida = useCallback((etapa: number): boolean => {
     const validacoes: Record<number, () => boolean> = {
@@ -304,7 +306,7 @@ export default function FormularioImovel({
       if (modoEdicao && dadosIniciais?.id) {
         let urlsFinais = [...imagensExistentes];
         if (imagensNovas.length > 0) {
-          const novasUrls = await uploadImagensSupabase(imagensNovas, dadosIniciais.id);
+          const novasUrls = await uploadImagensSharp(imagensNovas);
           urlsFinais = [...urlsFinais, ...novasUrls];
         }
         const dadosUpdate = {
@@ -350,7 +352,7 @@ export default function FormularioImovel({
           .single();
         if (error || !data?.id) throw new Error(error?.message || "Erro ao criar imóvel.");
         if (imagensNovas.length > 0) {
-          const urlsImagens = await uploadImagensSupabase(imagensNovas, data.id);
+          const urlsImagens = await uploadImagensSharp(imagensNovas);
           await supabase
             .from("imoveis")
             .update({
@@ -373,7 +375,7 @@ export default function FormularioImovel({
     }
   }, [
     formulario, imagensExistentes, imagensNovas, itensDisponiveis, itens,
-    modoEdicao, dadosIniciais, uploadImagensSupabase, limparFormulario,
+    modoEdicao, dadosIniciais, limparFormulario,
     onSuccess, onLimpar, router
   ]);
 
