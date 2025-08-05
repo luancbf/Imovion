@@ -42,6 +42,7 @@ export default function ImovelCarousel({
                   src={img}
                   alt={`Imóvel ${tipo || ""} em ${cidade || ""} - Foto ${i + 1}`}
                   fill
+                  quality={100}
                   className="object-cover rounded-2xl transition-all duration-500"
                   unoptimized
                   priority={i === 0}

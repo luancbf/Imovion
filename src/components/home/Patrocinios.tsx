@@ -130,6 +130,7 @@ export default function Patrocinios() {
                   alt={patrocinio.image_alt}
                   width={160}
                   height={160}
+                  quality={100}
                   className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out w-full h-full"
                   sizes="(max-width: 640px) 128px, (max-width: 1024px) 160px, 200px"
                   onError={(e) => {

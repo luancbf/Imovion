@@ -119,7 +119,7 @@ export default function Slider({
   if (loading) {
     return (
       <div className={`w-full ${className}`}>
-        <div className="relative w-full h-50 overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse shadow-lg flex items-center justify-center">
+        <div className="relative w-full h-50 sm:h-80 lg:h-130 overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse shadow-lg flex items-center justify-center">
           <div className="animate-spin h-6 w-6 border-2 border-gray-400 border-t-transparent" />
         </div>
       </div>
@@ -129,7 +129,7 @@ export default function Slider({
   if (error) {
     return (
       <div className={`w-full ${className}`}>
-        <div className="relative w-full h-30 overflow-hidden bg-gradient-to-br from-red-100 to-red-200 border border-red-300 shadow-lg flex items-center justify-center">
+        <div className="relative w-full h-50 sm:h-80 lg:h-130 overflow-hidden bg-gradient-to-br from-red-100 to-red-200 border border-red-300 shadow-lg flex items-center justify-center">
           <div className="text-center p-4">
             <p className="text-red-800 font-medium mb-2">Erro ao carregar slider</p>
             <button
@@ -147,7 +147,7 @@ export default function Slider({
   if (!shuffledBanners.length) {
     return (
       <div className={`w-full ${className}`}>
-        <div className="relative w-full h-30 flex items-center justify-center bg-gray-100 border border-gray-200 rounded-xl">
+        <div className="relative w-full h-50 sm:h-80 lg:h-130 flex items-center justify-center bg-gray-100 border border-gray-200 rounded-xl">
           <span className="text-gray-500 text-sm">Nenhum banner configurado para exibição.</span>
         </div>
       </div>
@@ -203,7 +203,7 @@ export default function Slider({
                     priority={idx === 0 && type === 'principal'}
                     className="object-cover w-full h-full transition-transform duration-500 hover:scale-105"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
-                    quality={90}
+                    quality={100}
                   />
                 </Link>
               </SwiperSlide>

@@ -133,6 +133,7 @@ export default function ImovelCardCadastro({
                     src={img}
                     alt={`${formatarTexto(tipoImovel)} em ${formatarTexto(imovel.cidade)} - Foto ${i + 1}`}
                     fill
+                    quality={100}
                     className="object-cover transition-all duration-500"
                     unoptimized
                     priority={i === 0}

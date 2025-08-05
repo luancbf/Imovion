@@ -126,6 +126,7 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
                 <Image
                   src={img}
                   alt={`Imóvel ${formatarTexto(imovel.tipoimovel)} em ${formatarTexto(imovel.cidade)} - Foto ${i + 1}`}
+                  quality={100}
                   fill
                   className="object-cover rounded transition-all duration-500"
                   unoptimized

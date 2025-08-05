@@ -36,6 +36,7 @@ export default function Footer() {
             alt="Imovion Logo"
             width={320}
             height={80}
+            quality={100}
             className="h-12 w-auto mb-2"
             priority
           />

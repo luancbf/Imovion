@@ -13,6 +13,7 @@ export default function Header() {
             alt="Imovion Logo"
             width={320}
             height={80}
+            quality={100}
             priority
             className="h-9 sm:h-11 w-auto"
           />
