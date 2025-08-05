@@ -317,14 +317,19 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
   }, [isVisible, loadSliderBanners]);
 
   const handleImageUpload = async (imageName: string, file: File) => {
+    console.log("1. Iniciando upload para:", imageName, file.name);
     setImageUploading(imageName, true);
     try {
       // 1. Busque a URL antiga antes de atualizar
       const banner = sliderBanners.find(b => b.image_name === imageName);
       const oldUrl = banner?.image_url;
+      console.log("2. Banner encontrado:", banner);
+      console.log("3. URL antiga:", oldUrl);
 
       // 2. Faça o upload da nova imagem
-      const imageUrl = await uploadSliderImage(file, imageName);
+      console.log("4. Chamando uploadSliderImage...");
+      const imageUrl = await uploadSliderImage(file);
+      console.log("5. Upload concluído, URL:", imageUrl);
 
       // 3. Atualize o banner com a nova URL
       updateSliderBanner(imageName, 'image_url', imageUrl);
@@ -335,11 +340,14 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
       if (oldUrl && oldUrl !== imageUrl) {
         const path = oldUrl.split('/storage/v1/object/public/')[1];
         if (path) {
-          await supabase.storage.from('slider_banners').remove([path]);
+          console.log("6. Removendo imagem antiga:", path);
+          await supabase.storage.from('imagens').remove([path]);
         }
       }
-    } catch {
-      alert('Erro ao fazer upload da imagem. Tente novamente.');
+      console.log("7. Upload finalizado com sucesso");
+    } catch (error) {
+      console.error("8. Erro no upload:", error);
+      alert(`Erro ao fazer upload da imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setImageUploading(imageName, false);
     }

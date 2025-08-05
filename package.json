@@ -11,6 +11,7 @@
   "dependencies": {
     "@react-google-maps/api": "^2.20.6",
     "@supabase/ssr": "^0.6.1",
+    "@supabase/storage-js": "^2.10.4",
     "@supabase/supabase-js": "^2.50.2",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
@@ -35,6 +36,6 @@
     "eslint-config-next": "15.3.1",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.7",
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   }
 }

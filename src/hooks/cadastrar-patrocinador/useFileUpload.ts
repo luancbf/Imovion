@@ -20,29 +20,46 @@ export const useFileUpload = () => {
     return { valid: true };
   };
 
-  const uploadSliderImage = async (file: File, imageName: string): Promise<string> => {
+  const uploadSliderImage = async (file: File): Promise<string> => {
+    console.log("Hook: Iniciando upload do arquivo:", file.name, file.size);
+    
     const validation = validateImage(file);
     if (!validation.valid) {
+      console.log("Hook: Validação falhou:", validation.error);
       throw new Error(validation.error);
     }
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `slider_${imageName}_${Date.now()}.${fileExt}`;
-      const filePath = `slider/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('imagens')
-        .upload(filePath, file);
-
-      if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}`);
-
-      const { data: urlData } = supabase.storage
-        .from('imagens')
-        .getPublicUrl(filePath);
-
-      return urlData.publicUrl;
+      const formData = new FormData();
+      formData.append("imagem", file);
+      formData.append("pasta", "slider");
+      
+      console.log("Hook: Enviando requisição para /api/upload-imagem");
+      const res = await fetch("/api/upload-imagem", {
+        method: "POST",
+        body: formData,
+      });
+      
+      console.log("Hook: Status da resposta:", res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.log("Hook: Erro HTTP:", errorText);
+        throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+      }
+      
+      const data = await res.json();
+      console.log("Hook: Resposta completa:", data);
+      
+      if (!data.url) {
+        throw new Error(data.error || "URL não retornada pela API");
+      }
+      
+      return data.url;
+    } catch (error) {
+      console.log("Hook: Erro capturado:", error);
+      throw error;
     } finally {
       setUploading(false);
     }
