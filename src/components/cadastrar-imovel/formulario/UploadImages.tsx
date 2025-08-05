@@ -11,6 +11,7 @@ interface UploadImagesProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   required?: boolean;
   imagensExistentes?: string[];
+  uploading?: boolean;
 }
 
 export default function UploadImages({
@@ -23,6 +24,7 @@ export default function UploadImages({
   fileInputRef,
   required,
   imagensExistentes = [],
+  uploading = false,
 }: UploadImagesProps) {
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
 
@@ -52,10 +54,26 @@ export default function UploadImages({
     <div
       onDrop={onDrop}
       onDragOver={e => e.preventDefault()}
-      onClick={triggerFileInput}
-      className="border-dashed border-2 p-4 rounded-lg text-center text-gray-600 bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors"
+      onClick={!uploading ? triggerFileInput : undefined}
+      className={`border-dashed border-2 p-4 rounded-lg text-center text-gray-600 bg-gray-100 transition-colors ${
+        uploading 
+          ? 'cursor-not-allowed opacity-50' 
+          : 'cursor-pointer hover:bg-gray-200'
+      }`}
     >
-      <p className="mb-2">Arraste e solte imagens aqui, clique para selecionar ou use as setas para ordenar</p>
+      <p className="mb-2">
+        {uploading 
+          ? "Fazendo upload das imagens..." 
+          : "Arraste e solte imagens aqui, clique para selecionar ou use as setas para ordenar"
+        }
+      </p>
+      
+      {uploading && (
+        <div className="flex justify-center mb-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      )}
+      
       <input
         type="file"
         multiple
@@ -64,26 +82,32 @@ export default function UploadImages({
         className="hidden"
         ref={fileInputRef}
         required={required}
+        disabled={uploading}
       />
+      
       <div className="flex flex-wrap gap-4 mt-4 justify-center">
         {previews.map((preview, index) => (
           <div
             key={`${preview}-${index}`}
             className="relative w-28 h-28 flex flex-col items-center group bg-white rounded-lg shadow transition-all"
-            draggable
+            draggable={!uploading}
             onDragStart={e => {
-              e.stopPropagation();
-              handleDragStart(index);
+              if (!uploading) {
+                e.stopPropagation();
+                handleDragStart(index);
+              }
             }}
             onDragOver={handleDragOver}
             onDrop={e => {
-              e.stopPropagation();
-              handleDropImage(index);
+              if (!uploading) {
+                e.stopPropagation();
+                handleDropImage(index);
+              }
             }}
             style={{
               opacity: draggedIndex === index ? 0.5 : 1,
               border: draggedIndex === index ? "2px dashed #3b82f6" : "2px solid transparent",
-              cursor: "grab",
+              cursor: uploading ? "not-allowed" : "grab",
               transition: "border 0.2s, opacity 0.2s"
             }}
           >
@@ -94,19 +118,23 @@ export default function UploadImages({
               className="object-cover rounded-lg"
               style={{ zIndex: 1 }}
               sizes="112px"
+              unoptimized
               onError={() => {
-                console.error('Erro ao carregar imagem:', preview);
+                console.error('Erro ao carregar preview:', preview);
               }}
             />
             <button
               type="button"
               onClick={e => {
-                e.stopPropagation();
-                onRemove(index);
+                if (!uploading) {
+                  e.stopPropagation();
+                  onRemove(index);
+                }
               }}
-              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-pointer shadow hover:bg-red-600 z-10"
+              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow hover:bg-red-600 z-10 disabled:opacity-50"
               aria-label="Remover imagem"
               tabIndex={-1}
+              disabled={uploading}
             >
               ×
             </button>
@@ -114,11 +142,13 @@ export default function UploadImages({
               <button
                 type="button"
                 onClick={e => {
-                  e.stopPropagation();
-                  moveLeft(index);
+                  if (!uploading) {
+                    e.stopPropagation();
+                    moveLeft(index);
+                  }
                 }}
                 className="bg-white border border-gray-300 rounded-full w-7 h-7 flex items-center justify-center shadow hover:bg-blue-100 transition disabled:opacity-30"
-                disabled={index === 0}
+                disabled={index === 0 || uploading}
                 aria-label="Mover para a esquerda"
                 tabIndex={-1}
               >
@@ -129,11 +159,13 @@ export default function UploadImages({
               <button
                 type="button"
                 onClick={e => {
-                  e.stopPropagation();
-                  moveRight(index);
+                  if (!uploading) {
+                    e.stopPropagation();
+                    moveRight(index);
+                  }
                 }}
                 className="bg-white border border-gray-300 rounded-full w-7 h-7 flex items-center justify-center shadow hover:bg-blue-100 transition disabled:opacity-30"
-                disabled={index === previews.length - 1}
+                disabled={index === previews.length - 1 || uploading}
                 aria-label="Mover para a direita"
                 tabIndex={-1}
               >

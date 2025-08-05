@@ -10,7 +10,6 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 
 function formatarTexto(texto?: string) {
   return texto ? texto.replace(/_/g, " ") : '';
@@ -40,7 +39,7 @@ type ImovelCardProps = {
 export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCardProps) {
   const imagens = imovel.imagens?.length ? imovel.imagens : ["/imoveis/sem-imagem.jpg"];
 
-  // Corrija aqui: parse seguro do campo itens
+  // Parse seguro do campo itens
   let itens: Record<string, unknown> = {};
   if (typeof imovel.itens === "string") {
     try {
@@ -52,39 +51,12 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
     itens = imovel.itens;
   }
 
-  // Adicione estes logs para depuração
-  console.log("imovel recebido:", imovel);
-  console.log("itens parseados:", itens);
-
-  const quartos =
-    typeof itens?.quartos === "number"
-      ? itens.quartos
-      : Number(itens?.quartos) || 0;
-
-  const banheiros =
-    typeof itens?.banheiros === "number"
-      ? itens.banheiros
-      : Number(itens?.banheiros) || 0;
-
-  const garagens =
-    typeof itens?.garagens === "number"
-      ? itens.garagens
-      : Number(itens?.garagens) || 0;
-
-  const salas =
-    typeof itens?.salas === "number"
-      ? itens.salas
-      : Number(itens?.salas) || 0;
-
-  const hectares =
-    typeof itens?.hectares === "number"
-      ? itens.hectares
-      : Number(itens?.hectares) || 0;
-
-  const galpoes =
-    typeof itens?.galpoes === "number"
-      ? itens.galpoes
-      : Number(itens?.galpoes) || 0;
+  const quartos = typeof itens?.quartos === "number" ? itens.quartos : Number(itens?.quartos) || 0;
+  const banheiros = typeof itens?.banheiros === "number" ? itens.banheiros : Number(itens?.banheiros) || 0;
+  const garagens = typeof itens?.garagens === "number" ? itens.garagens : Number(itens?.garagens) || 0;
+  const salas = typeof itens?.salas === "number" ? itens.salas : Number(itens?.salas) || 0;
+  const hectares = typeof itens?.hectares === "number" ? itens.hectares : Number(itens?.hectares) || 0;
+  const galpoes = typeof itens?.galpoes === "number" ? itens.galpoes : Number(itens?.galpoes) || 0;
 
   let itensPrincipais: ItemPrincipal[] = [];
 
@@ -112,12 +84,11 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
 
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 flex flex-col">
-      <div className="relative h-45 md:h-50 bg-gray-100 flex items-center justify-center custom-swiper-arrows">
+      <div className="relative h-45 md:h-50 bg-gray-100 flex items-center justify-center">
         <Swiper
           modules={[Navigation]}
           navigation
-          pagination={{ clickable: true }}
-          className="w-full h-full rounded"
+          className="w-full h-full"
           style={{ height: '100%' }}
         >
           {imagens.map((img, i) => (
@@ -126,12 +97,11 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
                 <Image
                   src={img}
                   alt={`Imóvel ${formatarTexto(imovel.tipoimovel)} em ${formatarTexto(imovel.cidade)} - Foto ${i + 1}`}
-                  quality={100}
                   fill
-                  className="object-cover rounded transition-all duration-500"
+                  className="object-cover transition-all duration-500"
                   unoptimized
                   priority={i === 0}
-                  style={{ objectFit: 'cover' }}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   onError={(e) => {
                     console.error('Erro ao carregar imagem:', img);
                     const target = e.target as HTMLImageElement;
@@ -142,13 +112,6 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
             </SwiperSlide>
           ))}
         </Swiper>
-        
-        <style jsx global>{`
-          .custom-swiper-arrows .swiper-button-next::after,
-          .custom-swiper-arrows .swiper-button-prev::after {
-            font-size: 1.5rem !important;
-          }
-        `}</style>
       </div>
       
       <div className="p-4 flex-1 flex flex-col gap-2">
@@ -162,7 +125,6 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           {imovel.valor && typeof imovel.valor === 'number'
             ? imovel.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
             : 'Consulte o valor'}
-          {/* Exibe "/por mês" se for aluguel */}
           {imovel.setornegocio?.toLowerCase() === "aluguel" && imovel.valor && (
             <span className="text-base font-normal text-gray-600"> /por mês</span>
           )}
@@ -177,7 +139,6 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           </p>
         </div>
 
-        {/* Itens principais dinâmicos */}
         <div className="flex items-center gap-4 mt-3">
           {itensPrincipais
             .filter(item => {
@@ -195,7 +156,6 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
             ))}
         </div>
 
-        {/* Botões de ação */}
         <div className="font-poppins flex flex-wrap gap-2 mt-4">
           <Link
             href={`/imoveis/${imovel.id}`}

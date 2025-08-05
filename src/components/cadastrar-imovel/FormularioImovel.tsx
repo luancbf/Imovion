@@ -83,7 +83,17 @@ export default function FormularioImovel({
   const getDadoInicial = useCallback((prop: string, dados: ImovelEdicao | null | undefined): string => {
     if (!dados) return "";
     const dadosTyped = dados as Record<string, unknown>;
-    const valor = dadosTyped[prop] ?? dadosTyped[prop.replace(/([A-Z])/g, '_$1').toLowerCase()];
+    
+    // Mapear propriedades camelCase para snake_case
+    const propMapping: Record<string, string> = {
+      codigoImovel: 'codigoimovel',
+      enderecoDetalhado: 'enderecodetalhado',
+      // adicione outros mapeamentos se necessário
+    };
+    
+    const propKey = propMapping[prop] || prop;
+    const valor = dadosTyped[propKey] ?? dadosTyped[prop.replace(/([A-Z])/g, '_$1').toLowerCase()];
+    
     return typeof valor === 'string' ? valor :
       typeof valor === 'number' ? valor.toString() : "";
   }, []);
@@ -115,7 +125,7 @@ export default function FormularioImovel({
       codigoImovel: getDadoInicial('codigoImovel', dadosIniciais) || "",
       cidade: getDadoInicial('cidade', dadosIniciais),
       bairro: getDadoInicial('bairro', dadosIniciais),
-      enderecoDetalhado: getDadoInicial('enderecoDetalhado', dadosIniciais) || getDadoInicial('enderecodetalhado', dadosIniciais),
+      enderecoDetalhado: getDadoInicial('enderecoDetalhado', dadosIniciais),
       valor: typeof dadosIniciais.valor === "number"
     ? formatarParaMoeda(dadosIniciais.valor.toString())
     : formatarParaMoeda(String(dadosIniciais.valor || "")),
@@ -286,7 +296,7 @@ export default function FormularioImovel({
       const capitalizar = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
       const dadosImovel = {
-        codigoImovel: formulario.codigoImovel?.trim() || "",
+        codigoimovel: formulario.codigoImovel?.trim() || "", // MUDANÇA AQUI: codigoimovel em minúsculo
         cidade: formulario.cidade.trim(),
         bairro: formulario.bairro.trim(),
         enderecodetalhado: formulario.enderecoDetalhado,

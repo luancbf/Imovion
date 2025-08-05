@@ -137,6 +137,12 @@ export default function ImovelCardCadastro({
                     className="object-cover transition-all duration-500"
                     unoptimized
                     priority={i === 0}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    onError={(e) => {
+                      console.error('Erro ao carregar imagem:', img);
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/imoveis/sem-imagem.jpg";
+                    }}
                   />
                 </div>
               </SwiperSlide>
