@@ -28,7 +28,6 @@ interface ImovelCardProps {
   imovel: ImovelComItens;
   onDelete: (id: string) => void;
   onEdit: (imovel: ImovelComItens) => void;
-  cidadesComBairros: Record<string, string[]>;
   patrocinadores: { id: string; nome: string }[];
 }
 

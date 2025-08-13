@@ -6,6 +6,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import { FiHome, FiSave, FiUpload, FiMapPin, FiDollarSign, FiEdit3, FiX } from "react-icons/fi";
 import UploadImages from "./formulario/UploadImages";
 import ItensImovel from "./formulario/ItensImovel";
+import AlertModal from "@/components/common/AlertModal";
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import { formatarParaMoeda, formatarMetragem, formatarTelefone } from "@/utils/formatters";
 import type { FormularioImovelProps, ImovelEdicao } from "@/types/formularios";
@@ -47,7 +48,6 @@ const CLASSES = {
 
 export default function FormularioImovel({
   patrocinadores,
-  cidadesComBairros,
   opcoesTipoImovel,
   onSuccess,
   dadosIniciais,
@@ -55,6 +55,7 @@ export default function FormularioImovel({
 }: FormularioImovelProps) {
   const router = useRouter();
 
+  // STATE
   const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
   const [itens, setItens] = useState<Record<string, number>>({});
   const [previews, setPreviews] = useState<string[]>([]);
@@ -64,8 +65,26 @@ export default function FormularioImovel({
   const [modoEdicao, setModoEdicao] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
+  // ESTADO DO MODAL DE ALERTA
+  const [alertModal, setAlertModal] = useState({
+    open: false,
+    type: "info" as "success" | "error" | "info",
+    message: ""
+  });
+
+  // REFS
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // FUNÇÕES DE ALERTA
+  const showAlert = useCallback((type: "success" | "error" | "info", message: string) => {
+    setAlertModal({ open: true, type, message });
+  }, []);
+
+  const closeAlert = useCallback(() => {
+    setAlertModal({ open: false, type: "info", message: "" });
+  }, []);
+
+  // COMPUTED VALUES
   const itensDisponiveis = useMemo(() => {
     const setorSelecionado = formulario.tipoNegocio;
     return setorSelecionado && ITENS_POR_SETOR[setorSelecionado]
@@ -73,6 +92,7 @@ export default function FormularioImovel({
       : [];
   }, [formulario.tipoNegocio]);
 
+  // UTILITY FUNCTIONS
   const inicializarItens = useCallback((): Record<string, number> => {
     const todosItens = Object.values(ITENS_POR_SETOR)
       .flat()
@@ -84,11 +104,9 @@ export default function FormularioImovel({
     if (!dados) return "";
     const dadosTyped = dados as Record<string, unknown>;
     
-    // Mapear propriedades camelCase para snake_case
     const propMapping: Record<string, string> = {
       codigoImovel: 'codigoimovel',
       enderecoDetalhado: 'enderecodetalhado',
-      // adicione outros mapeamentos se necessário
     };
     
     const propKey = propMapping[prop] || prop;
@@ -114,8 +132,8 @@ export default function FormularioImovel({
     setModoEdicao(false);
   }, [inicializarItens]);
 
+  // EFFECTS
   useEffect(() => {
-
     if (!dadosIniciais?.id) {
       limparFormulario();
       return;
@@ -127,8 +145,8 @@ export default function FormularioImovel({
       bairro: getDadoInicial('bairro', dadosIniciais),
       enderecoDetalhado: getDadoInicial('enderecoDetalhado', dadosIniciais),
       valor: typeof dadosIniciais.valor === "number"
-    ? formatarParaMoeda(dadosIniciais.valor.toString())
-    : formatarParaMoeda(String(dadosIniciais.valor || "")),
+        ? formatarParaMoeda(dadosIniciais.valor.toString())
+        : formatarParaMoeda(String(dadosIniciais.valor || "")),
       metragem: formatarMetragemValor(dadosIniciais.metragem),
       descricao: getDadoInicial('descricao', dadosIniciais),
       tipoImovel: dadosIniciais.tipoImovel || "",    
@@ -138,6 +156,7 @@ export default function FormularioImovel({
       patrocinador: getDadoInicial('patrocinadorid', dadosIniciais) || getDadoInicial('patrocinador', dadosIniciais) || "",
       creci: getDadoInicial('creci', dadosIniciais) || "",
     });
+    
     if (dadosIniciais.itens) {
       try {
         const itensObj = typeof dadosIniciais.itens === 'string'
@@ -151,6 +170,7 @@ export default function FormularioImovel({
         setItens(inicializarItens());
       }
     }
+    
     if (Array.isArray(dadosIniciais.imagens)) {
       const imagensValidas = dadosIniciais.imagens.filter(
         (img): img is string => typeof img === 'string' && img.trim().length > 0
@@ -184,6 +204,7 @@ export default function FormularioImovel({
     }
   }, [formulario.patrocinador, patrocinadores]);
 
+  // HANDLERS
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     const formatters: Record<string, (val: string) => string> = {
@@ -277,26 +298,26 @@ export default function FormularioImovel({
   }, [formulario, imagensExistentes.length, imagensNovas.length]);
 
   const parseValor = (valorStr: string): number => {
-  // Remove prefixo R$ e espaços
-  let limpo = valorStr.replace(/^R\$\s*/, "");
-  // Remove pontos de milhares
-  limpo = limpo.replace(/\./g, "");
-  // Troca vírgula por ponto
-  limpo = limpo.replace(",", ".");
-  // Converte para float
-  return parseFloat(limpo) || 0;
-};
+    let limpo = valorStr.replace(/^R\$\s*/, "");
+    limpo = limpo.replace(/\./g, "");
+    limpo = limpo.replace(",", ".");
+    return parseFloat(limpo) || 0;
+  };
 
   const enviarFormulario = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setCarregando(true);
     try {
       const totalImagens = imagensExistentes.length + imagensNovas.length;
-      if (totalImagens === 0) throw new Error("Por favor, adicione pelo menos uma imagem");
+      if (totalImagens === 0) {
+        showAlert("error", "Por favor, adicione pelo menos uma imagem");
+        return;
+      }
+
       const capitalizar = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
       const dadosImovel = {
-        codigoimovel: formulario.codigoImovel?.trim() || "", // MUDANÇA AQUI: codigoimovel em minúsculo
+        codigoimovel: formulario.codigoImovel?.trim() || "",
         cidade: formulario.cidade.trim(),
         bairro: formulario.bairro.trim(),
         enderecodetalhado: formulario.enderecoDetalhado,
@@ -329,19 +350,14 @@ export default function FormularioImovel({
           .update(dadosUpdate)
           .eq("id", dadosIniciais.id);
         if (error) throw new Error(`Erro ao atualizar: ${error.message}`);
-        alert("✅ Imóvel atualizado com sucesso!");
+        
+        showAlert("success", "✅ Imóvel atualizado com sucesso!");
 
-        // URLs antes da edição
         const imagensAntigas = Array.isArray(dadosIniciais.imagens) ? dadosIniciais.imagens : [];
-        // URLs após edição
         const imagensAtuais = urlsFinais;
-
-        // Imagens removidas
         const imagensRemovidas = imagensAntigas.filter(url => !imagensAtuais.includes(url));
 
-        // Exclui do storage
         for (const url of imagensRemovidas) {
-          // Extrai o caminho relativo do arquivo no storage
           const path = url.split('/storage/v1/object/public/imagens/')[1];
           if (path) {
             await supabase.storage.from('imagens').remove([path]);
@@ -371,433 +387,442 @@ export default function FormularioImovel({
             })
             .eq("id", data.id);
         }
-        alert("✅ Imóvel cadastrado com sucesso!");
+        showAlert("success", "✅ Imóvel cadastrado com sucesso!");
       }
+      
       limparFormulario();
       onSuccess?.();
       onLimpar?.();
       router.refresh();
     } catch (error) {
       const mensagemErro = error instanceof Error ? error.message : "Erro desconhecido ao processar imóvel.";
-      alert(`❌ ${mensagemErro}`);
+      showAlert("error", `❌ ${mensagemErro}`);
     } finally {
       setCarregando(false);
     }
   }, [
     formulario, imagensExistentes, imagensNovas, itensDisponiveis, itens,
     modoEdicao, dadosIniciais, limparFormulario,
-    onSuccess, onLimpar, router
+    onSuccess, onLimpar, router, showAlert
   ]);
 
   return (
-    <section className="bg-white rounded-3xl shadow-xl p-4 sm:p-8 border border-blue-100">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-100 rounded-2xl">
-            <FiHome className="text-blue-600" size={24} />
+    <>
+      {/* MODAL DE ALERTA */}
+      <AlertModal
+        open={alertModal.open}
+        type={alertModal.type}
+        message={alertModal.message}
+        onClose={closeAlert}
+      />
+
+      <section className="bg-white rounded-3xl shadow-xl p-4 sm:p-8 border border-blue-100">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-100 rounded-2xl">
+              <FiHome className="text-blue-600" size={24} />
+            </div>
+            <div>
+              <h1 className="font-poppins text-xl sm:text-3xl font-bold text-blue-900">
+                {modoEdicao ? "✏️ Editando Imóvel" : "🏠 Cadastrar Novo Imóvel"}
+              </h1>
+            </div>
           </div>
-          <div>
-            <h1 className="font-poppins text-xl sm:text-3xl font-bold text-blue-900">
-              {modoEdicao ? "✏️ Editando Imóvel" : "🏠 Cadastrar Novo Imóvel"}
-            </h1>
-          </div>
+          {modoEdicao && (
+            <button
+              type="button"
+              onClick={cancelarEdicao}
+              className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-semibold transition-colors font-inter"
+            >
+              <FiX size={18} />
+              <span className="hidden sm:inline">Cancelar</span>
+            </button>
+          )}
         </div>
-        {modoEdicao && (
-          <button
-            type="button"
-            onClick={cancelarEdicao}
-            className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-semibold transition-colors font-inter"
-          >
-            <FiX size={18} />
-            <span className="hidden sm:inline">Cancelar</span>
-          </button>
-        )}
-      </div>
 
-      {/* Indicador de Progresso */}
-      <div className="mb-8">
-        <div className="flex flex-row items-center justify-between mb-4 gap-1 overflow-x-auto">
-          {ETAPAS.map((etapa, index) => {
-            const Icone = etapa.icone;
-            const isAtual = etapaAtual === etapa.numero;
-            const isConcluida = etapaValida(etapa.numero) && etapaAtual > etapa.numero;
-            const isAcessivel = index === 0 || ETAPAS.slice(0, index).every((_, i) => etapaValida(i + 1));
-            // O último só é concluído se etapaAtual for maior que ele e todas anteriores válidas
-            const isUltimo = index === ETAPAS.length - 1;
-            const isFinalizado = isUltimo
-              ? ETAPAS.every((_, i) => etapaValida(i + 1)) && etapaAtual > etapa.numero
-              : isConcluida;
+        {/* Indicador de Progresso */}
+        <div className="mb-8">
+          <div className="flex flex-row items-center justify-between mb-4 gap-1 overflow-x-auto">
+            {ETAPAS.map((etapa, index) => {
+              const Icone = etapa.icone;
+              const isAtual = etapaAtual === etapa.numero;
+              const isConcluida = etapaValida(etapa.numero) && etapaAtual > etapa.numero;
+              const isAcessivel = index === 0 || ETAPAS.slice(0, index).every((_, i) => etapaValida(i + 1));
+              const isUltimo = index === ETAPAS.length - 1;
+              const isFinalizado = isUltimo
+                ? ETAPAS.every((_, i) => etapaValida(i + 1)) && etapaAtual > etapa.numero
+                : isConcluida;
 
-            return (
-              <div key={etapa.numero} className="flex flex-col items-center flex-1 min-w-[70px]">
-                <button
-                  type="button"
-                  onClick={() => isAcessivel && setEtapaAtual(etapa.numero)}
-                  disabled={!isAcessivel}
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 mb-2 cursor-pointer font-poppins
-                    ${isAtual
-                      ? "bg-blue-600 text-white"
-                      : isFinalizado
-                      ? "bg-green-500 text-white"
-                      : isAcessivel
-                      ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    }`}
-                >
-                  {isFinalizado && !isAtual ? "✓" : <Icone size={20} />}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
-            style={{
-              width: `${(ETAPAS.filter((_, i) => etapaValida(i + 1) && etapaAtual > i + 1).length / ETAPAS.length) * 100}%`
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Formulário */}
-      <form onSubmit={enviarFormulario} className="space-y-8">
-        {/* Etapa 1: Tipo & Categoria */}
-        {etapaAtual === 1 && (
-          <div className="space-y-6">
-            <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2 font-poppins">
-                <FiHome size={20} />
-                Classificação do Imóvel
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-blue-900 font-inter">
-                    Setor de Negociação
-                  </label>
-                  <select
-                    name="tipoNegocio"
-                    value={formulario.tipoNegocio}
-                    onChange={handleChange}
-                    className={CLASSES.select}
-                    required
+              return (
+                <div key={etapa.numero} className="flex flex-col items-center flex-1 min-w-[70px]">
+                  <button
+                    type="button"
+                    onClick={() => isAcessivel && setEtapaAtual(etapa.numero)}
+                    disabled={!isAcessivel}
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 mb-2 cursor-pointer font-poppins
+                      ${isAtual
+                        ? "bg-blue-600 text-white"
+                        : isFinalizado
+                        ? "bg-green-500 text-white"
+                        : isAcessivel
+                        ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      }`}
                   >
-                    <option value="">🏢 Selecione o setor</option>
-                    <option value="Residencial">🏠 Residencial</option>
-                    <option value="Comercial">🏪 Comercial</option>
-                    <option value="Rural">🌾 Rural</option>
-                  </select>
+                    {isFinalizado && !isAtual ? "✓" : <Icone size={20} />}
+                  </button>
                 </div>
-                {formulario.tipoNegocio && (
+              );
+            })}
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
+              style={{
+                width: `${(ETAPAS.filter((_, i) => etapaValida(i + 1) && etapaAtual > i + 1).length / ETAPAS.length) * 100}%`
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Formulário */}
+        <form onSubmit={enviarFormulario} className="space-y-8">
+          {/* Etapa 1: Tipo & Categoria */}
+          {etapaAtual === 1 && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2 font-poppins">
+                  <FiHome size={20} />
+                  Classificação do Imóvel
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-blue-900 font-inter">
-                      Tipo de Negócio
+                      Setor de Negociação
                     </label>
                     <select
-                      name="setorNegocio"
-                      value={formulario.setorNegocio}
+                      name="tipoNegocio"
+                      value={formulario.tipoNegocio}
                       onChange={handleChange}
                       className={CLASSES.select}
                       required
                     >
-                      <option value="">💼 Tipo de negócio</option>
-                      <option value="Aluguel">🏠 Aluguel</option>
-                      <option value="Venda">💰 Venda</option>
+                      <option value="">🏢 Selecione o setor</option>
+                      <option value="Residencial">🏠 Residencial</option>
+                      <option value="Comercial">🏪 Comercial</option>
+                      <option value="Rural">🌾 Rural</option>
+                    </select>
+                  </div>
+                  {formulario.tipoNegocio && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-blue-900 font-inter">
+                        Tipo de Negócio
+                      </label>
+                      <select
+                        name="setorNegocio"
+                        value={formulario.setorNegocio}
+                        onChange={handleChange}
+                        className={CLASSES.select}
+                        required
+                      >
+                        <option value="">💼 Tipo de negócio</option>
+                        <option value="Aluguel">🏠 Aluguel</option>
+                        <option value="Venda">💰 Venda</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+                {formulario.tipoNegocio && formulario.setorNegocio && (
+                  <div className="mt-6 space-y-2">
+                    <label className="block text-sm font-semibold text-blue-900 font-inter">
+                      Tipo de Imóvel
+                    </label>
+                    <select
+                      name="tipoImovel"
+                      value={formulario.tipoImovel}
+                      onChange={handleChange}
+                      className={CLASSES.select}
+                      required
+                    >
+                      <option value="">🏘️ Selecione o tipo de imóvel</option>
+                      {(opcoesTipoImovel[
+                        `${formulario.tipoNegocio}-${formulario.setorNegocio}`
+                      ] || []).map((opcao) => (
+                        <option key={opcao} value={opcao}>
+                          {opcao}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 )}
               </div>
-              {formulario.tipoNegocio && formulario.setorNegocio && (
+            </div>
+          )}
+
+          {/* Etapa 2: Localização */}
+          {etapaAtual === 2 && (
+            <div className="space-y-6">
+              <div className="bg-green-50 rounded-2xl p-6 border border-green-200">
+                <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2 font-poppins">
+                  <FiMapPin size={20} />
+                  Localização do Imóvel
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-green-900 font-inter">
+                      Cidade
+                    </label>
+                    <input
+                      name="cidade"
+                      type="text"
+                      placeholder="Digite a cidade..."
+                      value={formulario.cidade}
+                      onChange={handleChange}
+                      className={CLASSES.input}
+                      required
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-green-600">
+                      💡 Digite o nome da cidade onde o imóvel está localizado
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-green-900 font-inter">
+                      Bairro
+                    </label>
+                    <input
+                      name="bairro"
+                      type="text"
+                      placeholder="Digite o bairro..."
+                      value={formulario.bairro}
+                      onChange={handleChange}
+                      className={CLASSES.input}
+                      required
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
                 <div className="mt-6 space-y-2">
-                  <label className="block text-sm font-semibold text-blue-900 font-inter">
-                    Tipo de Imóvel
+                  <label className="block text-sm font-semibold text-green-900 font-inter">
+                    Endereço Completo
+                  </label>
+                  <input
+                    name="enderecoDetalhado"
+                    placeholder="Rua, número, complemento, ponto de referência..."
+                    value={formulario.enderecoDetalhado}
+                    onChange={handleChange}
+                    className={CLASSES.input}
+                    required
+                  />
+                  <p className="text-xs text-green-600">
+                    💡 Inclua informações que ajudem a localizar o imóvel
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Etapa 3: Detalhes & Valor */}
+          {etapaAtual === 3 && (
+            <div className="space-y-6">
+              <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200">
+                <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2 font-poppins">
+                  <FiDollarSign size={20} />
+                  Detalhes Comerciais
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-purple-900 font-inter">
+                      Valor do Imóvel
+                    </label>
+                    <input
+                      name="valor"
+                      placeholder="R$ 0,00"
+                      value={formulario.valor}
+                      onChange={handleChange}
+                      className={CLASSES.input}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-purple-900 font-inter">
+                      Metragem
+                    </label>
+                    <input
+                      name="metragem"
+                      placeholder="0 m²"
+                      value={formulario.metragem}
+                      onChange={handleChange}
+                      className={CLASSES.input}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-purple-900 font-inter">
+                    Descrição do Imóvel
+                  </label>
+                  <textarea
+                    name="descricao"
+                    placeholder="Descreva as principais características, diferenciais e detalhes do imóvel..."
+                    value={formulario.descricao}
+                    onChange={handleChange}
+                    className={CLASSES.textarea}
+                    rows={4}
+                    required
+                  />
+                </div>
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-purple-900 font-inter">
+                    Código do Imóvel
+                  </label>
+                  <input
+                    name="codigoImovel"
+                    placeholder="Digite o código do imóvel"
+                    value={formulario.codigoImovel || ""}
+                    onChange={handleChange}
+                    className={CLASSES.input}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-purple-900 font-inter">
+                    Patrocinador (Opcional)
                   </label>
                   <select
-                    name="tipoImovel"
-                    value={formulario.tipoImovel}
+                    name="patrocinador"
+                    value={formulario.patrocinador || ''}
                     onChange={handleChange}
                     className={CLASSES.select}
-                    required
                   >
-                    <option value="">🏘️ Selecione o tipo de imóvel</option>
-                    {(opcoesTipoImovel[
-                      `${formulario.tipoNegocio}-${formulario.setorNegocio}`
-                    ] || []).map((opcao) => (
-                      <option key={opcao} value={opcao}>
-                        {opcao}
+                    <option value="">🏢 Selecionar patrocinador</option>
+                    {patrocinadores.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nome}
                       </option>
                     ))}
                   </select>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Etapa 2: Localização */}
-        {etapaAtual === 2 && (
-          <div className="space-y-6">
-            <div className="bg-green-50 rounded-2xl p-6 border border-green-200">
-              <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2 font-poppins">
-                <FiMapPin size={20} />
-                Localização do Imóvel
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-green-900 font-inter">
-                    Cidade
-                  </label>
-                  <select
-                    name="cidade"
-                    value={formulario.cidade}
-                    onChange={handleChange}
-                    className={CLASSES.select}
-                    required
-                  >
-                    <option value="">🏙️ Selecione a cidade</option>
-                    {Object.keys(cidadesComBairros).map((cidade) => (
-                      <option key={cidade} value={cidade}>
-                        {cidade.replace(/_/g, ' ')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-green-900 font-inter">
-                    Bairro
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-purple-900 font-inter">
+                    WhatsApp para Contato
                   </label>
                   <input
-                    name="bairro"
-                    placeholder="Digite o bairro"
-                    value={formulario.bairro}
+                    name="whatsapp"
+                    placeholder="(00) 00000-0000"
+                    value={formulario.whatsapp}
                     onChange={handleChange}
                     className={CLASSES.input}
                     required
                   />
                 </div>
-              </div>
-              <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-green-900 font-inter">
-                  Endereço Completo
-                </label>
-                <input
-                  name="enderecoDetalhado"
-                  placeholder="Rua, número, complemento, ponto de referência..."
-                  value={formulario.enderecoDetalhado}
-                  onChange={handleChange}
-                  className={CLASSES.input}
-                  required
-                />
-                <p className="text-xs text-green-600">
-                  💡 Inclua informações que ajudem a localizar o imóvel
-                </p>
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-purple-900 font-inter">
+                    CRECI
+                  </label>
+                  <input
+                    name="creci"
+                    placeholder="Digite o CRECI"
+                    value={formulario.creci || ""}
+                    onChange={handleChange}
+                    className={CLASSES.input}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Etapa 3: Detalhes & Valor */}
-        {etapaAtual === 3 && (
-          <div className="space-y-6">
-            <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200">
-              <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2 font-poppins">
-                <FiDollarSign size={20} />
-                Detalhes Comerciais
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-purple-900 font-inter">
-                    Valor do Imóvel
-                  </label>
-                  <input
-                    name="valor"
-                    placeholder="R$ 0,00"
-                    value={formulario.valor}
-                    onChange={handleChange}
-                    className={CLASSES.input}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-purple-900 font-inter">
-                    Metragem
-                  </label>
-                  <input
-                    name="metragem"
-                    placeholder="0 m²"
-                    value={formulario.metragem}
-                    onChange={handleChange}
-                    className={CLASSES.input}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900 font-inter">
-                  Descrição do Imóvel
-                </label>
-                <textarea
-                  name="descricao"
-                  placeholder="Descreva as principais características, diferenciais e detalhes do imóvel..."
-                  value={formulario.descricao}
-                  onChange={handleChange}
-                  className={CLASSES.textarea}
-                  rows={4}
-                  required
+          {/* Etapa 4: Imagens */}
+          {etapaAtual === 4 && (
+            <div className="space-y-6">
+              <div className="bg-orange-50 rounded-2xl p-6 border border-orange-200">
+                <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center gap-2 font-poppins">
+                  <FiUpload size={20} />
+                  Galeria de Imagens
+                  {modoEdicao && (
+                    <span className="text-sm bg-orange-200 text-orange-800 px-2 py-1 rounded-full">
+                      {imagensExistentes.length} existente(s) + {imagensNovas.length} nova(s)
+                    </span>
+                  )}
+                </h3>
+                <UploadImages
+                  previews={previews}
+                  onDrop={handleDrop}
+                  onFileChange={handleFileChange}
+                  onRemove={removeImagem}
+                  onReorder={handleReorder}
+                  fileInputRef={fileInputRef}
+                  required={previews.length === 0}
+                  imagensExistentes={imagensExistentes}
+                  triggerFileInput={() => fileInputRef.current?.click()}
                 />
               </div>
-              {/* CÓDIGO DO IMÓVEL */}
-              <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900 font-inter">
-                  Código do Imóvel
-                </label>
-                <input
-                  name="codigoImovel"
-                  placeholder="Digite o código do imóvel"
-                  value={formulario.codigoImovel || ""}
-                  onChange={handleChange}
-                  className={CLASSES.input}
-                  autoComplete="off"
+            </div>
+          )}
+
+          {/* Etapa 5: Características */}
+          {etapaAtual === 5 && formulario.tipoNegocio && (
+            <div className="space-y-6">
+              <div className="bg-indigo-50 rounded-2xl p-6 border border-indigo-200">
+                <h3 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center gap-2 font-poppins">
+                  <FiEdit3 size={20} />
+                  Características Específicas
+                </h3>
+                <ItensImovel
+                  itensDisponiveis={itensDisponiveis}
+                  itens={itens}
+                  setItens={setItens}
+                  ITENS_QUANTITATIVOS={ITENS_QUANTITATIVOS}
                 />
               </div>
-              {/* Patrocinador */}
-              <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900 font-inter">
-                  Patrocinador (Opcional)
-                </label>
-                <select
-                  name="patrocinador"
-                  value={formulario.patrocinador || ''}
-                  onChange={handleChange}
-                  className={CLASSES.select}
+            </div>
+          )}
+
+          {/* Navegação e Ações */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-blue-100">
+            <div className="flex gap-3">
+              {etapaAtual > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setEtapaAtual(etapaAtual - 1)}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-semibold transition-colors cursor-pointer"
                 >
-                  <option value="">🏢 Selecionar patrocinador</option>
-                  {patrocinadores.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900 font-inter">
-                  WhatsApp para Contato
-                </label>
-                <input
-                  name="whatsapp"
-                  placeholder="(00) 00000-0000"
-                  value={formulario.whatsapp}
-                  onChange={handleChange}
-                  className={CLASSES.input}
-                  required
-                />
-              </div>
-              <div className="mt-6 space-y-2">
-                <label className="block text-sm font-semibold text-purple-900 font-inter">
-                  CRECI
-                </label>
-                <input
-                  name="creci"
-                  placeholder="Digite o CRECI"
-                  value={formulario.creci || ""}
-                  onChange={handleChange}
-                  className={CLASSES.input}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Etapa 4: Imagens */}
-        {etapaAtual === 4 && (
-          <div className="space-y-6">
-            <div className="bg-orange-50 rounded-2xl p-6 border border-orange-200">
-              <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center gap-2 font-poppins">
-                <FiUpload size={20} />
-                Galeria de Imagens
-                {modoEdicao && (
-                  <span className="text-sm bg-orange-200 text-orange-800 px-2 py-1 rounded-full">
-                    {imagensExistentes.length} existente(s) + {imagensNovas.length} nova(s)
-                  </span>
-                )}
-              </h3>
-              <UploadImages
-                previews={previews}
-                onDrop={handleDrop}
-                onFileChange={handleFileChange}
-                onRemove={removeImagem}
-                onReorder={handleReorder}
-                fileInputRef={fileInputRef}
-                required={previews.length === 0}
-                imagensExistentes={imagensExistentes}
-                triggerFileInput={() => fileInputRef.current?.click()}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Etapa 5: Características */}
-        {etapaAtual === 5 && formulario.tipoNegocio && (
-          <div className="space-y-6">
-            <div className="bg-indigo-50 rounded-2xl p-6 border border-indigo-200">
-              <h3 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center gap-2 font-poppins">
-                <FiEdit3 size={20} />
-                Características Específicas
-              </h3>
-              <ItensImovel
-                itensDisponiveis={itensDisponiveis}
-                itens={itens}
-                setItens={setItens}
-                ITENS_QUANTITATIVOS={ITENS_QUANTITATIVOS}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Navegação e Ações */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-blue-100">
-          <div className="flex gap-3">
-            {etapaAtual > 1 && (
-              <button
-                type="button"
-                onClick={() => setEtapaAtual(etapaAtual - 1)}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-semibold transition-colors cursor-pointer"
-              >
-                ← Anterior
-              </button>
-            )}
-            {etapaAtual < ETAPAS.length && etapaValida(etapaAtual) && (
-              <button
-                type="button"
-                onClick={() => setEtapaAtual(etapaAtual + 1)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors cursor-pointer"
-              >
-                Próximo →
-              </button>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={carregando || !ETAPAS.every((_, i) => etapaValida(i + 1))}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
-            >
-              {carregando ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  <span>{modoEdicao ? "Atualizando..." : "Salvando..."}</span>
-                </>
-              ) : (
-                <>
-                  <FiSave size={18} />
-                  <span>{modoEdicao ? "💾 Atualizar Imóvel" : "🏠 Salvar Imóvel"}</span>
-                </>
+                  ← Anterior
+                </button>
               )}
-            </button>
+              {etapaAtual < ETAPAS.length && etapaValida(etapaAtual) && (
+                <button
+                  type="button"
+                  onClick={() => setEtapaAtual(etapaAtual + 1)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors cursor-pointer"
+                >
+                  Próximo →
+                </button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={carregando || !ETAPAS.every((_, i) => etapaValida(i + 1))}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
+              >
+                {carregando ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    <span>{modoEdicao ? "Atualizando..." : "Salvando..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <FiSave size={18} />
+                    <span>{modoEdicao ? "💾 Atualizar Imóvel" : "🏠 Salvar Imóvel"}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
-    </section>
+        </form>
+      </section>
+    </>
   );
 }

@@ -5,7 +5,6 @@ import useAuthGuard from '@/hooks/useAuthGuard';
 import FormularioImovel from '@/components/cadastrar-imovel/FormularioImovel';
 import FiltroCadastroImoveis from '@/components/cadastrar-imovel/FiltroCadastroImoveis';
 import ListaImoveis from '@/components/cadastrar-imovel/ListaImoveis';
-import cidadesComBairros from '@/constants/cidadesComBairros';
 import { opcoesTipoImovel } from '@/constants/opcoesTipoImovel';
 import type { Imovel } from '@/types/Imovel';
 import type { ImovelEdicao } from '@/types/formularios';
@@ -100,11 +99,35 @@ export default function CadastrarImovel() {
   };
 
   const handleEditarNoFormulario = (imovel: Imovel) => {
+    // Parse seguro do campo itens
+    let itensProcessados: Record<string, number> | undefined;
+    
+    if (imovel.itens) {
+      try {
+        if (typeof imovel.itens === 'string') {
+          // Se for string, faz o parse do JSON
+          const itensParsed = JSON.parse(imovel.itens);
+          itensProcessados = Object.fromEntries(
+            Object.entries(itensParsed).map(([k, v]) => [k, Number(v) || 0])
+          );
+        } else if (typeof imovel.itens === 'object') {
+          // Se já for objeto, converte os valores para number
+          itensProcessados = Object.fromEntries(
+            Object.entries(imovel.itens).map(([k, v]) => [k, Number(v) || 0])
+          );
+        }
+      } catch (error) {
+        console.error('Erro ao processar itens do imóvel:', error);
+        itensProcessados = undefined;
+      }
+    }
+
     const imovelParaEdicao: ImovelEdicao = {
       ...imovel,
       tipoImovel: imovel.tipoimovel,
       setorNegocio: imovel.setornegocio,
       tipoNegocio: imovel.tiponegocio,
+      itens: itensProcessados, // Campo itens corretamente tipado
     };
 
     setImovelEditando(imovelParaEdicao);
@@ -149,7 +172,6 @@ export default function CadastrarImovel() {
           
           <FormularioImovel
             patrocinadores={patrocinadores}
-            cidadesComBairros={cidadesComBairros}
             opcoesTipoImovel={opcoesTipoImovel}
             onSuccess={handleSuccess}
             dadosIniciais={imovelEditando}
@@ -167,7 +189,6 @@ export default function CadastrarImovel() {
             onDelete={handleDelete}
             onEdit={handleEditarNoFormulario}
             patrocinadores={patrocinadores}
-            cidadesComBairros={cidadesComBairros}
           />
 
         </div>

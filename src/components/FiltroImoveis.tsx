@@ -11,12 +11,13 @@ interface ItemImovel {
   nome: string;
   icone: string;
 }
+
 interface SelectOption {
   label: string;
   value: string;
 }
+
 interface FiltroImovelProps {
-  cidadesComBairros: Record<string, string[]>;
   opcoesTipoImovel: Record<string, string[]>;
   setor: "" | "Residencial" | "Comercial" | "Rural";
   tipoNegocio: "" | "Aluguel" | "Venda";
@@ -24,20 +25,17 @@ interface FiltroImovelProps {
   onTipoNegocioChange?: (novoTipo: "" | "Aluguel" | "Venda") => void;
   onFiltroChange: (filtros: Record<string, string>) => void;
   filtrosIniciais?: Record<string, string>;
-  mostrarCategoriaNegocio?: boolean; // <-- Adicione esta linha!
+  mostrarCategoriaNegocio?: boolean;
 }
+
 interface SelectFieldProps {
   label: string;
   name: string;
   value: string;
   options: SelectOption[];
-  placeholder?: string;
   disabled?: boolean;
   icon?: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-}
-interface ItemComponentProps {
-  item: ItemImovel;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 
 // CONSTANTES
@@ -75,7 +73,6 @@ const VALORES_FILTRO = {
 } as const;
 
 export function FiltroImovel({
-  cidadesComBairros,
   opcoesTipoImovel,
   setor,
   tipoNegocio,
@@ -83,21 +80,20 @@ export function FiltroImovel({
   onTipoNegocioChange,
   onFiltroChange,
   filtrosIniciais: filtrosExternos = {},
-  mostrarCategoriaNegocio = false // <-- Adicione aqui também!
+  mostrarCategoriaNegocio = false
 }: FiltroImovelProps) {
 
-  // ITENS DISPONÍVEIS
+  // COMPUTED VALUES (sem dependência de state)
   const itensDisponiveis = useMemo((): ItemImovel[] =>
     ITENS_POR_SETOR[setor] || [],
     [setor]
   );
+
   const chaveOpcoes = useMemo(() => `${setor}-${tipoNegocio}`, [setor, tipoNegocio]);
   const tiposDisponiveis = useMemo(() => opcoesTipoImovel[chaveOpcoes] || [], [opcoesTipoImovel, chaveOpcoes]);
   
-  // FILTROS INICIAIS
   const filtrosIniciais = useMemo((): Record<string, string> => ({
-    setornegocio: "", // <-- campo correto!
-    tipoImovel: "",
+    tipoimovel: "",
     cidade: "",
     bairro: "",
     valor: "",
@@ -106,59 +102,88 @@ export function FiltroImovel({
     ...filtrosExternos
   }), [itensDisponiveis, filtrosExternos]);
 
-  // ESTADO
+  const opcoesFormatadas = useMemo(() => ({
+    tipos: tiposDisponiveis.map((tipo): SelectOption => ({ 
+      label: tipo.replace(/_/g, " "), 
+      value: tipo 
+    })),
+    valores: tipoNegocio === "Aluguel"
+      ? VALORES_FILTRO.valor as readonly SelectOption[]
+      : VALORES_FILTRO.valorVenda as readonly SelectOption[],
+    metragens: VALORES_FILTRO.metragem as readonly SelectOption[]
+  }), [tiposDisponiveis, tipoNegocio]);
+
+  // STATE
   const [filtros, setFiltros] = useState<Record<string, string>>(filtrosIniciais);
   const [mostrarItens, setMostrarItens] = useState<boolean>(false);
+
+  // COMPUTED VALUES (com dependência de state)
+  const filtrosAtivos = useMemo(() => {
+    return Object.values(filtros).filter(valor => valor && valor !== "" && valor !== "0").length;
+  }, [filtros]);
+  
+  // REFS
   const itensRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // DEBOUNCE
+  // UTILITY FUNCTIONS
+  const processarFiltros = useCallback((novosFiltros: Record<string, string>) => {
+    const filtrosProcessados = { ...novosFiltros };
+    
+    // Trim em strings
+    Object.keys(filtrosProcessados).forEach(chave => {
+      if (typeof filtrosProcessados[chave] === "string") {
+        filtrosProcessados[chave] = filtrosProcessados[chave].trim();
+      }
+    });
+    
+    // Processar faixas de valor
+    if (filtrosProcessados.valor?.includes('-')) {
+      const [min, max] = filtrosProcessados.valor.split('-');
+      filtrosProcessados.valorMin = min;
+      filtrosProcessados.valorMax = max;
+      delete filtrosProcessados.valor;
+    }
+    
+    // Processar faixas de metragem
+    if (filtrosProcessados.metragem?.includes('-')) {
+      const [min, max] = filtrosProcessados.metragem.split('-');
+      filtrosProcessados.metragemMin = min;
+      filtrosProcessados.metragemMax = max;
+      delete filtrosProcessados.metragem;
+    }
+    
+    return filtrosProcessados;
+  }, []);
+
+  // HANDLERS
   const handleFiltroChange = useCallback((novosFiltros: Record<string, string>): void => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
-      const filtrosProcessados = { ...novosFiltros };
-      Object.keys(filtrosProcessados).forEach(key => {
-        if (typeof filtrosProcessados[key] === "string") {
-          if (["tipoimovel", "cidade", "bairro"].includes(key)) {
-            filtrosProcessados[key] = filtrosProcessados[key].trim().toLowerCase();
-          } else {
-            filtrosProcessados[key] = filtrosProcessados[key].trim();
-          }
-        }
-      });
-      if (filtrosProcessados.valor && filtrosProcessados.valor.includes('-')) {
-        const [min, max] = filtrosProcessados.valor.split('-');
-        filtrosProcessados.valorMin = min;
-        filtrosProcessados.valorMax = max;
-        delete filtrosProcessados.valor;
-      }
-      if (filtrosProcessados.metragem && filtrosProcessados.metragem.includes('-')) {
-        const [min, max] = filtrosProcessados.metragem.split('-');
-        filtrosProcessados.metragemMin = min;
-        filtrosProcessados.metragemMax = max;
-        delete filtrosProcessados.metragem;
-      }
-      onFiltroChange({
-        ...filtrosProcessados,
-        setornegocio: (filtrosProcessados.setornegocio ?? "").trim(),
-        tipoimovel: (filtrosProcessados.tipoimovel ?? "").trim().toLowerCase(),
-        cidade: (filtrosProcessados.cidade ?? "").trim().toLowerCase(),
-        bairro: (filtrosProcessados.bairro ?? "").trim().toLowerCase(),
-      });
-    }, 300);
-  }, [onFiltroChange]);
+      const filtrosProcessados = processarFiltros(novosFiltros);
+      onFiltroChange(filtrosProcessados);
+    }, 150);
+  }, [onFiltroChange, processarFiltros]);
 
-  // HANDLERS
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     const { name, value } = e.target;
+    
     const novosFiltros = { ...filtros, [name]: value };
-    if (name === "cidade") novosFiltros.bairro = "";
+    
+    // Limpar bairro quando cidade mudar
+    if (name === "cidade") {
+      novosFiltros.bairro = "";
+    }
+    
     setFiltros(novosFiltros);
     handleFiltroChange(novosFiltros);
 
-    // Atualize setor/tipoNegocio no componente pai
-    if (name === "setor" && onSetorChange) onSetorChange(value as "" | "Residencial" | "Comercial" | "Rural");
-    if (name === "setornegocio" && onTipoNegocioChange) onTipoNegocioChange(value as "" | "Aluguel" | "Venda");
+    if (name === "setor" && onSetorChange) {
+      onSetorChange(value as "" | "Residencial" | "Comercial" | "Rural");
+    }
+    if (name === "setornegocio" && onTipoNegocioChange) {
+      onTipoNegocioChange(value as "" | "Aluguel" | "Venda");
+    }
   }, [filtros, handleFiltroChange, onSetorChange, onTipoNegocioChange]);
 
   const handleItemQuantChange = useCallback((chave: string, valor: number): void => {
@@ -171,8 +196,7 @@ export function FiltroImovel({
 
   const limparFiltros = useCallback((): void => {
     const filtrosLimpos = {
-      setornegocio: "", // <-- adicione aqui!
-      tipoImovel: "",
+      tipoimovel: "",
       cidade: "",
       bairro: "",
       valor: "",
@@ -189,10 +213,10 @@ export function FiltroImovel({
     setMostrarItens(prev => !prev);
   }, []);
 
+  // EFFECTS
   useEffect(() => {
     const novosFiltrosIniciais = {
-      setornegocio: "", // <-- adicione aqui!
-      tipoImovel: "",
+      tipoimovel: "",
       cidade: "",
       bairro: "",
       valor: "",
@@ -211,7 +235,7 @@ export function FiltroImovel({
     };
   }, []);
 
-  // COMPONENTES AUXILIARES
+  // COMPONENTS
   const SelectField = ({ label, name, value, options = [], disabled = false, icon }: SelectFieldProps) => (
     <div className="flex flex-col w-full">
       <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -233,17 +257,13 @@ export function FiltroImovel({
     </div>
   );
 
-  const ItemImovelComponent = ({ item }: ItemComponentProps) => {
+  const ItemImovelComponent = ({ item }: { item: ItemImovel }) => {
     const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
     const valorAtual = Number(filtros[item.chave] || 0);
     const isAtivo = isQuant ? valorAtual > 0 : Number(filtros[item.chave]) > 0;
 
     return (
-      <div
-        className={`bg-white rounded-lg border border-indigo-200 p-2 flex flex-col items-center justify-center transition-all duration-200 hover:shadow-md w-full min-h-[70px] select-none`}
-        tabIndex={-1}
-        onMouseDown={e => e.preventDefault()}
-      >
+      <div className="bg-white rounded-lg border border-indigo-200 p-2 flex flex-col items-center justify-center transition-all duration-200 hover:shadow-md w-full min-h-[70px] select-none">
         <div className="flex items-center gap-2 mb-1 select-none">
           <span className="text-xl select-none">{item.icone}</span>
           <span className="font-medium text-indigo-900 text-xs select-none">{item.nome}</span>
@@ -252,8 +272,6 @@ export function FiltroImovel({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              tabIndex={-1}
-              onMouseDown={e => e.preventDefault()}
               onClick={() => handleItemQuantChange(item.chave, valorAtual - 1)}
               className="w-7 h-7 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-full flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               disabled={valorAtual <= 0}
@@ -268,8 +286,6 @@ export function FiltroImovel({
             </div>
             <button
               type="button"
-              tabIndex={-1}
-              onMouseDown={e => e.preventDefault()}
               onClick={() => handleItemQuantChange(item.chave, valorAtual + 1)}
               className="w-7 h-7 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer"
               aria-label={`Aumentar ${item.nome}`}
@@ -280,8 +296,6 @@ export function FiltroImovel({
         ) : (
           <button
             type="button"
-            tabIndex={-1}
-            onMouseDown={e => e.preventDefault()}
             onClick={() => handleItemQuantChange(item.chave, isAtivo ? 0 : 1)}
             className={`mt-1 w-5 h-5 rounded-full border-4 flex items-center justify-center transition-colors duration-200 cursor-pointer ${
               isAtivo
@@ -300,37 +314,16 @@ export function FiltroImovel({
     );
   };
 
-  // OPÇÕES FORMATADAS
-  const opcoesFormatadas = useMemo(() => ({
-    tipos: tiposDisponiveis.map((tipo): SelectOption => ({ label: tipo, value: tipo })),
-    cidades: Object.keys(cidadesComBairros).map((cidade): SelectOption => ({
-      label: cidade.replace(/_/g, " "),
-      value: cidade
-    })),
-    valores: tipoNegocio === "Aluguel"
-      ? VALORES_FILTRO.valor as readonly SelectOption[]
-      : VALORES_FILTRO.valorVenda as readonly SelectOption[],
-    metragens: VALORES_FILTRO.metragem as readonly SelectOption[]
-  }), [tiposDisponiveis, cidadesComBairros, tipoNegocio]);
-
-  // FILTROS ATIVOS
-  const filtrosAtivos = useMemo(() => {
-    return Object.values(filtros).filter(valor => valor && valor !== "" && valor !== "0").length;
-  }, [filtros]);
-
   // RENDER
   return (
     <div className="w-full bg-white rounded-2xl shadow p-4 sm:p-6 mb-8 flex flex-col gap-6 max-w-7xl mx-auto border border-blue-100">
       <div className="flex flex-col items-center gap-4 w-full">
-        <div
-          className={
-            // Se mostrarCategoriaNegocio, use grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4, senão grid padrão com 3 colunas em telas grandes
-            mostrarCategoriaNegocio
-              ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full"
-              : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full"
-          }
-        >
-          {/* Categoria */}
+        <div className={
+          mostrarCategoriaNegocio
+            ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full"
+            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full"
+        }>
+          
           {mostrarCategoriaNegocio && (
             <>
               <SelectField
@@ -346,7 +339,6 @@ export function FiltroImovel({
                 icon="🏷️"
                 onChange={handleChange}
               />
-              {/* Tipo de Negócio */}
               <SelectField
                 label="Tipo de Negócio"
                 name="setornegocio"
@@ -361,11 +353,11 @@ export function FiltroImovel({
               />
             </>
           )}
-          {/* Tipo de imóvel */}
+          
           <SelectField
             label="Tipo de imóvel"
-            name="tipoImovel"
-            value={filtros.tipoImovel}
+            name="tipoimovel"
+            value={filtros.tipoimovel}
             options={[
               { label: "Todos os tipos de imóvel", value: "" },
               ...opcoesFormatadas.tipos
@@ -373,20 +365,25 @@ export function FiltroImovel({
             icon="🏠"
             onChange={handleChange}
           />
-          {/* Cidade */}
-          <SelectField
-            label="Cidade"
-            name="cidade"
-            value={filtros.cidade}
-            options={[
-              { label: "Todas as cidades", value: "" },
-              ...opcoesFormatadas.cidades
-            ]}
-            icon="📍"
-            onChange={handleChange}
-          />
-          {/* Bairro */}
-          <div className="flex flex-col justify-end h-full w-full">
+          
+          <div className="flex flex-col w-full">
+            <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              📍 Cidade
+            </label>
+            <input
+              type="text"
+              name="cidade"
+              value={filtros.cidade}
+              onChange={handleChange}
+              placeholder="Digite a cidade..."
+              autoComplete="off"
+              spellCheck="false"
+              className="p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+              style={{ minHeight: "48px" }}
+            />
+          </div>
+          
+          <div className="flex flex-col w-full">
             <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               🏘️ Bairro
             </label>
@@ -395,13 +392,14 @@ export function FiltroImovel({
               name="bairro"
               value={filtros.bairro}
               onChange={handleChange}
-              placeholder="Digite o bairro"
+              placeholder="Digite o bairro..."
               autoComplete="off"
+              spellCheck="false"
               className="p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 transition-all duration-200"
               style={{ minHeight: "48px" }}
             />
           </div>
-          {/* Faixa de valor */}
+          
           <SelectField
             label="Faixa de valor"
             name="valor"
@@ -413,7 +411,7 @@ export function FiltroImovel({
             icon="💰"
             onChange={handleChange}
           />
-          {/* Faixa de metragem */}
+          
           <SelectField
             label="Faixa de metragem"
             name="metragem"
@@ -426,7 +424,7 @@ export function FiltroImovel({
             onChange={handleChange}
           />
         </div>
-        {/* BOTÕES DE AÇÃO */}
+        
         <div className="flex flex-row flex-wrap gap-3 w-full justify-center mt-4">
           <button
             type="button"
@@ -451,7 +449,7 @@ export function FiltroImovel({
           </button>
         </div>
       </div>
-      {/* CARACTERÍSTICAS ESPECÍFICAS */}
+      
       <div
         ref={itensRef}
         className={`w-full transition-all duration-300 ease-in-out ${

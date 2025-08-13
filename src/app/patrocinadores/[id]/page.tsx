@@ -9,7 +9,6 @@ import Footer from "@/components/home/Footer";
 import ImovelCard from "@/components/ImovelCard";
 import type { Imovel } from "@/types/Imovel";
 import { FiltroImovel } from "@/components/FiltroImoveis";
-import cidadesComBairros from "@/constants/cidadesComBairros";
 import { opcoesTipoImovel } from "@/constants/opcoesTipoImovel";
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import { FiFilter } from "react-icons/fi";
@@ -289,7 +288,6 @@ export default function PatrocinadorPage() {
               {mostrarFiltro && (
                 <div>
                   <FiltroImovel
-                    cidadesComBairros={cidadesComBairros}
                     opcoesTipoImovel={opcoesTipoImovel}
                     setor={setor}
                     tipoNegocio={tipoNegocio}

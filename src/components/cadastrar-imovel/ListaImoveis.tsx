@@ -13,19 +13,58 @@ const supabase = createBrowserClient(
 interface ListaImoveisProps {
   imoveis: Imovel[];
   carregando: boolean;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
   onEdit: (imovel: Imovel) => void;
   patrocinadores: { id: string; nome: string }[];
-  cidadesComBairros: Record<string, string[]>;
 }
 
 export default function ListaImoveis({
   imoveis,
   carregando,
+  onDelete,
   onEdit,
   patrocinadores,
-  cidadesComBairros
 }: ListaImoveisProps) {
+  
+  const handleDeleteImovel = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir este imóvel?')) {
+      try {
+        // 1. Buscar imagens do imóvel
+        const { data: imovel } = await supabase
+          .from('imoveis')
+          .select('imagens')
+          .eq('id', id)
+          .single();
+
+        // 2. Remover imagens do storage
+        if (imovel?.imagens && Array.isArray(imovel.imagens)) {
+          for (const url of imovel.imagens) {
+            // Ajuste o split conforme seu bucket/pasta
+            const path = url.split('/storage/v1/object/public/imagens/')[1];
+            if (path) {
+              await supabase.storage.from('imagens').remove([path]);
+            }
+          }
+        }
+
+        // 3. Excluir imóvel do banco
+        const { error } = await supabase.from('imoveis').delete().eq('id', id);
+        
+        if (error) {
+          alert('Erro ao excluir imóvel: ' + error.message);
+        } else {
+          // 4. Chamar o callback do componente pai
+          await onDelete(id);
+          alert('Imóvel excluído com sucesso!');
+        }
+        
+      } catch (error) {
+        console.error('Erro ao excluir imóvel:', error);
+        alert('Erro inesperado ao excluir imóvel.');
+      }
+    }
+  };
+
   return (
     <section className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-blue-100">
       {/* Header da Seção */}
@@ -85,7 +124,6 @@ export default function ListaImoveis({
                 }}
                 onDelete={handleDeleteImovel}
                 onEdit={onEdit}
-                cidadesComBairros={cidadesComBairros}
                 patrocinadores={patrocinadores}
               />
             </div>
@@ -105,28 +143,4 @@ export default function ListaImoveis({
       )}
     </section>
   );
-}
-
-async function handleDeleteImovel(id: string) {
-  // 1. Buscar imagens do imóvel
-  const { data: imovel } = await supabase
-    .from('imoveis')
-    .select('imagens')
-    .eq('id', id)
-    .single();
-
-  // 2. Remover imagens do storage
-  if (imovel?.imagens && Array.isArray(imovel.imagens)) {
-    for (const url of imovel.imagens) {
-      // Ajuste o split conforme seu bucket/pasta
-      const path = url.split('/storage/v1/object/public/imagens/')[1];
-      if (path) {
-        await supabase.storage.from('imagens').remove([path]);
-      }
-    }
-  }
-
-  // 3. Excluir imóvel do banco
-  await supabase.from('imoveis').delete().eq('id', id);
-
 }

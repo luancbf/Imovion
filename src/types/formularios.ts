@@ -1,5 +1,4 @@
 import type { Imovel } from './Imovel';
-import type { Patrocinador } from './cadastrar-patrocinador';
 
 export interface ImovelEdicao extends Partial<Imovel> {
   id?: string;
@@ -14,10 +13,9 @@ export interface ImovelEdicao extends Partial<Imovel> {
 }
 
 export interface FormularioImovelProps {
-  patrocinadores: Patrocinador[];
-  cidadesComBairros: Record<string, string[]>;
+  patrocinadores: { id: string; nome: string; telefone?: string; creci?: string }[];
   opcoesTipoImovel: Record<string, string[]>;
-  onSuccess: () => void;
+  onSuccess?: () => void;
   dadosIniciais?: ImovelEdicao | null;
   onLimpar?: () => void;
 }

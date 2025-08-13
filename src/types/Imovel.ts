@@ -1,5 +1,5 @@
 export interface Imovel {
-  id: string;
+  id?: string;
   cidade: string;
   bairro: string;
   enderecodetalhado: string;
@@ -8,14 +8,16 @@ export interface Imovel {
   descricao: string;
   tipoimovel: string;
   tiponegocio: string;
-  setornegocio?: string;
-  whatsapp: string;
-  patrocinador?: string;
+  setornegocio: string;
+  whatsapp?: string;
   patrocinadorid?: string;
-  imagens: string[];
-  datacadastro?: Date | string;
-  itens?: Record<string, unknown>;
+  patrocinador?: string;
+  itens?: Record<string, unknown> | string;
+  imagens?: string[];
+  datacadastro?: string | Date;
+  updated_at?: string | Date;
   ativo?: boolean;
-  latitude?: number | null;
-  longitude?: number | null;
+  latitude?: number;
+  longitude?: number;
+  codigoimovel?: string;
 }

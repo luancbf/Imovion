@@ -1,5 +1,6 @@
 import Slider from "@/components/home/Slider";
 import FiltrosExpansivos from "@/components/home/FiltrosExpansiveis";
+import MensagemCliente from "@/components/home/MensagemCliente";
 import Patrocinios from "@/components/home/Patrocinios";
 import Footer from "@/components/home/Footer";
 import Header from "@/components/home/Header";
@@ -23,6 +24,8 @@ export default function Home() {
       
       <FiltrosExpansivos />
       
+      <MensagemCliente />
+
       <section className="w-full pt-10">
         <Patrocinios />
       </section>

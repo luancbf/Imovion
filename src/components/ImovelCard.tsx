@@ -83,7 +83,7 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 flex flex-col">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 flex flex-col h-full">
       <div className="relative h-45 md:h-50 bg-gray-100 flex items-center justify-center">
         <Swiper
           modules={[Navigation]}
@@ -114,49 +114,62 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
         </Swiper>
       </div>
       
-      <div className="p-4 flex-1 flex flex-col gap-2">
-        <h3 className="font-poppins text-lg md:text-xl font-bold text-blue-800">
-          {contexto === "patrocinador"
-            ? `${negocioFormatado(imovel.tiponegocio)} - ${formatarTexto(imovel.setornegocio)} - ${formatarTexto(imovel.tipoimovel)}`
-            : formatarTexto(imovel.tipoimovel)}
-        </h3>
+      {/* Container do conteúdo com flex-1 para ocupar espaço disponível */}
+      <div className="p-4 flex-1 flex flex-col">
         
-        <p className="font-poppins text-green-700 font-bold text-xl md:text-2xl">
-          {imovel.valor && typeof imovel.valor === 'number'
-            ? imovel.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            : 'Consulte o valor'}
-          {imovel.setornegocio?.toLowerCase() === "aluguel" && imovel.valor && (
-            <span className="text-base font-normal text-gray-600"> /por mês</span>
+        {/* Conteúdo principal que cresce */}
+        <div className="flex-1 flex flex-col gap-2">
+          <h3 className="font-poppins text-lg md:text-xl font-bold text-blue-800">
+            {contexto === "patrocinador"
+              ? `${negocioFormatado(imovel.tiponegocio)} - ${formatarTexto(imovel.setornegocio)} - ${formatarTexto(imovel.tipoimovel)}`
+              : formatarTexto(imovel.tipoimovel)}
+          </h3>
+          
+          {/* CÓDIGO DO IMÓVEL - só exibe se existir */}
+          {imovel.codigoimovel && imovel.codigoimovel.trim() && (
+            <div className="font-inter text-sm text-gray-600">
+              <span className="font-poppins font-bold">Cód. Imóvel:</span> {imovel.codigoimovel}
+            </div>
           )}
-        </p>
-        
-        <div className="font-inter text-normal text-gray-600 space-y-1">
-          <p>
-            <span className="font-poppins font-bold">Local:</span> {formatarTexto(imovel.cidade)}, {formatarTexto(imovel.bairro)}
+          
+          <p className="font-poppins text-green-700 font-bold text-xl md:text-2xl">
+            {imovel.valor && typeof imovel.valor === 'number'
+              ? imovel.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+              : 'Consulte o valor'}
+            {imovel.setornegocio?.toLowerCase() === "aluguel" && imovel.valor && (
+              <span className="text-base font-normal text-gray-600"> /por mês</span>
+            )}
           </p>
-          <p>
-            <span className="font-poppins font-bold">Endereço:</span> {formatarTexto(imovel.enderecodetalhado)}
-          </p>
+          
+          <div className="font-inter text-normal text-gray-600 space-y-1">
+            <p>
+              <span className="font-poppins font-bold">Local:</span> {formatarTexto(imovel.cidade)}, {formatarTexto(imovel.bairro)}
+            </p>
+            <p>
+              <span className="font-poppins font-bold">Endereço:</span> {formatarTexto(imovel.enderecodetalhado)}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 mt-3">
+            {itensPrincipais
+              .filter(item => {
+                if (typeof item.value === "string") {
+                  const match = item.value.match(/^(\d+)/);
+                  return match ? Number(match[1]) > 0 : false;
+                }
+                return typeof item.value === "number" ? item.value > 0 : false;
+              })
+              .map((item, idx) => (
+                <div key={item.label + idx} className="flex items-center gap-1 text-blue-900">
+                  {item.icon}
+                  <span className="font-bold text-sm">{item.value}</span>
+                </div>
+              ))}
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 mt-3">
-          {itensPrincipais
-            .filter(item => {
-              if (typeof item.value === "string") {
-                const match = item.value.match(/^(\d+)/);
-                return match ? Number(match[1]) > 0 : false;
-              }
-              return typeof item.value === "number" ? item.value > 0 : false;
-            })
-            .map((item, idx) => (
-              <div key={item.label + idx} className="flex items-center gap-1 text-blue-900">
-                {item.icon}
-                <span className="font-bold text-sm">{item.value}</span>
-              </div>
-            ))}
-        </div>
-
-        <div className="font-poppins flex flex-wrap gap-2 mt-4">
+        {/* Botões sempre na parte inferior */}
+        <div className="font-poppins flex flex-wrap gap-2 mt-4 pt-4">
           <Link
             href={`/imoveis/${imovel.id}`}
             className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white text-sm px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105"
@@ -171,7 +184,7 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
                   imovel.valor 
                     ? imovel.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
                     : 'A consultar'
-                }`
+                }${imovel.codigoimovel && imovel.codigoimovel.trim() ? ` - Código: ${imovel.codigoimovel}` : ''}`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
