@@ -38,6 +38,15 @@ interface SelectFieldProps {
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 
+interface InputFieldProps {
+  label: string;
+  name: string;
+  value: string;
+  placeholder: string;
+  icon?: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
 // CONSTANTES
 const VALORES_FILTRO = {
   valor: [
@@ -121,6 +130,11 @@ export function FiltroImovel({
   const filtrosAtivos = useMemo(() => {
     return Object.values(filtros).filter(valor => valor && valor !== "" && valor !== "0").length;
   }, [filtros]);
+
+  // Verificar se tipo de negócio está selecionado para habilitar valor
+  const valorDisponivel = useMemo(() => {
+    return tipoNegocio !== "";
+  }, [tipoNegocio]);
   
   // REFS
   const itensRef = useRef<HTMLDivElement>(null);
@@ -173,6 +187,11 @@ export function FiltroImovel({
     // Limpar bairro quando cidade mudar
     if (name === "cidade") {
       novosFiltros.bairro = "";
+    }
+
+    // Limpar valor quando tipo de negócio mudar
+    if (name === "setornegocio") {
+      novosFiltros.valor = "";
     }
     
     setFiltros(novosFiltros);
@@ -246,7 +265,11 @@ export function FiltroImovel({
         value={value}
         onChange={handleChange}
         disabled={disabled}
-        className="p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+        className={`h-12 p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 cursor-pointer transition-all duration-200 ${
+          disabled 
+            ? 'opacity-50 cursor-not-allowed bg-gray-100' 
+            : 'hover:border-gray-400'
+        }`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -254,6 +277,24 @@ export function FiltroImovel({
           </option>
         ))}
       </select>
+    </div>
+  );
+
+  const InputField = ({ label, name, value, placeholder, icon, onChange }: InputFieldProps) => (
+    <div className="flex flex-col w-full">
+      <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+        {icon && <span className="text-lg">{icon}</span>} {label}
+      </label>
+      <input
+        type="text"
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoComplete="off"
+        spellCheck="false"
+        className="h-12 p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 transition-all duration-200 hover:border-gray-400"
+      />
     </div>
   );
 
@@ -366,49 +407,37 @@ export function FiltroImovel({
             onChange={handleChange}
           />
           
-          <div className="flex flex-col w-full">
-            <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              📍 Cidade
-            </label>
-            <input
-              type="text"
-              name="cidade"
-              value={filtros.cidade}
-              onChange={handleChange}
-              placeholder="Digite a cidade..."
-              autoComplete="off"
-              spellCheck="false"
-              className="p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              style={{ minHeight: "48px" }}
-            />
-          </div>
+          <InputField
+            label="Cidade"
+            name="cidade"
+            value={filtros.cidade}
+            placeholder="Digite a cidade..."
+            icon="📍"
+            onChange={handleChange}
+          />
           
-          <div className="flex flex-col w-full">
-            <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              🏘️ Bairro
-            </label>
-            <input
-              type="text"
-              name="bairro"
-              value={filtros.bairro}
-              onChange={handleChange}
-              placeholder="Digite o bairro..."
-              autoComplete="off"
-              spellCheck="false"
-              className="p-3 border border-gray-300 rounded-lg bg-white text-black focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              style={{ minHeight: "48px" }}
-            />
-          </div>
+          <InputField
+            label="Bairro"
+            name="bairro"
+            value={filtros.bairro}
+            placeholder="Digite o bairro..."
+            icon="🏘️"
+            onChange={handleChange}
+          />
           
           <SelectField
-            label="Faixa de valor"
+            label={`Faixa de valor ${tipoNegocio ? `(${tipoNegocio})` : ''}`}
             name="valor"
             value={filtros.valor}
             options={[
-              { label: "Qualquer valor", value: "" },
-              ...opcoesFormatadas.valores
+              { 
+                label: valorDisponivel ? "Qualquer valor" : "Selecione o tipo de negócio primeiro", 
+                value: "" 
+              },
+              ...(valorDisponivel ? opcoesFormatadas.valores : [])
             ]}
             icon="💰"
+            disabled={!valorDisponivel}
             onChange={handleChange}
           />
           

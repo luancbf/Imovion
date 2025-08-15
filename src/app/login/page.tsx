@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+
+const MAX_TENTATIVAS = 5;
+const BLOQUEIO_INICIAL = 30; // segundos
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [tentativas, setTentativas] = useState(0);
+  const [bloqueadoAte, setBloqueadoAte] = useState<number | null>(null);
+  const [tempoRestante, setTempoRestante] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,12 +28,33 @@ export default function LoginPage() {
 
   const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
+  // Atualiza o tempo restante de bloqueio
+  function atualizarTempoRestante(bloqueadoAte: number) {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      const agora = Date.now();
+      const diff = Math.max(0, Math.ceil((bloqueadoAte - agora) / 1000));
+      setTempoRestante(diff);
+      if (diff <= 0) {
+        setBloqueadoAte(null);
+        setTentativas(0);
+        clearInterval(timerRef.current!);
+      }
+    }, 1000);
+  }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setCarregando(true);
     setErro("");
 
-    // Validação básica
+    // Bloqueio por brute force
+    if (bloqueadoAte && Date.now() < bloqueadoAte) {
+      setErro(`Muitas tentativas. Tente novamente em ${tempoRestante} segundos.`);
+      return;
+    }
+
+    setCarregando(true);
+
     if (!email.trim() || !senha.trim()) {
       setErro("Preencha todos os campos.");
       setCarregando(false);
@@ -41,7 +69,19 @@ export default function LoginPage() {
 
       if (error) {
         if (error.message === "Invalid login credentials") {
-          setErro("E-mail ou senha inválidos.");
+          const novasTentativas = tentativas + 1;
+          setTentativas(novasTentativas);
+
+          if (novasTentativas >= MAX_TENTATIVAS) {
+            const tempoBloqueio = BLOQUEIO_INICIAL * 1000 * Math.pow(2, novasTentativas - MAX_TENTATIVAS); // Exponencial
+            const ate = Date.now() + tempoBloqueio;
+            setBloqueadoAte(ate);
+            setTempoRestante(Math.ceil(tempoBloqueio / 1000));
+            atualizarTempoRestante(ate);
+            setErro(`Muitas tentativas. Tente novamente em ${Math.ceil(tempoBloqueio / 1000)} segundos.`);
+          } else {
+            setErro("E-mail ou senha inválidos.");
+          }
         } else {
           setErro("Erro ao tentar login. Tente novamente.");
         }
@@ -56,6 +96,8 @@ export default function LoginPage() {
       }
 
       // Login bem-sucedido
+      setTentativas(0);
+      setBloqueadoAte(null);
       router.push("/admin");
     } catch {
       setErro("Erro inesperado. Tente novamente.");
@@ -63,6 +105,9 @@ export default function LoginPage() {
       setCarregando(false);
     }
   }
+
+  // Limpa timer ao desmontar
+  // useEffect não incluso aqui, mas recomendado para produção
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-200">
@@ -89,6 +134,7 @@ export default function LoginPage() {
             required
             autoFocus
             autoComplete="email"
+            disabled={!!bloqueadoAte && Date.now() < bloqueadoAte}
           />
           <input
             type="password"
@@ -98,12 +144,13 @@ export default function LoginPage() {
             onChange={e => setSenha(e.target.value)}
             required
             autoComplete="current-password"
+            disabled={!!bloqueadoAte && Date.now() < bloqueadoAte}
           />
           {erro && <div className="text-red-600 text-sm text-center">{erro}</div>}
           <button
             type="submit"
             className="font-poppins bg-blue-700 hover:bg-blue-800 text-white rounded-lg py-3 font-semibold transition"
-            disabled={carregando}
+            disabled={carregando || (!!bloqueadoAte && Date.now() < bloqueadoAte)}
           >
             {carregando ? "Entrando..." : "Entrar"}
           </button>

@@ -156,60 +156,62 @@ export default function Slider({
 
   return (
     <div className={`w-full ${className}`}>
-      <div className="relative w-full h-50 sm:h-80 lg:h-130 bg-gray-100 overflow-hidden">
-        <Swiper
-          modules={[Navigation, Pagination, Autoplay]}
-          navigation={showControls && shuffledBanners.length > 1}
-          pagination={shuffledBanners.length > 1 ? { clickable: true } : false}
-          autoplay={autoplay ? {
-            delay: type === 'principal' ? 4500 : 5000,
-            disableOnInteraction: false,
-            pauseOnMouseEnter: true
-          } : false}
-          loop={shuffledBanners.length > 1}
-          className="w-full h-full"
-          style={{ height: '100%' }}
-        >
-          {shuffledBanners.map((banner, idx) => {
-            const isClickable = banner.is_clickable && banner.patrocinador_slug && banner.patrocinador_nome;
-            const linkHref = isClickable
-              ? `/patrocinadores/${banner.patrocinador_slug}`
-              : "/";
+      <div className="relative w-full h-50 sm:h-80 lg:h-130 overflow-hidden flex justify-center">
+        <div className=" w-full max-w-3xl md:max-w-4xl lg:max-w-3/4 mx-auto h-full">
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            navigation={showControls && shuffledBanners.length > 1}
+            pagination={shuffledBanners.length > 1 ? { clickable: true } : false}
+            autoplay={autoplay ? {
+              delay: type === 'principal' ? 4500 : 5000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true
+            } : false}
+            loop={shuffledBanners.length > 1}
+            className="w-full h-full"
+            style={{ height: '100%' }}
+          >
+            {shuffledBanners.map((banner, idx) => {
+              const isClickable = banner.is_clickable && banner.patrocinador_slug && banner.patrocinador_nome;
+              const linkHref = isClickable
+                ? `/patrocinadores/${banner.patrocinador_slug}`
+                : "/";
 
-            return (
-              <SwiperSlide key={`${banner.id}-${idx}`}>
-                <Link
-                  href={linkHref}
-                  className="block w-full h-full"
-                  aria-label={isClickable
-                    ? `Ver detalhes do ${banner.patrocinador_nome}`
-                    : "Ir para página inicial"}
-                  onClick={() => {
-                    if (typeof window !== "undefined" && window.gtag && isClickable) {
-                      window.gtag("event", "click_banner_patrocinador", {
-                        patrocinador_slug: banner.patrocinador_slug,
-                        patrocinador_nome: banner.patrocinador_nome,
-                        banner_id: banner.id,
-                        page_path: window.location.pathname,
-                      });
-                    }
-                  }}
-                >
-                  <Image
-                    src={banner.image_url}
-                    alt={banner.image_alt}
-                    width={1200}
-                    height={320}
-                    priority={idx === 0 && type === 'principal'}
-                    className="object-cover w-full h-full transition-transform duration-500 hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
-                    quality={100}
-                  />
-                </Link>
-              </SwiperSlide>
-            );
-          })}
-        </Swiper>
+              return (
+                <SwiperSlide key={`${banner.id}-${idx}`}>
+                  <Link
+                    href={linkHref}
+                    className="block w-full h-full"
+                    aria-label={isClickable
+                      ? `Ver detalhes do ${banner.patrocinador_nome}`
+                      : "Ir para página inicial"}
+                    onClick={() => {
+                      if (typeof window !== "undefined" && window.gtag && isClickable) {
+                        window.gtag("event", "click_banner_patrocinador", {
+                          patrocinador_slug: banner.patrocinador_slug,
+                          patrocinador_nome: banner.patrocinador_nome,
+                          banner_id: banner.id,
+                          page_path: window.location.pathname,
+                        });
+                      }
+                    }}
+                  >
+                    <Image
+                      src={banner.image_url}
+                      alt={banner.image_alt}
+                      width={1200}
+                      height={320}
+                      priority={idx === 0 && type === 'principal'}
+                      className="object-cover w-full h-full transition-transform duration-500 hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
+                      quality={100}
+                    />
+                  </Link>
+                </SwiperSlide>
+              );
+            })}
+          </Swiper>
+        </div>
       </div>
     </div>
   );

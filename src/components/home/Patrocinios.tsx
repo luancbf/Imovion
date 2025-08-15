@@ -117,7 +117,7 @@ export default function Patrocinios() {
             
             const PatrocinioCard = (
               <div 
-                className={`w-22 h-22 sm:w-40 sm:h-40 lg:w-50 lg:h-50 group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 ${
+                className={`w-20 h-20 sm:w-40 sm:h-40 lg:w-50 lg:h-50 group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 ${
                   isClickable ? 'cursor-pointer' : ''
                 }`}
                 style={{ 
