@@ -1,44 +1,40 @@
 // src/services/apiIntegration.ts
 import { DataMapper } from './dataMapper';
-import { ExternalAPIConfig, SyncLog, ExternalImovelData, FieldMapping } from '@/types/apiIntegration';
+import { ExternalAPIConfig, ExternalImovelData, FieldMapping, SyncResult } from '@/types/apiIntegration';
 import { Imovel } from '@/types/Imovel';
 import { createClient } from '@supabase/supabase-js';
 
-// ✅ Interface para dados estendidos do imóvel
+// ✅ Interfaces otimizadas
 interface ImovelExtended extends Partial<Imovel> {
   fonte_api?: string;
-  data_sincronizacao?: Date | string;
+  data_sincronizacao?: string;
   external_id?: string;
   is_active?: boolean;
-  deleted_at?: Date | string | null;
+  deleted_at?: string | null;
   deletion_reason?: string;
 }
 
-// ✅ Interface para config do banco de dados
 interface DatabaseAPIConfig {
   id: string;
   name: string;
   base_url: string;
   auth_key: string | null;
   auth_type: 'none' | 'api-key' | 'bearer' | 'basic';
-  mapping: Record<string, unknown>; // Será convertido para FieldMapping
+  mapping: Record<string, unknown>;
   rate_limit: number;
   is_active: boolean;
   enable_deletion: boolean;
   deletion_strategy: 'soft_delete' | 'archive' | 'hard_delete';
   keep_days_before_delete: number;
   webhook_secret: string | null;
-  created_at?: string;
-  updated_at?: string;
 }
 
-// ✅ CORRIGIDO: Função única para converter mapping do banco para FieldMapping
+// ✅ Função utilitária para conversão de mapping
 function convertToFieldMapping(data: Record<string, unknown>): FieldMapping {
-  // Garantir que todos os campos obrigatórios existam
-  const defaultMapping: FieldMapping = {
+  const defaults: FieldMapping = {
     id: 'id',
     cidade: 'city',
-    bairro: 'neighborhood', 
+    bairro: 'neighborhood',
     valor: 'price',
     tipoImovel: 'type',
     tipoNegocio: 'business_type',
@@ -50,25 +46,27 @@ function convertToFieldMapping(data: Record<string, unknown>): FieldMapping {
     caracteristicas: {}
   };
 
-  // Mesclar com dados existentes, mantendo defaults para campos ausentes
   return {
-    id: (data.id as string) || defaultMapping.id,
-    cidade: (data.cidade as string) || defaultMapping.cidade,
-    bairro: (data.bairro as string) || defaultMapping.bairro,
-    valor: (data.valor as string) || defaultMapping.valor,
-    tipoImovel: (data.tipoImovel as string) || defaultMapping.tipoImovel,
-    tipoNegocio: (data.tipoNegocio as string) || defaultMapping.tipoNegocio,
-    setorNegocio: (data.setorNegocio as string) || defaultMapping.setorNegocio,
-    descricao: (data.descricao as string) || defaultMapping.descricao,
-    metragem: (data.metragem as string) || defaultMapping.metragem,
-    whatsapp: (data.whatsapp as string) || defaultMapping.whatsapp,
-    imagens: (data.imagens as string) || defaultMapping.imagens,
-    caracteristicas: (data.caracteristicas as Record<string, string>) || defaultMapping.caracteristicas
+    id: (data.id as string) || defaults.id,
+    cidade: (data.cidade as string) || defaults.cidade,
+    bairro: (data.bairro as string) || defaults.bairro,
+    valor: (data.valor as string) || defaults.valor,
+    tipoImovel: (data.tipoImovel as string) || defaults.tipoImovel,
+    tipoNegocio: (data.tipoNegocio as string) || defaults.tipoNegocio,
+    setorNegocio: (data.setorNegocio as string) || defaults.setorNegocio,
+    descricao: (data.descricao as string) || defaults.descricao,
+    metragem: (data.metragem as string) || defaults.metragem,
+    whatsapp: (data.whatsapp as string) || defaults.whatsapp,
+    imagens: (data.imagens as string) || defaults.imagens,
+    caracteristicas: (data.caracteristicas as Record<string, string>) || defaults.caracteristicas
   };
 }
 
 export class APIIntegrationService {
-  private supabase;
+  private readonly supabase;
+  private readonly BATCH_SIZE = 25;
+  private readonly MAX_RETRIES = 3;
+  private readonly REQUEST_TIMEOUT = 30000;
 
   constructor() {
     this.supabase = createClient(
@@ -77,116 +75,120 @@ export class APIIntegrationService {
     );
   }
 
-  // ✅ Buscar dados de uma API externa com tipos seguros
-  async fetchFromExternalAPI(config: ExternalAPIConfig, limit = 10): Promise<ExternalImovelData[]> {
-    console.log(`🔄 Iniciando busca na API: ${config.name}`);
-    
-    try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Projeto-Imobiliario-Integration/1.0'
-      };
+  // ✅ Requisição com retry otimizada
+  private async makeRequest(url: string, headers: Record<string, string>): Promise<Response> {
+    for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT);
 
-      // Configurar autenticação baseada no tipo
-      switch (config.authType) {
-        case 'api-key':
-          headers['X-API-Key'] = config.authKey || '';
-          break;
-        case 'bearer':
-          headers['Authorization'] = `Bearer ${config.authKey || ''}`;
-          break;
-        case 'basic':
-          if (config.authKey) {
-            headers['Authorization'] = `Basic ${Buffer.from(config.authKey).toString('base64')}`;
-          }
-          break;
-        case 'none':
-        default:
-          // Sem autenticação
-          break;
-      }
+        const response = await fetch(url, {
+          method: 'GET',
+          headers,
+          signal: controller.signal
+        });
 
-      // Construir URL com parâmetros
-      const url = new URL(config.baseUrl);
-      if (limit && limit > 0) {
-        url.searchParams.set('limit', limit.toString());
-      }
+        clearTimeout(timeoutId);
 
-      console.log(`🔗 Fazendo requisição para: ${url.toString()}`);
+        if (response.ok) return response;
 
-      // Fazer requisição com timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers,
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`API retornou status ${response.status}: ${response.statusText}`);
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('API não retornou JSON válido');
-      }
-
-      const data: unknown = await response.json();
-      
-      // ✅ Normalizar diferentes formatos de resposta inline
-      let items: ExternalImovelData[] = [];
-      
-      if (Array.isArray(data)) {
-        items = data;
-      } else if (data && typeof data === 'object') {
-        const dataObj = data as Record<string, unknown>;
-        
-        if (dataObj.data && Array.isArray(dataObj.data)) {
-          items = dataObj.data;
-        } else if (dataObj.results && Array.isArray(dataObj.results)) {
-          items = dataObj.results;
-        } else if (dataObj.items && Array.isArray(dataObj.items)) {
-          items = dataObj.items;
-        } else if (dataObj.properties && Array.isArray(dataObj.properties)) {
-          items = dataObj.properties;
-        } else {
-          // Se for um objeto único, tratar como array de 1 item
-          items = [data as ExternalImovelData];
+        // Rate limit handling
+        if (response.status === 429 && attempt < this.MAX_RETRIES) {
+          await this.delay(2000 * attempt);
+          continue;
         }
-      } else {
-        throw new Error('Formato de resposta da API não reconhecido');
-      }
 
-      console.log(`✅ Recebidos ${items.length} itens da API ${config.name}`);
-      return items;
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Timeout na requisição para a API');
+      } catch (error) {
+        if (attempt === this.MAX_RETRIES) throw error;
+        await this.delay(1000 * attempt);
       }
-      
-      console.error(`❌ Erro ao buscar dados de ${config.name}:`, error);
-      throw error;
     }
+    throw new Error('Max retries exceeded');
   }
 
-  // ✅ Função de sincronização com conversão correta de tipos
-  async syncAPI(config: DatabaseAPIConfig): Promise<SyncLog> {
+  // ✅ Normalização de resposta da API
+  private normalizeAPIResponse(data: unknown): ExternalImovelData[] {
+    if (Array.isArray(data)) return data;
+    
+    if (data && typeof data === 'object') {
+      const obj = data as Record<string, unknown>;
+      const keys = ['data', 'results', 'items', 'properties', 'listings', 'imoveis'];
+      
+      for (const key of keys) {
+        if (Array.isArray(obj[key])) return obj[key] as ExternalImovelData[];
+      }
+      
+      return [data as ExternalImovelData];
+    }
+    
+    throw new Error('Invalid API response format');
+  }
+
+  // ✅ Configuração de headers de autenticação
+  private getAuthHeaders(config: ExternalAPIConfig): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Projeto-Imobiliario-Integration/1.0',
+      'Accept': 'application/json'
+    };
+
+    switch (config.authType) {
+      case 'api-key':
+        if (config.authKey) headers['X-API-Key'] = config.authKey;
+        break;
+      case 'bearer':
+        if (config.authKey) headers['Authorization'] = `Bearer ${config.authKey}`;
+        break;
+      case 'basic':
+        if (config.authKey) headers['Authorization'] = `Basic ${btoa(config.authKey)}`;
+        break;
+    }
+
+    return headers;
+  }
+
+  // ✅ Delay helper
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // ✅ Busca dados de API externa
+  async fetchFromExternalAPI(config: ExternalAPIConfig, limit = 100): Promise<ExternalImovelData[]> {
+    console.log(`🔄 Fetching from ${config.name}`);
+    
+    const headers = this.getAuthHeaders(config);
+    const url = new URL(config.baseUrl);
+    
+    if (limit > 0) url.searchParams.set('limit', limit.toString());
+
+    const response = await this.makeRequest(url.toString(), headers);
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      throw new Error('Invalid content type');
+    }
+
+    const data = await response.json();
+    const items = this.normalizeAPIResponse(data);
+
+    console.log(`✅ ${items.length} items fetched from ${config.name}`);
+    return items;
+  }
+
+  // ✅ Sincronização de uma API
+  async syncAPI(config: DatabaseAPIConfig): Promise<SyncResult> {
     const startTime = Date.now();
     
     try {
-      // ✅ Converter config do banco para o tipo esperado usando função auxiliar
       const apiConfig: ExternalAPIConfig = {
         id: config.id,
         name: config.name,
         baseUrl: config.base_url,
         authKey: config.auth_key || undefined,
         authType: config.auth_type,
-        mapping: convertToFieldMapping(config.mapping), // ✅ Conversão type-safe
+        mapping: convertToFieldMapping(config.mapping),
         rateLimit: config.rate_limit,
         isActive: config.is_active,
         enableDeletion: config.enable_deletion,
@@ -195,325 +197,310 @@ export class APIIntegrationService {
         webhookSecret: config.webhook_secret || undefined
       };
 
-      // Buscar dados da API externa
       const externalData = await this.fetchFromExternalAPI(apiConfig);
       
-      if (!externalData || externalData.length === 0) {
-        const duration = Date.now() - startTime;
-        return {
-          id: crypto.randomUUID(),
-          apiConfigId: config.id,
-          timestamp: new Date(),
-          status: 'success',
-          totalProcessed: 0,
-          totalErrors: 0,
-          totalDeleted: 0,
-          errorMessages: [],
-          deletedIds: [],
-          duration
-        };
+      if (externalData.length === 0) {
+        return this.createSyncResult(config.id, 'success', 0, 0, [], Date.now() - startTime);
       }
 
-      // Processar dados usando o método existente
-      const result = await this.processWebhookData(apiConfig, externalData);
-      
-      const duration = Date.now() - startTime;
-      
-      const syncLog: SyncLog = {
-        id: crypto.randomUUID(),
-        apiConfigId: config.id,
-        timestamp: new Date(),
-        status: result.errors > 0 ? 'partial' : 'success',
-        totalProcessed: result.processed,
-        totalErrors: result.errors,
-        totalDeleted: 0, // TODO: Implementar detecção de exclusões
-        errorMessages: result.errorMessages,
-        deletedIds: [],
-        duration
-      };
+      const result = await this.processData(apiConfig, externalData);
+      const syncResult = this.createSyncResult(
+        config.id,
+        result.errors > 0 ? 'partial' : 'success',
+        result.processed,
+        result.errors,
+        result.errorMessages,
+        Date.now() - startTime
+      );
 
-      await this.saveSyncLog(syncLog);
-      return syncLog;
+      await this.saveSyncLog(syncResult);
+      return syncResult;
 
     } catch (error) {
-      const duration = Date.now() - startTime;
-      
-      const errorLog: SyncLog = {
-        id: crypto.randomUUID(),
-        apiConfigId: config.id,
-        timestamp: new Date(),
-        status: 'error',
-        totalProcessed: 0,
-        totalErrors: 1,
-        totalDeleted: 0,
-        errorMessages: [error instanceof Error ? error.message : 'Erro desconhecido'],
-        deletedIds: [],
-        duration
-      };
+      const errorResult = this.createSyncResult(
+        config.id,
+        'error',
+        0,
+        1,
+        [error instanceof Error ? error.message : 'Unknown error'],
+        Date.now() - startTime
+      );
 
-      await this.saveSyncLog(errorLog);
-      return errorLog;
+      await this.saveSyncLog(errorResult);
+      return errorResult;
     }
   }
 
-  // ✅ Sincronizar todas as APIs ativas
-  async syncAllAPIs(): Promise<SyncLog[]> {
-    console.log('🔄 Iniciando sincronização de todas as APIs...');
+  // ✅ Sincronização de todas as APIs
+  async syncAllAPIs(): Promise<SyncResult[]> {
+    console.log('🔄 Starting full sync...');
     
-    try {
-      // Buscar todas as APIs ativas
-      const { data: configs, error } = await this.supabase
-        .from('api_configs')
-        .select('*')
-        .eq('is_active', true);
+    const { data: configs, error } = await this.supabase
+      .from('api_configs')
+      .select('*')
+      .eq('is_active', true);
 
-      if (error) {
-        throw new Error(`Erro ao buscar configurações: ${error.message}`);
-      }
+    if (error) throw new Error(`Failed to fetch configs: ${error.message}`);
+    if (!configs?.length) return [];
 
-      if (!configs || configs.length === 0) {
-        console.log('📭 Nenhuma API ativa encontrada');
-        return [];
-      }
+    const results: SyncResult[] = [];
 
-      const results: SyncLog[] = [];
-
-      // Cast explícito dos dados do banco para o tipo esperado
-      const typedConfigs = configs as DatabaseAPIConfig[];
-
-      // Sincronizar cada API sequencialmente para respeitar rate limits
-      for (const config of typedConfigs) {
-        try {
-          console.log(`🔄 Sincronizando API: ${config.name}`);
-          
-          const result = await this.syncAPI(config);
-          results.push(result);
-          
-          // Aguardar um pouco entre APIs para não sobrecarregar
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-        } catch (error) {
-          console.error(`❌ Erro na sincronização de ${config.name}:`, error);
-          
-          // Criar log de erro
-          const errorLog: SyncLog = {
-            id: crypto.randomUUID(),
-            apiConfigId: config.id,
-            timestamp: new Date(),
-            status: 'error',
-            totalProcessed: 0,
-            totalErrors: 1,
-            totalDeleted: 0,
-            errorMessages: [error instanceof Error ? error.message : 'Erro desconhecido'],
-            deletedIds: [],
-            duration: 0
-          };
-          
-          await this.saveSyncLog(errorLog);
-          results.push(errorLog);
-        }
-      }
-
-      console.log(`✅ Sincronização completa. ${results.length} APIs processadas`);
-      return results;
-
-    } catch (error) {
-      console.error('❌ Erro na sincronização geral:', error);
-      throw error;
-    }
-  }
-
-  // ✅ Função de upsert com tipos corretos
-  private async upsertImoveis(imoveis: ImovelExtended[]): Promise<void> {
-    console.log(`💾 Salvando/atualizando ${imoveis.length} imóveis...`);
-
-    try {
-      const batchSize = 50;
-      for (let i = 0; i < imoveis.length; i += batchSize) {
-        const batch = imoveis.slice(i, i + batchSize);
+    for (const config of configs as DatabaseAPIConfig[]) {
+      try {
+        const result = await this.syncAPI(config);
+        results.push(result);
         
-        const { error } = await this.supabase
-          .from('imoveis')
-          .upsert(batch, {
-            onConflict: 'external_id,fonte_api'
+        // Rate limiting
+        const delay = Math.max(1000, 60000 / config.rate_limit);
+        await this.delay(delay);
+        
+      } catch (error) {
+        const errorResult = this.createSyncResult(
+          config.id,
+          'error',
+          0,
+          1,
+          [error instanceof Error ? error.message : 'Unknown error'],
+          0
+        );
+        results.push(errorResult);
+      }
+    }
+
+    console.log(`✅ Sync complete: ${results.length} APIs processed`);
+    return results;
+  }
+
+  // ✅ Processamento de dados
+  async processData(config: ExternalAPIConfig, payload: unknown): Promise<{
+    processed: number;
+    errors: number;
+    errorMessages: string[];
+  }> {
+    const mapper = new DataMapper(config.mapping);
+    const processedData: ImovelExtended[] = [];
+    const errorMessages: string[] = [];
+
+    const items = this.normalizeAPIResponse(payload);
+
+    for (const [index, item] of items.entries()) {
+      try {
+        const mappedItem = mapper.mapToInternal(item);
+        const validation = mapper.validateMappedData(mappedItem);
+        
+        if (validation.valid) {
+          processedData.push({
+            ...mappedItem,
+            external_id: mappedItem.id,
+            fonte_api: config.id,
+            is_active: true,
+            deleted_at: null,
+            data_sincronizacao: new Date().toISOString()
           });
-
-        if (error) {
-          throw new Error(`Erro ao salvar lote: ${error.message}`);
+        } else {
+          errorMessages.push(`Item ${index + 1}: ${validation.errors.join(', ')}`);
         }
-
-        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        errorMessages.push(`Item ${index + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-
-      console.log(`✅ Upsert concluído: ${imoveis.length} imóveis`);
-      
-    } catch (error) {
-      console.error('❌ Erro no upsert:', error);
-      throw error;
     }
+
+    if (processedData.length > 0) {
+      await this.upsertImoveis(processedData);
+    }
+
+    return {
+      processed: processedData.length,
+      errors: errorMessages.length,
+      errorMessages
+    };
   }
 
-  // ✅ Limpeza com tipagem correta para resposta do Supabase
-  async cleanupOldDeletedImoveis(config: ExternalAPIConfig): Promise<number> {
-    if (config.deletionStrategy !== 'soft_delete' || !config.keepDaysBeforeDelete) {
-      return 0;
-    }
-
-    console.log(`🧹 Limpando imóveis excluídos há mais de ${config.keepDaysBeforeDelete} dias`);
-
-    try {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - config.keepDaysBeforeDelete);
-
-      // ✅ Primeiro contar quantos registros serão deletados
-      const { count, error: countError } = await this.supabase
-        .from('imoveis')
-        .select('*', { count: 'exact', head: true })
-        .eq('fonte_api', config.id)
-        .eq('is_active', false)
-        .not('deleted_at', 'is', null)
-        .lt('deleted_at', cutoffDate.toISOString());
-
-      if (countError) {
-        throw new Error(`Erro ao contar registros: ${countError.message}`);
-      }
-
-      const recordCount = count || 0;
-
-      if (recordCount === 0) {
-        console.log('✅ Nenhum registro para limpar');
-        return 0;
-      }
-
-      // Agora fazer a deleção
-      const { error: deleteError } = await this.supabase
-        .from('imoveis')
-        .delete()
-        .eq('fonte_api', config.id)
-        .eq('is_active', false)
-        .not('deleted_at', 'is', null)
-        .lt('deleted_at', cutoffDate.toISOString());
-
-      if (deleteError) {
-        throw new Error(`Erro na limpeza: ${deleteError.message}`);
-      }
-
-      console.log(`✅ Limpeza concluída: ${recordCount} imóveis removidos definitivamente`);
-      return recordCount;
-
-    } catch (error) {
-      console.error('❌ Erro na limpeza:', error);
-      return 0;
-    }
-  }
-
-  // ✅ Implementação do saveSyncLog
-  private async saveSyncLog(log: SyncLog): Promise<void> {
-    try {
-      const { error } = await this.supabase
-        .from('sync_logs')
-        .insert([{
-          api_config_id: log.apiConfigId,
-          timestamp: log.timestamp.toISOString(),
-          status: log.status,
-          total_processed: log.totalProcessed,
-          total_errors: log.totalErrors,
-          total_deleted: log.totalDeleted || 0,
-          error_messages: log.errorMessages || [],
-          deleted_ids: log.deletedIds || [],
-          duration: log.duration
-        }]);
-
-      if (error) {
-        console.error('Erro ao salvar log:', error);
-      }
-    } catch (error) {
-      console.error('Erro ao salvar log:', error);
-    }
-  }
-
-  // ✅ Processar dados recebidos via webhook
+  // ✅ Compatibilidade com webhook (alias para processData)
   async processWebhookData(config: ExternalAPIConfig, payload: unknown): Promise<{
     processed: number;
     errors: number;
     errorMessages: string[];
   }> {
-    console.log(`🔄 Processando webhook data para ${config.name}`);
+    return this.processData(config, payload);
+  }
+
+  // ✅ Upsert otimizado em lotes
+  private async upsertImoveis(imoveis: ImovelExtended[]): Promise<void> {
+    if (imoveis.length === 0) return;
     
-    try {
-      const mapper = new DataMapper(config.mapping);
-      const processedData: ImovelExtended[] = [];
-      const errorMessages: string[] = [];
+    console.log(`💾 Upserting ${imoveis.length} properties...`);
 
-      // Normalizar payload para array de forma type-safe
-      let items: unknown[] = [];
+    for (let i = 0; i < imoveis.length; i += this.BATCH_SIZE) {
+      const batch = imoveis.slice(i, i + this.BATCH_SIZE);
       
-      if (Array.isArray(payload)) {
-        items = payload;
-      } else if (payload && typeof payload === 'object') {
-        items = [payload];
-      } else {
-        throw new Error('Payload inválido recebido no webhook');
+      const { error } = await this.supabase
+        .from('imoveis')
+        .upsert(batch, {
+          onConflict: 'external_id,fonte_api',
+          ignoreDuplicates: false
+        });
+
+      if (error) throw new Error(`Batch upsert failed: ${error.message}`);
+      
+      // Progress logging
+      const batchNum = Math.floor(i / this.BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(imoveis.length / this.BATCH_SIZE);
+      console.log(`✅ Batch ${batchNum}/${totalBatches} completed`);
+      
+      if (i + this.BATCH_SIZE < imoveis.length) {
+        await this.delay(200);
       }
+    }
 
-      for (const item of items) {
-        try {
-          // Type assertion segura após validação
-          const mappedItem = mapper.mapToInternal(item as ExternalImovelData);
-          const validation = mapper.validateMappedData(mappedItem);
-          
-          if (validation.valid) {
-            processedData.push({
-              ...mappedItem,
-              external_id: mappedItem.id,
-              fonte_api: config.id,
-              is_active: true,
-              deleted_at: null,
-              data_sincronizacao: new Date()
-            });
-          } else {
-            errorMessages.push(`Item ${mappedItem.id}: ${validation.errors.join(', ')}`);
-          }
-        } catch (error) {
-          errorMessages.push(`Erro ao processar item: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-        }
+    console.log(`✅ ${imoveis.length} properties upserted successfully`);
+  }
+
+  // ✅ Helper para criar SyncResult
+  private createSyncResult(
+    apiConfigId: string,
+    status: 'success' | 'error' | 'partial',
+    processed: number,
+    errors: number,
+    errorMessages: string[],
+    duration: number
+  ): SyncResult {
+    return {
+      apiConfigId,
+      status,
+      totalProcessed: processed,
+      totalErrors: errors,
+      totalDeleted: 0,
+      errorMessages,
+      deletedIds: [],
+      duration
+    };
+  }
+
+  // ✅ Salvar log de sincronização
+  private async saveSyncLog(result: SyncResult): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from('sync_logs')
+        .insert([{
+          api_config_id: result.apiConfigId,
+          timestamp: new Date().toISOString(),
+          status: result.status,
+          total_processed: result.totalProcessed,
+          total_errors: result.totalErrors,
+          total_deleted: result.totalDeleted,
+          error_messages: result.errorMessages,
+          deleted_ids: result.deletedIds,
+          duration: result.duration
+        }]);
+
+      if (error) {
+        console.error('⚠️ Failed to save sync log:', error);
       }
-
-      // Salvar dados válidos usando o método existente
-      if (processedData.length > 0) {
-        await this.upsertImoveis(processedData);
-      }
-
-      // Criar e salvar log do webhook
-      const syncLog: SyncLog = {
-        id: this.generateId(),
-        apiConfigId: config.id,
-        timestamp: new Date(),
-        status: errorMessages.length > 0 ? 'partial' : 'success',
-        totalProcessed: processedData.length,
-        totalErrors: errorMessages.length,
-        totalDeleted: 0,
-        errorMessages,
-        deletedIds: [],
-        duration: 0 // Processamento instantâneo para webhook
-      };
-
-      await this.saveSyncLog(syncLog);
-
-      return {
-        processed: processedData.length,
-        errors: errorMessages.length,
-        errorMessages
-      };
-
     } catch (error) {
-      console.error('❌ Erro no processamento do webhook:', error);
-      throw error;
+      console.error('⚠️ Error saving sync log:', error);
     }
   }
 
-  private generateId(): string {
-    // Gerar ID único para o log
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  // ✅ Teste de conectividade
+  async testConnection(config: ExternalAPIConfig): Promise<{
+    success: boolean;
+    message: string;
+    responseTime?: number;
+  }> {
+    const startTime = Date.now();
+    
+    try {
+      await this.fetchFromExternalAPI(config, 1);
+      return {
+        success: true,
+        message: 'Connection successful',
+        responseTime: Date.now() - startTime
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  // ✅ Limpeza de dados antigos
+  async cleanOldData(apiConfigId: string, daysOld: number): Promise<{
+    deleted: number;
+    errors: number;
+  }> {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+      const { data, error } = await this.supabase
+        .from('imoveis')
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          deletion_reason: `Auto-cleanup: ${daysOld} days old`
+        })
+        .eq('fonte_api', apiConfigId)
+        .lt('data_sincronizacao', cutoffDate.toISOString())
+        .is('deleted_at', null)
+        .select('id');
+
+      if (error) throw error;
+
+      return {
+        deleted: data?.length || 0,
+        errors: 0
+      };
+
+    } catch (error) {
+      console.error('❌ Cleanup failed:', error);
+      return { deleted: 0, errors: 1 };
+    }
+  }
+
+  // ✅ Estatísticas de sincronização
+  async getStats(apiConfigId?: string): Promise<{
+    totalSyncs: number;
+    successfulSyncs: number;
+    errorSyncs: number;
+    lastSync?: Date;
+    avgDuration?: number;
+  }> {
+    try {
+      let query = this.supabase
+        .from('sync_logs')
+        .select('status, duration, timestamp');
+
+      if (apiConfigId) {
+        query = query.eq('api_config_id', apiConfigId);
+      }
+
+      const { data: logs, error } = await query
+        .order('timestamp', { ascending: false })
+        .limit(100);
+
+      if (error || !logs?.length) {
+        return { totalSyncs: 0, successfulSyncs: 0, errorSyncs: 0 };
+      }
+
+      const totalSyncs = logs.length;
+      const successfulSyncs = logs.filter(log => log.status === 'success').length;
+      const errorSyncs = logs.filter(log => log.status === 'error').length;
+      const avgDuration = Math.round(
+        logs.reduce((sum, log) => sum + (log.duration || 0), 0) / totalSyncs
+      );
+
+      return {
+        totalSyncs,
+        successfulSyncs,
+        errorSyncs,
+        lastSync: new Date(logs[0].timestamp),
+        avgDuration
+      };
+
+    } catch (error) {
+      console.error('❌ Stats fetch failed:', error);
+      return { totalSyncs: 0, successfulSyncs: 0, errorSyncs: 0 };
+    }
   }
 }

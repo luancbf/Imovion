@@ -114,3 +114,15 @@ export interface ExternalImovelDataTyped {
 
 // ✅ União dos tipos para máxima flexibilidade
 export type ExternalAPIData = ExternalImovelData | ExternalImovelDataTyped;
+
+// ✅ Já existe, mas confirmar que está assim:
+export interface SyncResult {
+  apiConfigId: string;
+  status: 'success' | 'error' | 'partial';
+  totalProcessed: number;
+  totalErrors: number;
+  totalDeleted: number;
+  errorMessages?: string[];
+  deletedIds?: string[];
+  duration?: number;
+}
