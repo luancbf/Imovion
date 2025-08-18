@@ -8,15 +8,23 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// ✅ CORRIGIDO: Interface para Next.js 15
+interface RouteParams {
+  params: Promise<{ id: string }>; // ← Mudança aqui: Promise wrapper
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteParams
 ) {
   try {
+    // ✅ CORRIGIDO: Await nos params
+    const { id } = await context.params;
+    
     const { data, error } = await supabase
       .from('api_configs')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (error) throw error;
@@ -41,7 +49,9 @@ export async function GET(
       deletionStrategy: data.deletion_strategy,
       keepDaysBeforeDelete: data.keep_days_before_delete,
       webhookSecret: data.webhook_secret,
-      mapping: data.mapping
+      mapping: data.mapping,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
     };
 
     return NextResponse.json({ success: true, data: config });
@@ -56,34 +66,42 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteParams
 ) {
   try {
+    // ✅ CORRIGIDO: Await nos params
+    const { id } = await context.params;
     const body = await request.json();
     
+    const updateData = {
+      name: body.name,
+      base_url: body.baseUrl,
+      auth_type: body.authType,
+      auth_key: body.authKey,
+      rate_limit: body.rateLimit,
+      is_active: body.isActive,
+      enable_deletion: body.enableDeletion,
+      deletion_strategy: body.deletionStrategy,
+      keep_days_before_delete: body.keepDaysBeforeDelete,
+      webhook_secret: body.webhookSecret,
+      mapping: body.mapping,
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('api_configs')
-      .update({
-        name: body.name,
-        base_url: body.baseUrl,
-        auth_type: body.authType,
-        auth_key: body.authKey,
-        rate_limit: body.rateLimit,
-        is_active: body.isActive,
-        enable_deletion: body.enableDeletion,
-        deletion_strategy: body.deletionStrategy,
-        keep_days_before_delete: body.keepDaysBeforeDelete,
-        webhook_secret: body.webhookSecret,
-        mapping: body.mapping,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', params.id)
+      .update(updateData)
+      .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ 
+      success: true, 
+      data,
+      message: 'Configuração atualizada com sucesso' 
+    });
   } catch (error) {
     console.error('Erro ao atualizar configuração:', error);
     return NextResponse.json({ 
@@ -95,17 +113,37 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteParams
 ) {
   try {
+    // ✅ CORRIGIDO: Await nos params
+    const { id } = await context.params;
+    
+    // Verificar se existe antes de deletar
+    const { data: existingConfig, error: checkError } = await supabase
+      .from('api_configs')
+      .select('id, name')
+      .eq('id', id)
+      .single();
+
+    if (checkError || !existingConfig) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Configuração não encontrada' 
+      }, { status: 404 });
+    }
+
     const { error } = await supabase
       .from('api_configs')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      message: `Configuração "${existingConfig.name}" deletada com sucesso`
+    });
   } catch (error) {
     console.error('Erro ao deletar configuração:', error);
     return NextResponse.json({ 
