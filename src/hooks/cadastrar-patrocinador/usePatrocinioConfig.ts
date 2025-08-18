@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { PatrocinioConfig } from '@/types/cadastrar-patrocinador';
 
-// Configuração das 24 posições disponíveis
+// Configuração das 16 posições disponíveis
 const availablePatrocinioPositions = [
   { position: 0, name: 'Posição 1', description: 'Primeira posição', location: 'Linha 1 - Coluna 1' },
   { position: 1, name: 'Posição 2', description: 'Segunda posição', location: 'Linha 1 - Coluna 2' },
@@ -73,6 +73,36 @@ export const usePatrocinioConfig = () => {
       description: `Posição ${position + 1} de patrocínio`,
       location: 'Localização padrão'
     };
+  }, []);
+
+  // FUNÇÃO PARA REMOVER IMAGEM DO STORAGE
+  const removeImageFromStorage = useCallback(async (imageUrl: string): Promise<void> => {
+    try {
+      const { createBrowserClient } = await import("@supabase/ssr");
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
+      // Extrair o caminho da URL
+      const urlParts = imageUrl.split('/storage/v1/object/public/imagens/');
+      if (urlParts.length > 1) {
+        const filePath = urlParts[1];
+        console.log(`🗑️ Removendo imagem de patrocínio do storage: ${filePath}`);
+        
+        const { error } = await supabase.storage
+          .from('imagens')
+          .remove([filePath]);
+
+        if (error) {
+          console.error('Erro ao remover imagem do storage:', error);
+        } else {
+          console.log('✅ Imagem de patrocínio removida com sucesso do storage');
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao processar remoção da imagem de patrocínio:', error);
+    }
   }, []);
 
   // FUNÇÃO AUXILIAR PARA CRIAR MOCK CONFIGS
@@ -234,7 +264,69 @@ export const usePatrocinioConfig = () => {
     setUploadingPositions(prev => ({ ...prev, [position]: uploading }));
   }, []);
 
-  // SALVAR CONFIGURAÇÃO
+  // UPLOAD E ATUALIZAÇÃO DE IMAGEM OTIMIZADA (NOVA FUNÇÃO)
+  const uploadAndUpdatePatrocinio = useCallback(async (position: number, file: File, fileName: string): Promise<void> => {
+    console.log(`🔄 Iniciando upload para posição: ${position}`);
+    
+    // 1. Buscar configuração atual e URL antiga
+    const currentConfig = patrocinioConfigs.find(c => c.position === position);
+    const oldImageUrl = currentConfig?.image_url;
+    
+    console.log(`📄 Config atual:`, currentConfig);
+    console.log(`🖼️ URL antiga:`, oldImageUrl);
+
+    setPositionUploading(position, true);
+
+    try {
+      // 2. Fazer upload da nova imagem NA PASTA CORRETA
+      const formData = new FormData();
+      formData.append("imagem", file);
+      formData.append("pasta", "patrocinios"); // ✅ Especifica pasta patrocinios
+      
+      console.log(`📤 Fazendo upload do arquivo: ${file.name} para pasta: patrocinios`);
+      
+      const res = await fetch("/api/upload-imagem", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+      }
+      
+      const data = await res.json();
+      
+      if (!data.url) {
+        throw new Error(data.error || "URL não retornada pela API");
+      }
+
+      console.log(`✅ Nova imagem uploadada: ${data.url}`);
+      console.log(`📁 Caminho do arquivo: ${data.path}`);
+
+      // 3. Atualizar estado local com nova URL
+      updatePatrocinioConfig(position, 'image_url', data.url);
+      updatePatrocinioConfig(position, 'image_alt', `Patrocínio ${getPatrocinioPositionInfo(position).name}`);
+      updatePatrocinioConfig(position, 'image_name', fileName);
+      updatePatrocinioConfig(position, 'is_active', true);
+
+      // 4. Remover imagem antiga do storage (se existir e for diferente)
+      if (oldImageUrl && oldImageUrl !== data.url) {
+        console.log(`🗑️ Removendo imagem antiga: ${oldImageUrl}`);
+        await removeImageFromStorage(oldImageUrl);
+      }
+
+      console.log(`🎉 Upload e atualização concluídos para posição: ${position}`);
+
+    } catch (error) {
+      console.error(`❌ Erro no upload da posição ${position}:`, error);
+      throw error;
+    } finally {
+      setPositionUploading(position, false);
+    }
+  }, [patrocinioConfigs, updatePatrocinioConfig, removeImageFromStorage, getPatrocinioPositionInfo, setPositionUploading]);
+
+  // SALVAR CONFIGURAÇÃO (OTIMIZADO)
   const savePatrocinioConfig = useCallback(async (position: number): Promise<void> => {
     const config = patrocinioConfigs.find(c => c.position === position);
     if (!config) {
@@ -248,6 +340,8 @@ export const usePatrocinioConfig = () => {
     if (config.is_clickable === true && (!config.patrocinador_id || config.patrocinador_id.trim() === '')) {
       throw new Error('Para modo clicável, é necessário selecionar um patrocinador');
     }
+
+    console.log(`💾 Salvando configuração da posição: ${position}`, config);
 
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
@@ -279,62 +373,61 @@ export const usePatrocinioConfig = () => {
       } catch {
       }
 
-      if (config.id && !config.id.startsWith('mock-')) {
+      // Verificar se configuração já existe no banco
+      const { data: existingConfig } = await supabase
+        .from('patrocinio_configs')
+        .select('id, image_url')
+        .eq('position', position)
+        .single();
+
+      if (existingConfig) {
+        // ATUALIZAR configuração existente
+        console.log(`🔄 Atualizando configuração existente com ID: ${existingConfig.id}`);
+        
         const { error } = await supabase
           .from('patrocinio_configs')
           .update(saveData)
-          .eq('id', config.id);
+          .eq('id', existingConfig.id);
 
         if (error) {
           throw new Error(`Erro ao atualizar: ${error.message}`);
         }
+
+        // Atualizar o ID no estado local se necessário
+        setPatrocinioConfigs(prev =>
+          prev.map(c =>
+            c.position === position
+              ? { ...c, id: existingConfig.id }
+              : c
+          )
+        );
       } else {
+        // CRIAR nova configuração
+        console.log(`✨ Criando nova configuração para posição: ${position}`);
+        
         const { data: insertData, error } = await supabase
           .from('patrocinio_configs')
-          .upsert(saveData, {
-            onConflict: 'position'
-          })
-          .select('id')
+          .insert([{ ...saveData, created_at: new Date().toISOString() }])
+          .select()
           .single();
 
         if (error) {
-          throw new Error(`Erro ao salvar: ${error.message}`);
+          throw new Error(`Erro ao criar: ${error.message}`);
         }
-        
-        if (insertData?.id) {
-          setPatrocinioConfigs(prev => 
-            prev.map(c => 
-              c.position === position 
-                ? { 
-                    ...c, 
-                    ...saveData, 
-                    id: insertData.id,
-                    image_name: saveData.image_name || undefined,
-                    image_url: saveData.image_url || undefined,
-                    image_alt: saveData.image_alt || undefined,
-                    patrocinador_id: saveData.patrocinador_id || undefined
-                  }
+
+        // Atualizar o ID no estado local
+        if (insertData) {
+          setPatrocinioConfigs(prev =>
+            prev.map(c =>
+              c.position === position
+                ? { ...c, id: insertData.id }
                 : c
             )
           );
-          return;
         }
       }
 
-      setPatrocinioConfigs(prev => 
-        prev.map(c => 
-          c.position === position 
-            ? { 
-                ...c, 
-                ...saveData,
-                image_name: saveData.image_name || undefined,
-                image_url: saveData.image_url || undefined,
-                image_alt: saveData.image_alt || undefined,
-                patrocinador_id: saveData.patrocinador_id || undefined
-              }
-            : c
-        )
-      );
+      console.log(`✅ Configuração salva com sucesso para posição: ${position}`);
       
     } catch (error) {
       if (error instanceof Error && (
@@ -350,18 +443,22 @@ export const usePatrocinioConfig = () => {
               : c
           )
         );
+        console.log(`✅ Configuração salva localmente para posição: ${position}`);
         return;
       }
+      console.error(`❌ Erro ao salvar configuração da posição ${position}:`, error);
       throw error;
     }
   }, [patrocinioConfigs]);
 
-  // DELETAR CONFIGURAÇÃO
+  // DELETAR CONFIGURAÇÃO (MELHORADO)
   const deletePatrocinioConfig = useCallback(async (position: number): Promise<void> => {
     const config = patrocinioConfigs.find(c => c.position === position);
     if (!config?.id || config.id.startsWith('mock-')) {
       throw new Error('Configuração não encontrada ou não salva');
     }
+
+    console.log(`🗑️ Deletando configuração da posição: ${position}`);
 
     try {
       const { createBrowserClient } = await import("@supabase/ssr");
@@ -370,6 +467,12 @@ export const usePatrocinioConfig = () => {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
+      // 1. Remover imagem do storage se existir
+      if (config.image_url) {
+        await removeImageFromStorage(config.image_url);
+      }
+
+      // 2. Remover registro do banco
       const { error } = await supabase
         .from('patrocinio_configs')
         .delete()
@@ -379,6 +482,7 @@ export const usePatrocinioConfig = () => {
         throw new Error(`Erro ao excluir: ${error.message}`);
       }
       
+      // 3. Resetar configuração no estado local
       setPatrocinioConfigs(prev => 
         prev.map(c => 
           c.position === position 
@@ -398,10 +502,13 @@ export const usePatrocinioConfig = () => {
             : c
         )
       );
+      
+      console.log(`✅ Configuração deletada com sucesso para posição: ${position}`);
     } catch (error) {
+      console.error(`❌ Erro ao deletar configuração da posição ${position}:`, error);
       throw error;
     }
-  }, [patrocinioConfigs]);
+  }, [patrocinioConfigs, removeImageFromStorage]);
 
   // RESETAR CONFIGURAÇÃO
   const resetPatrocinioConfig = useCallback((position: number) => {
@@ -431,9 +538,11 @@ export const usePatrocinioConfig = () => {
     loadPatrocinioConfigs,
     updatePatrocinioConfig,
     setPositionUploading,
+    uploadAndUpdatePatrocinio, // Nova função otimizada
     savePatrocinioConfig,
     deletePatrocinioConfig,
     getPatrocinioPositionInfo,
-    resetPatrocinioConfig
+    resetPatrocinioConfig,
+    removeImageFromStorage // Expor para uso externo se necessário
   } as const;
 };

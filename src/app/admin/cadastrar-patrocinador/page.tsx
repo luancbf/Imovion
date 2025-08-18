@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import useAuthGuard from '@/hooks/useAuthGuard';
 import { Patrocinador } from '@/types/cadastrar-patrocinador';
 import AdminHeader from '@/components/cadastrar-patrocinador/AdminHeader';
 import PatrocinadorForm from '@/components/cadastrar-patrocinador/PatrocinadorForm';
@@ -10,7 +9,6 @@ import SliderConfiguration from '@/components/cadastrar-patrocinador/SliderConfi
 import PatrocinioConfiguration from '@/components/cadastrar-patrocinador/PatrocinioConfiguration';
 
 export default function CadastrarPatrocinador() {
-  useAuthGuard();
 
   const [showSliderConfig, setShowSliderConfig] = useState(false);
   const [showPatrocinioConfig, setShowPatrocinioConfig] = useState(false);

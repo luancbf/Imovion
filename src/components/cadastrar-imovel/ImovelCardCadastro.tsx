@@ -74,6 +74,7 @@ export default function ImovelCardCadastro({
   const tipoNegocio = imovel.tipoNegocio || imovel.tiponegocio;
   const setorNegocio = imovel.setorNegocio || imovel.setornegocio;
   const dataCadastro = imovel.dataCadastro || imovel.datacadastro;
+  const codigoImovel = imovel.codigoImovel || imovel.codigoimovel;
 
   const imagens = imovel.imagens || [];
   const itensDisponiveis = ITENS_POR_SETOR[tipoNegocio || ''] || [];
@@ -179,7 +180,18 @@ export default function ImovelCardCadastro({
           <div className="font-bold text-blue-900 text-base group-hover:text-blue-700 transition-colors truncate">
             {formatarTexto(tipoImovel)}
           </div>
+
           <div className="flex flex-wrap gap-1">
+            {/* CÓDIGO DO IMÓVEL - Agora com a mesma estilização dos demais badges */}
+            {codigoImovel && codigoImovel.trim() && (
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-500">Código</span>
+                <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                  {codigoImovel}
+                </span>
+              </div>
+            )}
+            
             <div className="flex flex-col">
               <span className="text-xs text-gray-500">Valor</span>
               <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold text-xs">
@@ -202,12 +214,6 @@ export default function ImovelCardCadastro({
               <span className="text-xs text-gray-500">Patrocinador</span>
               <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs">
                 {patrocinadorNome}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-gray-500">Código do Imóvel</span>
-              <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold select-none">
-                {imovel.codigoImovel || "N/A"}
               </span>
             </div>
           </div>

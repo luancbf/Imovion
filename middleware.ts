@@ -1,19 +1,11 @@
-// middleware.ts
+// middleware.ts - VERSÃO LIMPA SEM PARÂMETRO
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
-  const logado = request.cookies.get('logado')?.value;
-
-  const isProtectedRoute = request.nextUrl.pathname.startsWith('/cadastrar-imovel');
-
-  if (isProtectedRoute && logado !== 'true') {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
+export function middleware() {
+  // ✅ DESABILITADO: Sistema antigo de cookies
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/cadastrar-imovel'],
+  matcher: [], // ✅ VAZIO para desabilitar
 };

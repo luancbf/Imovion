@@ -1,9 +1,4 @@
 import { useState } from 'react';
-import { createBrowserClient } from "@supabase/ssr";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 export const useFileUpload = () => {
   const [uploading, setUploading] = useState(false);
@@ -65,29 +60,46 @@ export const useFileUpload = () => {
     }
   };
 
-  const uploadPatrocinioImage = async (file: File, positionId: string): Promise<string> => {
+  const uploadPatrocinioImage = async (file: File, fileName: string): Promise<string> => {
+    console.log(`🔄 Iniciando upload de patrocínio: ${fileName}`);
+    
     const validation = validateImage(file);
     if (!validation.valid) {
+      console.log("❌ Validação falhou:", validation.error);
       throw new Error(validation.error);
     }
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `patrocinio_${positionId}_${Date.now()}.${fileExt}`;
-      const filePath = `patrocinios/${fileName}`;
+      const formData = new FormData();
+      formData.append("imagem", file);
+      formData.append("pasta", "patrocinios"); // ✅ Especifica pasta patrocinios
+      
+      console.log(`📤 Fazendo upload do arquivo: ${file.name} para pasta: patrocinios`);
+      
+      const res = await fetch("/api/upload-imagem", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Erro HTTP ${res.status}: ${errorText}`);
+      }
+      
+      const data = await res.json();
+      
+      if (!data.url) {
+        throw new Error(data.error || "URL não retornada pela API");
+      }
 
-      const { error: uploadError } = await supabase.storage
-        .from('imagens')
-        .upload(filePath, file);
-
-      if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}`);
-
-      const { data: urlData } = supabase.storage
-        .from('imagens')
-        .getPublicUrl(filePath);
-
-      return urlData.publicUrl;
+      console.log(`✅ Imagem de patrocínio uploadada: ${data.url}`);
+      console.log(`📁 Caminho do arquivo: ${data.path}`);
+      
+      return data.url;
+    } catch (error) {
+      console.error(`❌ Erro no upload de patrocínio:`, error);
+      throw error;
     } finally {
       setUploading(false);
     }

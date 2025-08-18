@@ -66,15 +66,15 @@ export default function ListaImoveis({
   };
 
   return (
-    <section className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-blue-100">
-      {/* Header da Seção */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+    <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100">
+      {/* Header da Seção - MAIS COMPACTO */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-100 rounded-2xl">
-            <FiHome className="text-blue-600" size={24} />
+          <div className="p-2 bg-blue-100 rounded-xl">
+            <FiHome className="text-blue-600" size={20} />
           </div>
           <div>
-            <h2 className="font-poppins text-2xl font-bold text-blue-900">
+            <h2 className="font-poppins text-lg sm:text-xl font-bold text-blue-900">
               🏠 Imóveis Cadastrados
             </h2>
             <p className="text-blue-600 text-sm">
@@ -87,15 +87,15 @@ export default function ListaImoveis({
         </div>
       </div>
 
-      {/* Estados da Lista */}
+      {/* Estados da Lista - MESMA LÓGICA, ESPAÇAMENTO REDUZIDO */}
       {carregando ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent" />
           <span className="ml-3 text-blue-700 font-medium">Carregando imóveis...</span>
         </div>
       ) : imoveis.length === 0 ? (
-        <div className="text-center py-12 bg-blue-50 rounded-2xl border border-blue-200">
-          <FiSearch className="mx-auto text-blue-400 mb-4" size={48} />
+        <div className="text-center py-8 bg-blue-50 rounded-xl border border-blue-200">
+          <FiSearch className="mx-auto text-blue-400 mb-3" size={40} />
           <h3 className="text-blue-700 font-semibold text-lg mb-2">
             🏠 Nenhum imóvel cadastrado
           </h3>
@@ -104,7 +104,7 @@ export default function ListaImoveis({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {imoveis.map((imovel) => (
             <div
               key={imovel.id}
@@ -133,7 +133,7 @@ export default function ListaImoveis({
 
       {/* Rodapé com Informações */}
       {imoveis.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-blue-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-600">
+        <div className="mt-4 pt-4 border-t border-blue-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-gray-600">
           <div className="flex items-center gap-4">
             <span>
               Mostrando {imoveis.length} imóveis

@@ -8,82 +8,104 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  console.log("=== API UPLOAD CHAMADA (App Router) ===");
+  console.log("=== API UPLOAD WEBP OTIMIZADA ===");
   
   try {
-    console.log("1. Iniciando upload...");
-    
     const formData = await request.formData();
-    console.log("2. FormData parseado");
-    
     const file = formData.get("imagem") as File;
-    const pasta = (formData.get("pasta") as string) || "imoveis";
-
+    const imovelId = (formData.get("imovelId") as string) || "temp";
+    const pasta = (formData.get("pasta") as string) || "imoveis"; // Novo parâmetro
+    
     if (!file) {
-      console.log("3. Nenhum arquivo encontrado");
       return NextResponse.json({ error: "Nenhum arquivo enviado" }, { status: 400 });
     }
 
-    console.log("4. Arquivo encontrado:", file.name, "Tamanho:", file.size, "Pasta:", pasta);
+    console.log(`📁 Processando: ${file.name} para pasta: ${pasta}`);
 
-    // Converter File para Buffer
-    console.log("5. Convertendo File para Buffer...");
+    // Validar se é imagem
+    if (!file.type.startsWith('image/')) {
+      return NextResponse.json({ error: "Arquivo deve ser uma imagem" }, { status: 400 });
+    }
+
+    // Converter para Buffer
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    console.log("6. Buffer criado, tamanho:", buffer.length);
+    const originalBuffer = Buffer.from(arrayBuffer);
+    
+    console.log(`📏 Tamanho original: ${(originalBuffer.length / 1024).toFixed(2)} KB`);
 
-    // Comprimir com Sharp
-    console.log("7. Comprimindo imagem...");
-    const compressedBuffer = await sharp(buffer)
-      .resize(1280, null, { 
+    // Processar com Sharp - APENAS WEBP
+    const processedBuffer = await sharp(originalBuffer)
+      .resize(1920, 1280, { 
+        fit: 'inside',
         withoutEnlargement: true,
-        fit: 'inside'
+        background: { r: 255, g: 255, b: 255 }
       })
       .webp({ 
-        quality: 85,
-        effort: 4
+        quality: 88,
+        effort: 6,
+        smartSubsample: true
       })
       .toBuffer();
 
-    console.log("8. Imagem comprimida, novo tamanho:", compressedBuffer.length);
+    console.log(`🗜️ Tamanho comprimido: ${(processedBuffer.length / 1024).toFixed(2)} KB`);
+    console.log(`📉 Redução: ${((1 - processedBuffer.length / originalBuffer.length) * 100).toFixed(1)}%`);
 
-    // Nome único do arquivo
+    // Nome do arquivo único
     const timestamp = Date.now();
-    const fileName = `${timestamp}.webp`;
-    const filePath = `${pasta}/${fileName}`;
+    const randomSuffix = Math.random().toString(36).substring(7);
+    const fileName = `${timestamp}_${randomSuffix}.webp`;
+    
+    // Caminho baseado na pasta especificada
+    let filePath: string;
+    
+    switch (pasta) {
+      case "slider":
+        filePath = `slider/${fileName}`;
+        break;
+      case "patrocinios":
+        filePath = `patrocinios/${fileName}`;
+        break;
+      case "imoveis":
+      default:
+        filePath = `imoveis/${imovelId}/${fileName}`;
+        break;
+    }
 
-    console.log("9. Fazendo upload para Supabase:", filePath);
+    console.log(`💾 Salvando em: ${filePath}`);
 
-    // Upload para Supabase
-    const { data, error } = await supabase.storage
+    // Upload APENAS do WebP otimizado
+    const { error } = await supabase.storage
       .from("imagens")
-      .upload(filePath, compressedBuffer, {
+      .upload(filePath, processedBuffer, {
         contentType: "image/webp",
-        cacheControl: "3600"
+        cacheControl: "31536000", // 1 ano de cache
+        upsert: false
       });
 
     if (error) {
-      console.log("10. Erro no Supabase:", error);
-      return NextResponse.json({ error: `Erro no upload: ${error.message}` }, { status: 500 });
+      console.error("❌ Erro no Supabase:", error);
+      return NextResponse.json({ 
+        error: `Erro no upload: ${error.message}` 
+      }, { status: 500 });
     }
-
-    console.log("11. Upload realizado com sucesso:", data);
 
     // Gerar URL pública
     const { data: urlData } = supabase.storage
       .from("imagens")
       .getPublicUrl(filePath);
 
-    console.log("12. URL gerada:", urlData.publicUrl);
-    console.log("13. Retornando sucesso");
+    console.log(`✅ Upload concluído: ${urlData.publicUrl}`);
 
     return NextResponse.json({ 
       url: urlData.publicUrl,
-      path: filePath 
+      path: filePath,
+      originalSize: originalBuffer.length,
+      compressedSize: processedBuffer.length,
+      compressionRatio: `${((1 - processedBuffer.length / originalBuffer.length) * 100).toFixed(1)}%`
     });
 
   } catch (error) {
-    console.log("ERRO GERAL NA API:", error);
+    console.error("💥 ERRO GERAL:", error);
     
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : "Erro interno do servidor" 

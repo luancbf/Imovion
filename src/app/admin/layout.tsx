@@ -1,164 +1,143 @@
 'use client';
 
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname, useRouter } from 'next/navigation';
-import useAuthGuard from '@/hooks/useAuthGuard';
-import useAuth from '@/hooks/useAuth';
-import { FiPlusSquare, FiUsers, FiHome, FiLogOut } from "react-icons/fi";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import Link from 'next/link';
 
-const menuLinks = [
-  {
-    href: "/admin/cadastrar-imovel",
-    label: "Cadastrar Imóvel",
-    shortLabel: "Imóvel",
-    icon: <FiPlusSquare size={20} />,
-  },
-  {
-    href: "/admin/cadastrar-patrocinador",
-    label: "Cadastrar Patrocinador", 
-    shortLabel: "Patrocinador",
-    icon: <FiUsers size={20} />,
-  }
-];
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const carregando = useAuthGuard();
-  const pathname = usePathname();
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, loading, logout } = useAuth(); 
 
-  if (carregando) return null;
+  useEffect(() => {
+    console.log('🏢 AdminLayout - Estado:', { 
+      userEmail: user?.email || 'Nenhum', 
+      loading 
+    });
 
-  const isLinkAtivo = (href: string) => pathname === href;
+    if (!loading) {
+      if (!user) {
+        console.log('❌ AdminLayout: Usuário não logado, redirecionando...');
+        router.push('/login');
+        return;
+      }
+
+      console.log('✅ AdminLayout: Acesso autorizado para:', user.email);
+    }
+  }, [user, loading, router]); 
+
+  if (loading) {
+    console.log('⏳ AdminLayout: Carregando autenticação...');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto"></div>
+          <p className="mt-2 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    console.log('🚫 AdminLayout: Acesso negado, não renderizando');
+    return null;
+  }
+
+  const navigationItems = [
+    {
+      name: 'Dashboard',
+      href: '/admin',
+      icon: '📊',
+      shortName: 'Home'
+    },
+    {
+      name: 'Cadastrar Imóvel',
+      href: '/admin/cadastrar-imovel',
+      icon: '🏠',
+      shortName: 'Imóveis'
+    },
+    {
+      name: 'Patrocinadores',
+      href: '/admin/cadastrar-patrocinador',
+      icon: '💼',
+      shortName: 'Patrocinadores'
+    },
+    {
+      name: 'APIs',
+      href: '/admin/api-integration',
+      icon: '🔗',
+      shortName: 'APIs'
+    }
+  ];
+
+  const handleLogout = async () => {
+    console.log('🚪 AdminLayout: Iniciando logout...');
+    await logout();
+    router.push('/login');
+  };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-blue-100">
-      {/* HEADER MOBILE */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 w-full bg-white border-b border-blue-200 flex items-center justify-center px-4 py-3 shadow-sm z-50">
-        <Link href="/" className="flex items-center">
-          <Image
-            src="/imovion.png"
-            alt="Imovion Logo"
-            width={120}
-            height={40}
-            className="h-8 w-auto object-contain"
-          />
-        </Link>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <Link href="/admin" className="text-xl sm:text-2xl font-bold text-blue-600">
+                🏢 Imovion
+              </Link>
+            </div>
+
+            {/* Desktop Logout */}
+            <div className="hidden sm:flex items-center space-x-4">
+              <span className="text-sm text-gray-600">👤 {user.email}</span>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Sair
+              </button>
+            </div>
+
+            {/* Mobile Logout */}
+            <button
+              onClick={handleLogout}
+              className="sm:hidden bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
       </header>
 
-      <div className="flex min-h-screen w-full">
-        {/* MENU LATERAL DESKTOP */}
-        <aside className="hidden lg:block w-64 fixed top-0 left-0 h-screen bg-white border-r border-blue-200 text-gray-800 shadow-sm z-30">
-          <div className="flex flex-col h-full">
-            {/* Logo */}
-            <div className="flex justify-center py-8 px-6 border-b border-blue-100 flex-shrink-0">
-              <Link href="/" className="hover:opacity-80 transition-opacity">
-                <Image
-                  src="/imovion.png"
-                  alt="Imovion Logo"
-                  width={180}
-                  height={60}
-                  className="h-12 w-auto object-contain"
-                />
-              </Link>
-            </div>
-            
-            {/* Menu Navigation */}
-            <nav className="flex flex-col gap-2 p-6 flex-1 overflow-y-auto">
-              {menuLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`
-                    flex items-center px-4 py-3 rounded-lg transition-all duration-200 font-medium text-base flex-shrink-0
-                    focus:outline-none focus:ring-2 focus:ring-blue-300
-                    ${isLinkAtivo(link.href) 
-                      ? 'bg-blue-600 text-white shadow-md transform scale-[1.02]' 
-                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:transform hover:scale-[1.01]'
-                    }
-                  `}
-                >
-                  <span className="mr-3">{link.icon}</span>
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-            
-            {/* Footer do Menu Desktop */}
-            <div className="border-t border-gray-200 p-6 flex-shrink-0">
-              <Link
-                href="/"
-                className="flex items-center px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-all duration-200 font-medium mb-4"
-              >
-                <FiHome size={20} className="mr-3" />
-                Voltar ao Site
-              </Link>
-              <button
-                onClick={async () => {
-                  await logout();
-                  router.replace('/login');
-                }}
-                className="flex items-center px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-800 transition-all duration-200 font-medium w-full"
-              >
-                <FiLogOut size={20} className="mr-3" />
-                Sair da conta
-              </button>
-              <div className="text-xs text-gray-400 text-center mt-4">
-                &copy; {new Date().getFullYear()} Imovion
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* CONTEÚDO PRINCIPAL */}
-        <main className="flex-1 w-full min-h-screen max-w-none px-0 pt-16 pb-20 lg:pt-0 lg:pb-0 lg:ml-64 flex flex-col">
-          <div className="flex-1 flex flex-col w-full h-full">
+      {/* Main Content */}
+      <main className="flex-1">
+        <div className="p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
+          <div className="max-w-full">
             {children}
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
 
-      {/* MENU INFERIOR MOBILE/TABLET */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
-        <div className="flex justify-around items-center py-2">
-          {menuLinks.map((link) => (
+      {/* Bottom Navigation Mobile/Tablet */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+        <div className="grid grid-cols-4 gap-1 p-2">
+          {navigationItems.map((item) => (
             <Link
-              key={link.href}
-              href={link.href}
-              className={`
-                flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 flex-1 mx-1
-                focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50
-                ${isLinkAtivo(link.href) 
-                  ? 'text-blue-600 bg-blue-50 shadow-sm' 
-                  : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                }
-              `}
+              key={item.href}
+              href={item.href}
+              className="flex flex-col items-center justify-center py-2 px-1 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
             >
-              <span className="mb-1">{link.icon}</span>
-              <span className="text-xs font-medium leading-tight">{link.shortLabel}</span>
+              <span className="text-xl mb-1">{item.icon}</span>
+              <span className="text-xs font-medium text-center leading-tight">
+                {item.shortName}
+              </span>
             </Link>
           ))}
-          
-          {/* Botão Voltar ao Site */}
-          <Link
-            href="/"
-            className="flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 flex-1 mx-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50"
-          >
-            <FiHome size={20} className="mb-1" />
-            <span className="text-xs font-medium leading-tight">Site</span>
-          </Link>
-          {/* Botão Logout */}
-          <button
-            onClick={async () => {
-              await logout();
-              router.replace('/login');
-            }}
-            className="flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 flex-1 mx-1 text-red-600 hover:text-red-800 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-opacity-50"
-          >
-            <FiLogOut size={20} className="mb-1" />
-            <span className="text-xs font-medium leading-tight">Sair</span>
-          </button>
         </div>
       </nav>
     </div>

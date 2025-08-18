@@ -112,6 +112,15 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
             </SwiperSlide>
           ))}
         </Swiper>
+        
+        {/* Adicione um badge para mostrar a fonte */}
+        {imovel.fonte_api && (
+          <div className="absolute top-2 right-2">
+            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+              {imovel.fonte_api === 'internal' ? 'Interno' : 'Parceiro'}
+            </span>
+          </div>
+        )}
       </div>
       
       {/* Container do conteúdo com flex-1 para ocupar espaço disponível */}

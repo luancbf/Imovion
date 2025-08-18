@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { FiHome, FiSave, FiUpload, FiMapPin, FiDollarSign, FiEdit3, FiX } from "react-icons/fi";
@@ -11,12 +11,37 @@ import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import { formatarParaMoeda, formatarMetragem, formatarTelefone } from "@/utils/formatters";
 import type { FormularioImovelProps, ImovelEdicao } from "@/types/formularios";
 
+// TIPOS ADICIONAIS
+interface Patrocinador {
+  id: string;
+  nome: string;
+  telefone?: string;
+  creci?: string;
+}
+
+interface FormularioState {
+  codigoImovel: string;
+  cidade: string;
+  bairro: string;
+  enderecoDetalhado: string;
+  valor: string;
+  metragem: string;
+  descricao: string;
+  tipoImovel: string;
+  setorNegocio: string;
+  tipoNegocio: string;
+  whatsapp: string;
+  patrocinador: string;
+  creci: string;
+}
+
+// CONSTANTES
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const FORMULARIO_INICIAL = {
+const FORMULARIO_INICIAL: FormularioState = {
   codigoImovel: "",
   cidade: "",
   bairro: "",
@@ -33,11 +58,11 @@ const FORMULARIO_INICIAL = {
 };
 
 const ETAPAS = [
-  { numero: 1, icone: FiHome },
-  { numero: 2, icone: FiMapPin },
-  { numero: 3, icone: FiDollarSign },
-  { numero: 4, icone: FiUpload },
-  { numero: 5, icone: FiEdit3 },
+  { numero: 1, icone: FiHome, label: "Tipo & Categoria" },
+  { numero: 2, icone: FiMapPin, label: "Localização" },
+  { numero: 3, icone: FiDollarSign, label: "Detalhes" },
+  { numero: 4, icone: FiUpload, label: "Imagens" },
+  { numero: 5, icone: FiEdit3, label: "Características" },
 ];
 
 const CLASSES = {
@@ -46,36 +71,14 @@ const CLASSES = {
   textarea: "w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-500 resize-none",
 };
 
-export default function FormularioImovel({
-  patrocinadores,
-  opcoesTipoImovel,
-  onSuccess,
-  dadosIniciais,
-  onLimpar,
-}: FormularioImovelProps) {
-  const router = useRouter();
-
-  // STATE
-  const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
-  const [itens, setItens] = useState<Record<string, number>>({});
-  const [previews, setPreviews] = useState<string[]>([]);
-  const [imagensNovas, setImagensNovas] = useState<File[]>([]);
-  const [imagensExistentes, setImagensExistentes] = useState<string[]>([]);
-  const [etapaAtual, setEtapaAtual] = useState(1);
-  const [modoEdicao, setModoEdicao] = useState(false);
-  const [carregando, setCarregando] = useState(false);
-
-  // ESTADO DO MODAL DE ALERTA
+// HOOKS CUSTOMIZADOS
+function useAlert() {
   const [alertModal, setAlertModal] = useState({
     open: false,
     type: "info" as "success" | "error" | "info",
     message: ""
   });
 
-  // REFS
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // FUNÇÕES DE ALERTA
   const showAlert = useCallback((type: "success" | "error" | "info", message: string) => {
     setAlertModal({ open: true, type, message });
   }, []);
@@ -84,127 +87,13 @@ export default function FormularioImovel({
     setAlertModal({ open: false, type: "info", message: "" });
   }, []);
 
-  // COMPUTED VALUES
-  const itensDisponiveis = useMemo(() => {
-    const setorSelecionado = formulario.tipoNegocio;
-    return setorSelecionado && ITENS_POR_SETOR[setorSelecionado]
-      ? ITENS_POR_SETOR[setorSelecionado]
-      : [];
-  }, [formulario.tipoNegocio]);
+  return { alertModal, showAlert, closeAlert };
+}
 
-  // UTILITY FUNCTIONS
-  const inicializarItens = useCallback((): Record<string, number> => {
-    const todosItens = Object.values(ITENS_POR_SETOR)
-      .flat()
-      .filter(Boolean);
-    return Object.fromEntries(todosItens.map((item) => [item.chave, 0]));
-  }, []);
+function useFormulario(dadosIniciais: ImovelEdicao | null | undefined, patrocinadores: Patrocinador[]) {
+  const [formulario, setFormulario] = useState<FormularioState>(FORMULARIO_INICIAL);
+  const [modoEdicao, setModoEdicao] = useState(false);
 
-  const getDadoInicial = useCallback((prop: string, dados: ImovelEdicao | null | undefined): string => {
-    if (!dados) return "";
-    const dadosTyped = dados as Record<string, unknown>;
-    
-    const propMapping: Record<string, string> = {
-      codigoImovel: 'codigoimovel',
-      enderecoDetalhado: 'enderecodetalhado',
-    };
-    
-    const propKey = propMapping[prop] || prop;
-    const valor = dadosTyped[propKey] ?? dadosTyped[prop.replace(/([A-Z])/g, '_$1').toLowerCase()];
-    
-    return typeof valor === 'string' ? valor :
-      typeof valor === 'number' ? valor.toString() : "";
-  }, []);
-
-  const formatarMetragemValor = useCallback((metragem: unknown): string => {
-    if (typeof metragem === 'number' && !isNaN(metragem)) return formatarMetragem(metragem.toString());
-    if (typeof metragem === 'string' && metragem.trim().length > 0) return metragem;
-    return "";
-  }, []);
-
-  const limparFormulario = useCallback(() => {
-    setFormulario(FORMULARIO_INICIAL);
-    setPreviews([]);
-    setImagensNovas([]);
-    setImagensExistentes([]);
-    setItens(inicializarItens());
-    setEtapaAtual(1);
-    setModoEdicao(false);
-  }, [inicializarItens]);
-
-  // EFFECTS
-  useEffect(() => {
-    if (!dadosIniciais?.id) {
-      limparFormulario();
-      return;
-    }
-    setModoEdicao(true);
-    setFormulario({
-      codigoImovel: getDadoInicial('codigoImovel', dadosIniciais) || "",
-      cidade: getDadoInicial('cidade', dadosIniciais),
-      bairro: getDadoInicial('bairro', dadosIniciais),
-      enderecoDetalhado: getDadoInicial('enderecoDetalhado', dadosIniciais),
-      valor: typeof dadosIniciais.valor === "number"
-        ? formatarParaMoeda(dadosIniciais.valor.toString())
-        : formatarParaMoeda(String(dadosIniciais.valor || "")),
-      metragem: formatarMetragemValor(dadosIniciais.metragem),
-      descricao: getDadoInicial('descricao', dadosIniciais),
-      tipoImovel: dadosIniciais.tipoImovel || "",    
-      setorNegocio: dadosIniciais.setorNegocio || "",
-      tipoNegocio: dadosIniciais.tipoNegocio || "",
-      whatsapp: getDadoInicial('whatsapp', dadosIniciais),
-      patrocinador: getDadoInicial('patrocinadorid', dadosIniciais) || getDadoInicial('patrocinador', dadosIniciais) || "",
-      creci: getDadoInicial('creci', dadosIniciais) || "",
-    });
-    
-    if (dadosIniciais.itens) {
-      try {
-        const itensObj = typeof dadosIniciais.itens === 'string'
-          ? JSON.parse(dadosIniciais.itens)
-          : dadosIniciais.itens;
-        const itensNumericos = Object.fromEntries(
-          Object.entries(itensObj).map(([k, v]) => [k, Number(v) || 0])
-        );
-        setItens(itensNumericos);
-      } catch {
-        setItens(inicializarItens());
-      }
-    }
-    
-    if (Array.isArray(dadosIniciais.imagens)) {
-      const imagensValidas = dadosIniciais.imagens.filter(
-        (img): img is string => typeof img === 'string' && img.trim().length > 0
-      );
-      setImagensExistentes([...imagensValidas]);
-      setPreviews([...imagensValidas]);
-    }
-    setEtapaAtual(1);
-  }, [dadosIniciais, limparFormulario, inicializarItens, getDadoInicial, formatarMetragemValor]);
-
-  useEffect(() => {
-    if (formulario.patrocinador) {
-      const patrocinadorSelecionado = patrocinadores.find(
-        (p) => p.id === formulario.patrocinador
-      );
-      let telefonePatrocinador = "";
-      let creciPatrocinador = "";
-      if (patrocinadorSelecionado) {
-        if (typeof patrocinadorSelecionado.telefone === "string" && patrocinadorSelecionado.telefone.trim().length > 0) {
-          telefonePatrocinador = patrocinadorSelecionado.telefone;
-        }
-        if (typeof patrocinadorSelecionado.creci === "string" && patrocinadorSelecionado.creci.trim().length > 0) {
-          creciPatrocinador = patrocinadorSelecionado.creci;
-        }
-      }
-      setFormulario(prev => ({
-        ...prev,
-        whatsapp: telefonePatrocinador ? telefonePatrocinador : prev.whatsapp,
-        creci: creciPatrocinador,
-      }));
-    }
-  }, [formulario.patrocinador, patrocinadores]);
-
-  // HANDLERS
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     const formatters: Record<string, (val: string) => string> = {
@@ -216,6 +105,81 @@ export default function FormularioImovel({
     const valorFormatado = formatter ? formatter(value) : value;
     setFormulario(prev => ({ ...prev, [name]: valorFormatado }));
   }, []);
+
+  const limparFormulario = useCallback(() => {
+    setFormulario(FORMULARIO_INICIAL);
+    setModoEdicao(false);
+  }, []);
+
+  // Inicializar formulário com dados existentes
+  useEffect(() => {
+    if (!dadosIniciais?.id) {
+      limparFormulario();
+      return;
+    }
+
+    setModoEdicao(true);
+    
+    // Função auxiliar para formatar valor
+    const formatarValorInicial = (valor: unknown): string => {
+      if (typeof valor === "number") {
+        return formatarParaMoeda(valor.toString());
+      }
+      if (typeof valor === "string") {
+        return formatarParaMoeda(valor);
+      }
+      return "";
+    };
+
+    // Função auxiliar para formatar metragem
+    const formatarMetragemInicial = (metragem: unknown): string => {
+      if (typeof metragem === "number") {
+        return formatarMetragem(metragem.toString());
+      }
+      if (typeof metragem === "string") {
+        return metragem;
+      }
+      return "";
+    };
+
+    setFormulario({
+      codigoImovel: dadosIniciais.codigoimovel || "",
+      cidade: dadosIniciais.cidade || "",
+      bairro: dadosIniciais.bairro || "",
+      enderecoDetalhado: dadosIniciais.enderecodetalhado || "",
+      valor: formatarValorInicial(dadosIniciais.valor),
+      metragem: formatarMetragemInicial(dadosIniciais.metragem),
+      descricao: dadosIniciais.descricao || "",
+      tipoImovel: dadosIniciais.tipoimovel || "",
+      setorNegocio: dadosIniciais.setornegocio || "",
+      tipoNegocio: dadosIniciais.tiponegocio || "",
+      whatsapp: dadosIniciais.whatsapp || "",
+      patrocinador: dadosIniciais.patrocinadorid || "",
+      creci: "", // Campo não existe no tipo ImovelEdicao, então mantemos vazio
+    });
+  }, [dadosIniciais, limparFormulario]);
+
+  // Auto-preencher dados do patrocinador
+  useEffect(() => {
+    if (formulario.patrocinador) {
+      const patrocinador = patrocinadores.find(p => p.id === formulario.patrocinador);
+      if (patrocinador) {
+        setFormulario(prev => ({
+          ...prev,
+          whatsapp: patrocinador.telefone || prev.whatsapp,
+          creci: patrocinador.creci || "",
+        }));
+      }
+    }
+  }, [formulario.patrocinador, patrocinadores]);
+
+  return { formulario, modoEdicao, handleChange, limparFormulario };
+}
+
+function useImagens(dadosIniciais: ImovelEdicao | null | undefined) {
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [imagensNovas, setImagensNovas] = useState<File[]>([]);
+  const [imagensExistentes, setImagensExistentes] = useState<string[]>([]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -245,48 +209,97 @@ export default function FormularioImovel({
     setPreviews(prev => prev.filter((_, i) => i !== index));
   }, [imagensExistentes.length]);
 
-  const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
-    if (fromIndex === toIndex) return;
-    setPreviews(prev => {
-      const arr = [...prev];
-      const [removed] = arr.splice(fromIndex, 1);
-      arr.splice(toIndex, 0, removed);
-      return arr;
-    });
-    const totalExistentes = imagensExistentes.length;
-    if (fromIndex < totalExistentes || toIndex < totalExistentes) {
-      setImagensExistentes(prev => {
-        const arr = [...prev];
-        if (fromIndex < totalExistentes && toIndex < totalExistentes) {
-          const [removed] = arr.splice(fromIndex, 1);
-          arr.splice(toIndex, 0, removed);
-        }
-        return arr;
-      });
-    }
-  }, [imagensExistentes.length]);
+  const limparImagens = useCallback(() => {
+    setPreviews([]);
+    setImagensNovas([]);
+    setImagensExistentes([]);
+  }, []);
 
-  const cancelarEdicao = useCallback(() => {
-    limparFormulario();
-    onLimpar?.();
-  }, [limparFormulario, onLimpar]);
-
-  const uploadImagensSharp = async (imagens: File[]): Promise<string[]> => {
-    const urls: string[] = [];
-    for (const imagem of imagens) {
-      const formData = new FormData();
-      formData.append("imagem", imagem);
-      const res = await fetch("/api/upload-imagem", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.url) urls.push(data.url);
-      else throw new Error(data.error || "Erro ao enviar imagem");
+  // Inicializar imagens existentes
+  useEffect(() => {
+    if (Array.isArray(dadosIniciais?.imagens)) {
+      const imagensValidas = dadosIniciais.imagens.filter(
+        (img): img is string => typeof img === 'string' && img.trim().length > 0
+      );
+      setImagensExistentes([...imagensValidas]);
+      setPreviews([...imagensValidas]);
     }
-    return urls;
+  }, [dadosIniciais]);
+
+  return {
+    previews,
+    imagensNovas,
+    imagensExistentes,
+    handleFileChange,
+    handleDrop,
+    removeImagem,
+    limparImagens
   };
+}
 
+function useItens(dadosIniciais: ImovelEdicao | null | undefined, formulario: FormularioState) {
+  const [itens, setItens] = useState<Record<string, number>>({});
+
+  const itensDisponiveis = ITENS_POR_SETOR[formulario.tipoNegocio as keyof typeof ITENS_POR_SETOR] || [];
+
+  const inicializarItens = useCallback((): Record<string, number> => {
+    const todosItens = Object.values(ITENS_POR_SETOR).flat().filter(Boolean);
+    return Object.fromEntries(todosItens.map((item) => [item.chave, 0]));
+  }, []);
+
+  const limparItens = useCallback(() => {
+    setItens(inicializarItens());
+  }, [inicializarItens]);
+
+  // Inicializar itens existentes
+  useEffect(() => {
+    if (dadosIniciais?.itens) {
+      try {
+        const itensObj = typeof dadosIniciais.itens === 'string'
+          ? JSON.parse(dadosIniciais.itens)
+          : dadosIniciais.itens;
+        
+        if (typeof itensObj === 'object' && itensObj !== null) {
+          const itensNumericos = Object.fromEntries(
+            Object.entries(itensObj).map(([k, v]) => [k, Number(v) || 0])
+          );
+          setItens(itensNumericos);
+        } else {
+          setItens(inicializarItens());
+        }
+      } catch {
+        setItens(inicializarItens());
+      }
+    } else {
+      setItens(inicializarItens());
+    }
+  }, [dadosIniciais, inicializarItens]);
+
+  return { itens, setItens, itensDisponiveis, limparItens };
+}
+
+// COMPONENTE PRINCIPAL
+export default function FormularioImovel({
+  patrocinadores,
+  opcoesTipoImovel,
+  onSuccess,
+  dadosIniciais,
+  onLimpar,
+}: FormularioImovelProps) {
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Hooks customizados
+  const { alertModal, showAlert, closeAlert } = useAlert();
+  const { formulario, modoEdicao, handleChange, limparFormulario } = useFormulario(dadosIniciais, patrocinadores as Patrocinador[]);
+  const { previews, imagensNovas, imagensExistentes, handleFileChange, handleDrop, removeImagem, limparImagens } = useImagens(dadosIniciais);
+  const { itens, setItens, itensDisponiveis, limparItens } = useItens(dadosIniciais, formulario);
+
+  // State local
+  const [etapaAtual, setEtapaAtual] = useState(1);
+  const [carregando, setCarregando] = useState(false);
+
+  // Validações de etapa
   const etapaValida = useCallback((etapa: number): boolean => {
     const validacoes: Record<number, () => boolean> = {
       1: () => !!(formulario.tipoNegocio && formulario.setorNegocio && formulario.tipoImovel),
@@ -297,6 +310,33 @@ export default function FormularioImovel({
     return validacoes[etapa]?.() ?? true;
   }, [formulario, imagensExistentes.length, imagensNovas.length]);
 
+  // Upload de imagens
+  const uploadImagensSharp = async (imagens: File[], imovelId?: string): Promise<string[]> => {
+    const urls: string[] = [];
+    
+    for (const imagem of imagens) {
+      const formData = new FormData();
+      formData.append("imagem", imagem);
+      formData.append("imovelId", imovelId || "temp");
+      
+      const res = await fetch("/api/upload-imagem", {
+        method: "POST",
+        body: formData,
+      });
+      
+      const data = await res.json();
+      
+      if (data.url) {
+        urls.push(data.url);
+      } else {
+        throw new Error(data.error || "Erro ao enviar imagem");
+      }
+    }
+    
+    return urls;
+  };
+
+  // Parsear valor monetário
   const parseValor = (valorStr: string): number => {
     let limpo = valorStr.replace(/^R\$\s*/, "");
     limpo = limpo.replace(/\./g, "");
@@ -304,9 +344,19 @@ export default function FormularioImovel({
     return parseFloat(limpo) || 0;
   };
 
+  // Handlers principais
+  const cancelarEdicao = useCallback(() => {
+    limparFormulario();
+    limparImagens();
+    limparItens();
+    setEtapaAtual(1);
+    onLimpar?.();
+  }, [limparFormulario, limparImagens, limparItens, onLimpar]);
+
   const enviarFormulario = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setCarregando(true);
+    
     try {
       const totalImagens = imagensExistentes.length + imagensNovas.length;
       if (totalImagens === 0) {
@@ -335,50 +385,46 @@ export default function FormularioImovel({
       };
       
       if (modoEdicao && dadosIniciais?.id) {
+        // MODO EDIÇÃO
         let urlsFinais = [...imagensExistentes];
+        
         if (imagensNovas.length > 0) {
-          const novasUrls = await uploadImagensSharp(imagensNovas);
+          const novasUrls = await uploadImagensSharp(imagensNovas, dadosIniciais.id);
           urlsFinais = [...urlsFinais, ...novasUrls];
         }
-        const dadosUpdate = {
-          ...dadosImovel,
-          imagens: urlsFinais,
-          updated_at: new Date().toISOString(),
-        };
+        
         const { error } = await supabase
           .from("imoveis")
-          .update(dadosUpdate)
+          .update({
+            ...dadosImovel,
+            imagens: urlsFinais,
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", dadosIniciais.id);
+          
         if (error) throw new Error(`Erro ao atualizar: ${error.message}`);
         
         showAlert("success", "✅ Imóvel atualizado com sucesso!");
-
-        const imagensAntigas = Array.isArray(dadosIniciais.imagens) ? dadosIniciais.imagens : [];
-        const imagensAtuais = urlsFinais;
-        const imagensRemovidas = imagensAntigas.filter(url => !imagensAtuais.includes(url));
-
-        for (const url of imagensRemovidas) {
-          const path = url.split('/storage/v1/object/public/imagens/')[1];
-          if (path) {
-            await supabase.storage.from('imagens').remove([path]);
-          }
-        }
+        
       } else {
-        const dadosInsert = {
-          ...dadosImovel,
-          datacadastro: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          ativo: true,
-          imagens: [],
-        };
+        // MODO CRIAÇÃO
         const { data, error } = await supabase
           .from("imoveis")
-          .insert([dadosInsert])
+          .insert([{
+            ...dadosImovel,
+            datacadastro: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            ativo: true,
+            imagens: [],
+          }])
           .select()
           .single();
+          
         if (error || !data?.id) throw new Error(error?.message || "Erro ao criar imóvel.");
+        
         if (imagensNovas.length > 0) {
-          const urlsImagens = await uploadImagensSharp(imagensNovas);
+          const urlsImagens = await uploadImagensSharp(imagensNovas, data.id);
+          
           await supabase
             .from("imoveis")
             .update({
@@ -387,28 +433,27 @@ export default function FormularioImovel({
             })
             .eq("id", data.id);
         }
+        
         showAlert("success", "✅ Imóvel cadastrado com sucesso!");
       }
       
-      limparFormulario();
+      cancelarEdicao();
       onSuccess?.();
-      onLimpar?.();
       router.refresh();
+      
     } catch (error) {
-      const mensagemErro = error instanceof Error ? error.message : "Erro desconhecido ao processar imóvel.";
+      const mensagemErro = error instanceof Error ? error.message : "Erro desconhecido.";
       showAlert("error", `❌ ${mensagemErro}`);
     } finally {
       setCarregando(false);
     }
   }, [
     formulario, imagensExistentes, imagensNovas, itensDisponiveis, itens,
-    modoEdicao, dadosIniciais, limparFormulario,
-    onSuccess, onLimpar, router, showAlert
+    modoEdicao, dadosIniciais, showAlert, cancelarEdicao, onSuccess, router
   ]);
 
   return (
     <>
-      {/* MODAL DE ALERTA */}
       <AlertModal
         open={alertModal.open}
         type={alertModal.type}
@@ -416,69 +461,64 @@ export default function FormularioImovel({
         onClose={closeAlert}
       />
 
-      <section className="bg-white rounded-3xl shadow-xl p-4 sm:p-8 border border-blue-100">
+      {/* ✅ CONTAINER MAIS COMPACTO */}
+      <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-2xl">
-              <FiHome className="text-blue-600" size={24} />
+            <div className="p-2 bg-blue-100 rounded-xl">
+              <FiHome className="text-blue-600" size={20} />
             </div>
-            <div>
-              <h1 className="font-poppins text-xl sm:text-3xl font-bold text-blue-900">
-                {modoEdicao ? "✏️ Editando Imóvel" : "🏠 Cadastrar Novo Imóvel"}
-              </h1>
-            </div>
+            <h1 className="font-poppins text-lg sm:text-2xl font-bold text-blue-900">
+              {modoEdicao ? "✏️ Editando Imóvel" : "🏠 Cadastrar Novo Imóvel"}
+            </h1>
           </div>
           {modoEdicao && (
             <button
               type="button"
               onClick={cancelarEdicao}
-              className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-semibold transition-colors font-inter"
+              className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm"
             >
-              <FiX size={18} />
+              <FiX size={16} />
               <span className="hidden sm:inline">Cancelar</span>
             </button>
           )}
         </div>
 
-        {/* Indicador de Progresso */}
-        <div className="mb-8">
-          <div className="flex flex-row items-center justify-between mb-4 gap-1 overflow-x-auto">
+        {/* Indicador de Progresso - MAIS COMPACTO */}
+        <div className="mb-6">
+          <div className="flex flex-row items-center justify-between mb-3 gap-1 overflow-x-auto">
             {ETAPAS.map((etapa, index) => {
               const Icone = etapa.icone;
               const isAtual = etapaAtual === etapa.numero;
               const isConcluida = etapaValida(etapa.numero) && etapaAtual > etapa.numero;
               const isAcessivel = index === 0 || ETAPAS.slice(0, index).every((_, i) => etapaValida(i + 1));
-              const isUltimo = index === ETAPAS.length - 1;
-              const isFinalizado = isUltimo
-                ? ETAPAS.every((_, i) => etapaValida(i + 1)) && etapaAtual > etapa.numero
-                : isConcluida;
 
               return (
-                <div key={etapa.numero} className="flex flex-col items-center flex-1 min-w-[70px]">
+                <div key={etapa.numero} className="flex flex-col items-center flex-1 min-w-[60px]">
                   <button
                     type="button"
                     onClick={() => isAcessivel && setEtapaAtual(etapa.numero)}
                     disabled={!isAcessivel}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 mb-2 cursor-pointer font-poppins
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold transition-all duration-200 mb-1 cursor-pointer
                       ${isAtual
                         ? "bg-blue-600 text-white"
-                        : isFinalizado
+                        : isConcluida
                         ? "bg-green-500 text-white"
                         : isAcessivel
                         ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
                         : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      }`}
+                    }`}
                   >
-                    {isFinalizado && !isAtual ? "✓" : <Icone size={20} />}
+                    {isConcluida && !isAtual ? "✓" : <Icone size={16} />}
                   </button>
                 </div>
               );
             })}
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
             <div
-              className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-blue-500 to-green-500 h-1.5 rounded-full transition-all duration-500"
               style={{
                 width: `${(ETAPAS.filter((_, i) => etapaValida(i + 1) && etapaAtual > i + 1).length / ETAPAS.length) * 100}%`
               }}
@@ -486,194 +526,184 @@ export default function FormularioImovel({
           </div>
         </div>
 
-        {/* Formulário */}
-        <form onSubmit={enviarFormulario} className="space-y-8">
+        {/* Formulário - PADDING REDUZIDO */}
+        <form onSubmit={enviarFormulario} className="space-y-6">
           {/* Etapa 1: Tipo & Categoria */}
           {etapaAtual === 1 && (
-            <div className="space-y-6">
-              <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
-                <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2 font-poppins">
-                  <FiHome size={20} />
-                  Classificação do Imóvel
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2 font-poppins">
+                <FiHome size={20} />
+                Classificação do Imóvel
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-blue-900 font-inter">
+                    Setor de Negociação
+                  </label>
+                  <select
+                    name="tipoNegocio"
+                    value={formulario.tipoNegocio}
+                    onChange={handleChange}
+                    className={CLASSES.select}
+                    required
+                  >
+                    <option value="">🏢 Selecione o setor</option>
+                    <option value="Residencial">🏠 Residencial</option>
+                    <option value="Comercial">🏪 Comercial</option>
+                    <option value="Rural">🌾 Rural</option>
+                  </select>
+                </div>
+                {formulario.tipoNegocio && (
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-blue-900 font-inter">
-                      Setor de Negociação
+                      Tipo de Negócio
                     </label>
                     <select
-                      name="tipoNegocio"
-                      value={formulario.tipoNegocio}
+                      name="setorNegocio"
+                      value={formulario.setorNegocio}
                       onChange={handleChange}
                       className={CLASSES.select}
                       required
                     >
-                      <option value="">🏢 Selecione o setor</option>
-                      <option value="Residencial">🏠 Residencial</option>
-                      <option value="Comercial">🏪 Comercial</option>
-                      <option value="Rural">🌾 Rural</option>
-                    </select>
-                  </div>
-                  {formulario.tipoNegocio && (
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-blue-900 font-inter">
-                        Tipo de Negócio
-                      </label>
-                      <select
-                        name="setorNegocio"
-                        value={formulario.setorNegocio}
-                        onChange={handleChange}
-                        className={CLASSES.select}
-                        required
-                      >
-                        <option value="">💼 Tipo de negócio</option>
-                        <option value="Aluguel">🏠 Aluguel</option>
-                        <option value="Venda">💰 Venda</option>
-                      </select>
-                    </div>
-                  )}
-                </div>
-                {formulario.tipoNegocio && formulario.setorNegocio && (
-                  <div className="mt-6 space-y-2">
-                    <label className="block text-sm font-semibold text-blue-900 font-inter">
-                      Tipo de Imóvel
-                    </label>
-                    <select
-                      name="tipoImovel"
-                      value={formulario.tipoImovel}
-                      onChange={handleChange}
-                      className={CLASSES.select}
-                      required
-                    >
-                      <option value="">🏘️ Selecione o tipo de imóvel</option>
-                      {(opcoesTipoImovel[
-                        `${formulario.tipoNegocio}-${formulario.setorNegocio}`
-                      ] || []).map((opcao) => (
-                        <option key={opcao} value={opcao}>
-                          {opcao}
-                        </option>
-                      ))}
+                      <option value="">💼 Tipo de negócio</option>
+                      <option value="Aluguel">🏠 Aluguel</option>
+                      <option value="Venda">💰 Venda</option>
                     </select>
                   </div>
                 )}
               </div>
+              {formulario.tipoNegocio && formulario.setorNegocio && (
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-blue-900 font-inter">
+                    Tipo de Imóvel
+                  </label>
+                  <select
+                    name="tipoImovel"
+                    value={formulario.tipoImovel}
+                    onChange={handleChange}
+                    className={CLASSES.select}
+                    required
+                  >
+                    <option value="">🏘️ Selecione o tipo de imóvel</option>
+                    {(opcoesTipoImovel[
+                      `${formulario.tipoNegocio}-${formulario.setorNegocio}`
+                    ] || []).map((opcao) => (
+                      <option key={opcao} value={opcao}>
+                        {opcao}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
 
           {/* Etapa 2: Localização */}
           {etapaAtual === 2 && (
-            <div className="space-y-6">
-              <div className="bg-green-50 rounded-2xl p-6 border border-green-200">
-                <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2 font-poppins">
-                  <FiMapPin size={20} />
-                  Localização do Imóvel
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-green-900 font-inter">
-                      Cidade
-                    </label>
-                    <input
-                      name="cidade"
-                      type="text"
-                      placeholder="Digite a cidade..."
-                      value={formulario.cidade}
-                      onChange={handleChange}
-                      className={CLASSES.input}
-                      required
-                      autoComplete="off"
-                    />
-                    <p className="text-xs text-green-600">
-                      💡 Digite o nome da cidade onde o imóvel está localizado
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-green-900 font-inter">
-                      Bairro
-                    </label>
-                    <input
-                      name="bairro"
-                      type="text"
-                      placeholder="Digite o bairro..."
-                      value={formulario.bairro}
-                      onChange={handleChange}
-                      className={CLASSES.input}
-                      required
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
-                <div className="mt-6 space-y-2">
+            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+              <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2 font-poppins">
+                <FiMapPin size={20} />
+                Localização do Imóvel
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-green-900 font-inter">
-                    Endereço Completo
+                    Cidade
                   </label>
                   <input
-                    name="enderecoDetalhado"
-                    placeholder="Rua, número, complemento, ponto de referência..."
-                    value={formulario.enderecoDetalhado}
+                    name="cidade"
+                    type="text"
+                    placeholder="Digite a cidade..."
+                    value={formulario.cidade}
                     onChange={handleChange}
                     className={CLASSES.input}
                     required
+                    autoComplete="off"
                   />
-                  <p className="text-xs text-green-600">
-                    💡 Inclua informações que ajudem a localizar o imóvel
-                  </p>
                 </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-green-900 font-inter">
+                    Bairro
+                  </label>
+                  <input
+                    name="bairro"
+                    type="text"
+                    placeholder="Digite o bairro..."
+                    value={formulario.bairro}
+                    onChange={handleChange}
+                    className={CLASSES.input}
+                    required
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+              <div className="mt-6 space-y-2">
+                <label className="block text-sm font-semibold text-green-900 font-inter">
+                  Endereço Completo
+                </label>
+                <input
+                  name="enderecoDetalhado"
+                  placeholder="Rua, número, complemento..."
+                  value={formulario.enderecoDetalhado}
+                  onChange={handleChange}
+                  className={CLASSES.input}
+                  required
+                />
               </div>
             </div>
           )}
 
           {/* Etapa 3: Detalhes & Valor */}
           {etapaAtual === 3 && (
-            <div className="space-y-6">
-              <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200">
-                <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2 font-poppins">
-                  <FiDollarSign size={20} />
-                  Detalhes Comerciais
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-purple-900 font-inter">
-                      Valor do Imóvel
-                    </label>
-                    <input
-                      name="valor"
-                      placeholder="R$ 0,00"
-                      value={formulario.valor}
-                      onChange={handleChange}
-                      className={CLASSES.input}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-purple-900 font-inter">
-                      Metragem
-                    </label>
-                    <input
-                      name="metragem"
-                      placeholder="0 m²"
-                      value={formulario.metragem}
-                      onChange={handleChange}
-                      className={CLASSES.input}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="mt-6 space-y-2">
+            <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+              <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2 font-poppins">
+                <FiDollarSign size={20} />
+                Detalhes Comerciais
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-purple-900 font-inter">
-                    Descrição do Imóvel
+                    Valor do Imóvel
                   </label>
-                  <textarea
-                    name="descricao"
-                    placeholder="Descreva as principais características, diferenciais e detalhes do imóvel..."
-                    value={formulario.descricao}
+                  <input
+                    name="valor"
+                    placeholder="R$ 0,00"
+                    value={formulario.valor}
                     onChange={handleChange}
-                    className={CLASSES.textarea}
-                    rows={4}
+                    className={CLASSES.input}
                     required
                   />
                 </div>
-                <div className="mt-6 space-y-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-purple-900 font-inter">
+                    Metragem
+                  </label>
+                  <input
+                    name="metragem"
+                    placeholder="0 m²"
+                    value={formulario.metragem}
+                    onChange={handleChange}
+                    className={CLASSES.input}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="mt-6 space-y-2">
+                <label className="block text-sm font-semibold text-purple-900 font-inter">
+                  Descrição do Imóvel
+                </label>
+                <textarea
+                  name="descricao"
+                  placeholder="Descreva as principais características do imóvel..."
+                  value={formulario.descricao}
+                  onChange={handleChange}
+                  className={CLASSES.textarea}
+                  rows={4}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-purple-900 font-inter">
                     Código do Imóvel
                   </label>
@@ -686,25 +716,7 @@ export default function FormularioImovel({
                     autoComplete="off"
                   />
                 </div>
-                <div className="mt-6 space-y-2">
-                  <label className="block text-sm font-semibold text-purple-900 font-inter">
-                    Patrocinador (Opcional)
-                  </label>
-                  <select
-                    name="patrocinador"
-                    value={formulario.patrocinador || ''}
-                    onChange={handleChange}
-                    className={CLASSES.select}
-                  >
-                    <option value="">🏢 Selecionar patrocinador</option>
-                    {patrocinadores.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mt-6 space-y-2">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-purple-900 font-inter">
                     WhatsApp para Contato
                   </label>
@@ -717,7 +729,27 @@ export default function FormularioImovel({
                     required
                   />
                 </div>
-                <div className="mt-6 space-y-2">
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-purple-900 font-inter">
+                    Patrocinador (Opcional)
+                  </label>
+                  <select
+                    name="patrocinador"
+                    value={formulario.patrocinador || ''}
+                    onChange={handleChange}
+                    className={CLASSES.select}
+                  >
+                    <option value="">🏢 Selecionar patrocinador</option>
+                    {(patrocinadores as Patrocinador[]).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-purple-900 font-inter">
                     CRECI
                   </label>
@@ -735,58 +767,54 @@ export default function FormularioImovel({
 
           {/* Etapa 4: Imagens */}
           {etapaAtual === 4 && (
-            <div className="space-y-6">
-              <div className="bg-orange-50 rounded-2xl p-6 border border-orange-200">
-                <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center gap-2 font-poppins">
-                  <FiUpload size={20} />
-                  Galeria de Imagens
-                  {modoEdicao && (
-                    <span className="text-sm bg-orange-200 text-orange-800 px-2 py-1 rounded-full">
-                      {imagensExistentes.length} existente(s) + {imagensNovas.length} nova(s)
-                    </span>
-                  )}
-                </h3>
-                <UploadImages
-                  previews={previews}
-                  onDrop={handleDrop}
-                  onFileChange={handleFileChange}
-                  onRemove={removeImagem}
-                  onReorder={handleReorder}
-                  fileInputRef={fileInputRef}
-                  required={previews.length === 0}
-                  imagensExistentes={imagensExistentes}
-                  triggerFileInput={() => fileInputRef.current?.click()}
-                />
-              </div>
+            <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+              <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center gap-2 font-poppins">
+                <FiUpload size={20} />
+                Galeria de Imagens
+                {modoEdicao && (
+                  <span className="text-sm bg-orange-200 text-orange-800 px-2 py-1 rounded-full">
+                    {imagensExistentes.length} existente(s) + {imagensNovas.length} nova(s)
+                  </span>
+                )}
+              </h3>
+              <UploadImages
+                previews={previews}
+                onDrop={handleDrop}
+                onFileChange={handleFileChange}
+                onRemove={removeImagem}
+                onReorder={() => {}} // Simplificado para esta versão
+                fileInputRef={fileInputRef}
+                required={previews.length === 0}
+                imagensExistentes={imagensExistentes}
+                triggerFileInput={() => fileInputRef.current?.click()}
+              />
             </div>
           )}
 
           {/* Etapa 5: Características */}
           {etapaAtual === 5 && formulario.tipoNegocio && (
-            <div className="space-y-6">
-              <div className="bg-indigo-50 rounded-2xl p-6 border border-indigo-200">
-                <h3 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center gap-2 font-poppins">
-                  <FiEdit3 size={20} />
-                  Características Específicas
-                </h3>
-                <ItensImovel
-                  itensDisponiveis={itensDisponiveis}
-                  itens={itens}
-                  setItens={setItens}
-                  ITENS_QUANTITATIVOS={ITENS_QUANTITATIVOS}
-                />
-              </div>
+            <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
+              <h3 className="text-lg font-semibold text-indigo-900 mb-4 flex items-center gap-2 font-poppins">
+                <FiEdit3 size={20} />
+                Características Específicas
+              </h3>
+              <ItensImovel
+                itensDisponiveis={itensDisponiveis}
+                itens={itens}
+                setItens={setItens}
+                ITENS_QUANTITATIVOS={ITENS_QUANTITATIVOS}
+              />
             </div>
           )}
 
-          {/* Navegação e Ações */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-blue-100">
-            <div className="flex gap-3">
+          {/* Navegação e Ações - MAIS COMPACTA */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-6 border-t border-blue-100">
+            <div className="flex gap-2">
               {etapaAtual > 1 && (
                 <button
                   type="button"
                   onClick={() => setEtapaAtual(etapaAtual - 1)}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-semibold transition-colors cursor-pointer"
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-colors text-sm"
                 >
                   ← Anterior
                 </button>
@@ -795,31 +823,29 @@ export default function FormularioImovel({
                 <button
                   type="button"
                   onClick={() => setEtapaAtual(etapaAtual + 1)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors cursor-pointer"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm"
                 >
                   Próximo →
                 </button>
               )}
             </div>
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={carregando || !ETAPAS.every((_, i) => etapaValida(i + 1))}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
-              >
-                {carregando ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                    <span>{modoEdicao ? "Atualizando..." : "Salvando..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <FiSave size={18} />
-                    <span>{modoEdicao ? "💾 Atualizar Imóvel" : "🏠 Salvar Imóvel"}</span>
-                  </>
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={carregando || !ETAPAS.every((_, i) => etapaValida(i + 1))}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-sm"
+            >
+              {carregando ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  <span>{modoEdicao ? "Atualizando..." : "Salvando..."}</span>
+                </>
+              ) : (
+                <>
+                  <FiSave size={16} />
+                  <span>{modoEdicao ? "💾 Atualizar" : "🏠 Salvar"}</span>
+                </>
+              )}
+            </button>
           </div>
         </form>
       </section>

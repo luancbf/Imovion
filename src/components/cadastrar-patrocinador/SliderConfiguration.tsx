@@ -3,18 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { FiSettings, FiX, FiImage, FiUpload, FiMousePointer, FiHome, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
 import { useSliderConfig } from '@/hooks/cadastrar-patrocinador/useSliderConfig';
-import { useFileUpload } from '@/hooks/cadastrar-patrocinador/useFileUpload';
 import { usePatrocinadores } from '@/hooks/cadastrar-patrocinador/usePatrocinadores';
 import { SliderBanner } from '@/types/cadastrar-patrocinador';
 import Image from "next/image";
 import ConfirmModal from '@/components/common/ConfirmModal';
 import AlertModal from '@/components/common/AlertModal';
-import { createBrowserClient } from "@supabase/ssr";
-
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 interface SliderConfigurationProps {
   isVisible: boolean;
@@ -295,14 +288,13 @@ function BannerSection({
 
 export default function SliderConfiguration({ isVisible, onClose }: SliderConfigurationProps) {
   const { patrocinadores } = usePatrocinadores();
-  const { uploadSliderImage } = useFileUpload();
   const {
     sliderBanners,
     loading,
     uploadingImages,
     loadSliderBanners,
     updateSliderBanner,
-    setImageUploading,
+    uploadAndUpdateBanner, // Usar a nova função otimizada
     deleteSliderBanner,
     saveSliderBanner,
     saveAllSliderBanners
@@ -316,40 +308,16 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
     }
   }, [isVisible, loadSliderBanners]);
 
+  // NOVA FUNÇÃO DE UPLOAD OTIMIZADA
   const handleImageUpload = async (imageName: string, file: File) => {
-    console.log("1. Iniciando upload para:", imageName, file.name);
-    setImageUploading(imageName, true);
+    console.log(`🔄 Iniciando upload otimizado para: ${imageName}`);
+    
     try {
-      // 1. Busque a URL antiga antes de atualizar
-      const banner = sliderBanners.find(b => b.image_name === imageName);
-      const oldUrl = banner?.image_url;
-      console.log("2. Banner encontrado:", banner);
-      console.log("3. URL antiga:", oldUrl);
-
-      // 2. Faça o upload da nova imagem
-      console.log("4. Chamando uploadSliderImage...");
-      const imageUrl = await uploadSliderImage(file);
-      console.log("5. Upload concluído, URL:", imageUrl);
-
-      // 3. Atualize o banner com a nova URL
-      updateSliderBanner(imageName, 'image_url', imageUrl);
-      updateSliderBanner(imageName, 'image_alt', `Banner ${imageName}`);
-      updateSliderBanner(imageName, 'is_active', true);
-
-      // 4. Remova a imagem antiga do storage, se existir
-      if (oldUrl && oldUrl !== imageUrl) {
-        const path = oldUrl.split('/storage/v1/object/public/')[1];
-        if (path) {
-          console.log("6. Removendo imagem antiga:", path);
-          await supabase.storage.from('imagens').remove([path]);
-        }
-      }
-      console.log("7. Upload finalizado com sucesso");
+      await uploadAndUpdateBanner(imageName, file);
+      console.log(`✅ Upload e atualização concluídos para: ${imageName}`);
     } catch (error) {
-      console.error("8. Erro no upload:", error);
+      console.error(`❌ Erro no upload otimizado:`, error);
       alert(`Erro ao fazer upload da imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-    } finally {
-      setImageUploading(imageName, false);
     }
   };
 
@@ -371,12 +339,9 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
 
   const handleUpdate = (imageName: string, field: keyof SliderBanner, value: SliderBannerUpdateValue) => {
     updateSliderBanner(imageName, field, value);
-    if (field === 'image_url' && value) {
-      updateSliderBanner(imageName, 'is_active', true);
-    }
   };
 
-  // Adicione estado para controle de salvamento em lote
+  // Estado para controle de salvamento em lote
   const [savingAll, setSavingAll] = useState(false);
 
   const handleSaveAll = async () => {
@@ -479,7 +444,6 @@ export default function SliderConfiguration({ isVisible, onClose }: SliderConfig
         </div>
       )}
 
-      {/* Adicione o modal no JSX principal */}
       <ConfirmModal
         open={!!confirmDelete}
         title="Excluir Banner"

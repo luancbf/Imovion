@@ -1,60 +1,27 @@
-import type { Metadata } from "next";
-import { Inter, Poppins } from "next/font/google";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import Script from "next/script";
-import "./globals.css";
-import AnalyticsTracker from "@/components/AnalyticsTracker";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import CookieConsent from '@/components/CookieConsent';
+import AnalyticsTracker from '@/components/AnalyticsTracker';
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-poppins",
-  display: "swap",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-inter",
-  display: "swap",
-});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Imovion",
-  description: "Imoveis em Mato Grosso, compra e venda de imoveis, aluguel de imoveis, financiamento de imoveis.",
-  icons: {
-    icon: "/favicon.ico",
-  },
+  title: 'Imovion - Encontre seu imóvel ideal',
+  description: 'A melhor plataforma para encontrar imóveis em sua região',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="pt-BR" className={`${poppins.variable} ${inter.variable}`}>
-      <head>
-        {/* Google Analytics */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-Z52XQ13ERH"
-          strategy="afterInteractive"
-        />
-        <Script id="ga-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-Z52XQ13ERH', {
-              page_path: window.location.pathname,
-            });
-          `}
-        </Script>
-      </head>
-      <body className="font-sans">
-        <AnalyticsTracker />
+    <html lang="pt-BR">
+      <body className={inter.className}>
         {children}
-        <SpeedInsights />
+        <CookieConsent />
+        <AnalyticsTracker />
       </body>
     </html>
   );

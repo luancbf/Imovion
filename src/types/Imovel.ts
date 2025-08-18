@@ -20,4 +20,10 @@ export interface Imovel {
   latitude?: number;
   longitude?: number;
   codigoimovel?: string;
+
+  // Novos campos para integração
+  fonte_api?: string; // ID da configuração da API de origem
+  data_sincronizacao?: Date | string; // Quando foi sincronizado
+  external_id?: string; // ID original da API externa
+  data_atualizacao?: Date | string; // Última atualização
 }

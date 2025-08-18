@@ -1,18 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { FiSettings, FiX, FiImage, FiUpload, FiMousePointer, FiHome, FiRefreshCw } from 'react-icons/fi';
+import { FiSettings, FiX, FiImage, FiUpload, FiMousePointer, FiHome, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
 import { usePatrocinioConfig } from '@/hooks/cadastrar-patrocinador/usePatrocinioConfig';
-import { useFileUpload } from '@/hooks/cadastrar-patrocinador/useFileUpload';
 import { usePatrocinadores } from '@/hooks/cadastrar-patrocinador/usePatrocinadores';
 import Image from "next/image";
 import { PatrocinioConfig } from '@/types/cadastrar-patrocinador';
-import { createBrowserClient } from "@supabase/ssr";
-
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import ConfirmModal from '@/components/common/ConfirmModal';
+import AlertModal from '@/components/common/AlertModal';
 
 interface Patrocinador {
   id: string;
@@ -39,6 +34,7 @@ interface PatrocinioCardProps {
   updatePatrocinioConfig: (position: number, field: keyof PatrocinioConfig, value: PatrocinioUpdateValue) => void;
   savePatrocinioConfig: (position: number) => Promise<void>;
   handleImageUpload: (position: number, file: File) => Promise<void>;
+  onDelete: (position: number) => void;
 }
 
 function PatrocinioCard({
@@ -48,18 +44,20 @@ function PatrocinioCard({
   patrocinadores,
   updatePatrocinioConfig,
   savePatrocinioConfig,
-  handleImageUpload
+  handleImageUpload,
+  onDelete
 }: PatrocinioCardProps) {
   const isClickable = config.is_clickable === true;
   const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState<{ open: boolean; type: "success" | "error"; message: string }>({ open: false, type: "success", message: "" });
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await savePatrocinioConfig(config.position);
-      alert('Configuração salva com sucesso!');
+      setAlert({ open: true, type: "success", message: "Configuração salva com sucesso!" });
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erro ao salvar configuração.');
+      setAlert({ open: true, type: "error", message: error instanceof Error ? error.message : "Erro ao salvar configuração." });
     } finally {
       setSaving(false);
     }
@@ -108,7 +106,7 @@ function PatrocinioCard({
         <div>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (file) await handleImageUpload(config.position, file);
@@ -166,26 +164,40 @@ function PatrocinioCard({
           </select>
         </div>
 
-        {/* Botão de Clicabilidade */}
-        <button
-          type="button"
-          onClick={async () => {
-            const newClickable = !isClickable;
-            updatePatrocinioConfig(config.position, 'is_clickable', newClickable);
-            updatePatrocinioConfig(config.position, 'is_active', true);
-            if (!newClickable) {
-              updatePatrocinioConfig(config.position, 'patrocinador_id', null);
-            }
-          }}
-          className={`w-full flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg font-medium transition-all text-xs ${
-            isClickable 
-              ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-              : 'bg-gray-400 hover:bg-gray-500 text-white'
-          }`}
-        >
-          {isClickable ? <FiMousePointer size={10} /> : <FiHome size={10} />}
-          <span>{isClickable ? 'Clicável' : 'Não Clicável'}</span>
-        </button>
+        {/* Botões de ação */}
+        <div className="flex flex-row gap-1 w-full">
+          <button
+            type="button"
+            onClick={async () => {
+              const newClickable = !isClickable;
+              updatePatrocinioConfig(config.position, 'is_clickable', newClickable);
+              updatePatrocinioConfig(config.position, 'is_active', true);
+              if (!newClickable) {
+                updatePatrocinioConfig(config.position, 'patrocinador_id', null);
+              }
+            }}
+            className={`flex-1 flex items-center justify-center gap-1 px-1 py-1.5 rounded-lg font-medium transition-all text-xs ${
+              isClickable 
+                ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                : 'bg-gray-400 hover:bg-gray-500 text-white'
+            }`}
+          >
+            {isClickable ? <FiMousePointer size={10} /> : <FiHome size={10} />}
+            <span>{isClickable ? 'Click' : 'Home'}</span>
+          </button>
+          
+          {config.id && !config.id.startsWith('mock-') && config.image_url && (
+            <button
+              type="button"
+              onClick={() => onDelete(config.position)}
+              className="flex-1 flex items-center justify-center gap-1 px-1 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium text-xs transition-all"
+              title="Excluir configuração"
+            >
+              <FiTrash2 size={10} />
+              <span>Del</span>
+            </button>
+          )}
+        </div>
 
         {/* Botão de salvar individual */}
         <button
@@ -203,12 +215,19 @@ function PatrocinioCard({
             </>
           ) : (
             <>
-              <FiSettings size={10} />
+              <FiUpload size={10} />
               <span>Salvar</span>
             </>
           )}
         </button>
       </div>
+
+      <AlertModal
+        open={alert.open}
+        type={alert.type}
+        message={alert.message}
+        onClose={() => setAlert({ ...alert, open: false })}
+      />
     </div>
   );
 }
@@ -220,17 +239,19 @@ interface PatrocinioConfigurationProps {
 
 export default function PatrocinioConfiguration({ isVisible, onClose }: PatrocinioConfigurationProps) {
   const { patrocinadores } = usePatrocinadores();
-  const { uploadPatrocinioImage } = useFileUpload();
   const {
     patrocinioConfigs,
     loading,
     uploadingPositions,
     loadPatrocinioConfigs,
     updatePatrocinioConfig,
-    setPositionUploading,
+    uploadAndUpdatePatrocinio, // Nova função otimizada
     savePatrocinioConfig,
+    deletePatrocinioConfig,
     getPatrocinioPositionInfo
   } = usePatrocinioConfig();
+
+  const [confirmDelete, setConfirmDelete] = useState<{ position: number } | null>(null);
 
   useEffect(() => {
     if (isVisible) {
@@ -238,34 +259,39 @@ export default function PatrocinioConfiguration({ isVisible, onClose }: Patrocin
     }
   }, [isVisible, loadPatrocinioConfigs]);
 
+  // NOVA FUNÇÃO DE UPLOAD OTIMIZADA
   const handleImageUpload = async (position: number, file: File) => {
-    setPositionUploading(position, true);
+    console.log(`🔄 Iniciando upload otimizado para posição: ${position}`);
+    
     try {
-      // 1. Busque a URL antiga antes de atualizar
-      const config = patrocinioConfigs.find(c => c.position === position);
-      const oldUrl = config?.image_url;
-
-      // 2. Faça o upload da nova imagem
+      // Gerar nome único para o arquivo
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(2, 8);
       const fileName = `patrocinio-pos-${position + 1}-${timestamp}-${randomId}`;
-      const imageUrl = await uploadPatrocinioImage(file, fileName);
+      
+      // Usar a nova função otimizada
+      await uploadAndUpdatePatrocinio(position, file, fileName);
+      
+      console.log(`✅ Upload e atualização concluídos para posição: ${position}`);
+    } catch (error) {
+      console.error(`❌ Erro no upload otimizado:`, error);
+      alert(`Erro ao fazer upload da imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
+  };
 
-      // 3. Atualize a config com a nova URL
-      updatePatrocinioConfig(position, 'image_url', imageUrl);
-      updatePatrocinioConfig(position, 'image_alt', `Patrocínio ${getPatrocinioPositionInfo(position).name}`);
-      updatePatrocinioConfig(position, 'image_name', fileName);
-      updatePatrocinioConfig(position, 'is_active', true);
+  const handleDeleteConfig = async (position: number) => {
+    setConfirmDelete({ position });
+  };
 
-      // 4. Remova a imagem antiga do storage, se existir
-      if (oldUrl && oldUrl !== imageUrl) {
-        const path = oldUrl.split('/storage/v1/object/public/')[1];
-        if (path) {
-          await supabase.storage.from('patrocinio_configs').remove([path]);
-        }
+  const confirmDeleteConfig = async () => {
+    if (confirmDelete) {
+      try {
+        await deletePatrocinioConfig(confirmDelete.position);
+      } catch (error) {
+        alert(`Erro ao excluir configuração: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      } finally {
+        setConfirmDelete(null);
       }
-    } finally {
-      setPositionUploading(position, false);
     }
   };
 
@@ -323,10 +349,21 @@ export default function PatrocinioConfiguration({ isVisible, onClose }: Patrocin
               updatePatrocinioConfig={updatePatrocinioConfig}
               savePatrocinioConfig={savePatrocinioConfig}
               handleImageUpload={handleImageUpload}
+              onDelete={handleDeleteConfig}
             />
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Excluir Configuração"
+        message="Deseja excluir esta configuração de patrocínio permanentemente?"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onConfirm={confirmDeleteConfig}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </section>
   );
 }
