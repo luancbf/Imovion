@@ -58,89 +58,93 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+      <div className="h-full flex flex-col space-y-3">
+        <div className="animate-pulse space-y-3">
+          <div className="h-6 bg-gray-200 rounded w-2/3"></div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-20 lg:h-24 bg-gray-200 rounded"></div>
             ))}
           </div>
+          <div className="h-32 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Dashboard Administrativo
+    <div className="h-full flex flex-col space-y-4 overflow-hidden">
+      {/* ✅ HEADER COMPACTO */}
+      <div>
+        <h1 className="text-xl lg:text-3xl font-bold text-gray-900 mb-1">
+          Dashboard Admin
         </h1>
-        <p className="text-gray-600">
+        <p className="text-sm lg:text-base text-gray-600">
           Visão geral do sistema Imovion
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm">Total de Imóveis</p>
-              <p className="text-2xl font-bold">{stats.totalImoveis.toLocaleString()}</p>
+      {/* ✅ STATS CARDS OTIMIZADOS PARA MOBILE */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-3 lg:p-6 text-white">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex-1">
+              <p className="text-blue-100 text-xs lg:text-sm">Total Imóveis</p>
+              <p className="text-lg lg:text-2xl font-bold">{stats.totalImoveis.toLocaleString()}</p>
             </div>
-            <div className="text-3xl">🏠</div>
+            <div className="text-xl lg:text-3xl mt-1 lg:mt-0">🏠</div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm">APIs Ativas</p>
-              <p className="text-2xl font-bold">{stats.apisAtivas}/{stats.totalApis}</p>
+        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-3 lg:p-6 text-white">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex-1">
+              <p className="text-green-100 text-xs lg:text-sm">APIs Ativas</p>
+              <p className="text-lg lg:text-2xl font-bold">{stats.apisAtivas}/{stats.totalApis}</p>
             </div>
-            <div className="text-3xl">🔗</div>
+            <div className="text-xl lg:text-3xl mt-1 lg:mt-0">🔗</div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm">Status Sistema</p>
-              <p className="text-xl font-bold">Online</p>
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-3 lg:p-6 text-white">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex-1">
+              <p className="text-purple-100 text-xs lg:text-sm">Status</p>
+              <p className="text-base lg:text-xl font-bold">Online</p>
             </div>
-            <div className="text-3xl">⚡</div>
+            <div className="text-xl lg:text-3xl mt-1 lg:mt-0">⚡</div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm">Última Sync</p>
-              <p className="text-xl font-bold">{stats.ultimaSync}</p>
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-3 lg:p-6 text-white">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex-1">
+              <p className="text-orange-100 text-xs lg:text-sm">Última Sync</p>
+              <p className="text-base lg:text-xl font-bold">{stats.ultimaSync}</p>
             </div>
-            <div className="text-3xl">🔄</div>
+            <div className="text-xl lg:text-3xl mt-1 lg:mt-0">🔄</div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Sistema Funcionando
+      {/* ✅ STATUS SISTEMA COMPACTO */}
+      <div className="bg-white rounded-lg border border-gray-200 p-3 lg:p-6 flex-1">
+        <h2 className="text-base lg:text-xl font-semibold text-gray-900 mb-3">
+          Sistema Operacional
         </h2>
-        <p className="text-gray-600">
-          Use a navegação acima para acessar as funcionalidades do sistema.
+        <p className="text-sm lg:text-base text-gray-600 mb-3">
+          Todos os serviços funcionando normalmente.
         </p>
         
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
-            ✅ Banco de dados conectado
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+            ✅ Database OK
           </span>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
-            ✅ APIs configuradas
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+            ✅ APIs OK
           </span>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
-            ✅ Sistema online
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+            ✅ Sistema OK
           </span>
         </div>
       </div>
