@@ -11,6 +11,9 @@ interface ImovelDetalhesProps {
   descricao: string;
   patrocinadorNome?: string;
   patrocinadorCreci?: string;
+  codigoImovel?: string;
+  codigoParceiro?: string;
+  fonteApi?: string;
 }
 
 const fallback = {
@@ -35,6 +38,8 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
   metragem,
   enderecoDetalhado,
   descricao,
+  codigoImovel,
+  codigoParceiro
 }) => {
   const formatarValor = (valor: number) =>
     valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -66,6 +71,32 @@ const ImovelDetalhes: React.FC<ImovelDetalhesProps> = ({
           <span className="font-poppins font-semibold text-black">Descrição:</span> {descricao || fallback.descricao}
         </div>
       </div>
+
+      {/* CÓDIGOS ATUALIZADOS */}
+      {(codigoImovel || codigoParceiro) && (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <h5 className="font-semibold text-gray-900 mb-2">Códigos de Referência</h5>
+          <div className="space-y-2">
+            {codigoImovel && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Código Imovion:</span>
+                <code className="bg-white px-2 py-1 rounded border text-sm font-mono">
+                  {codigoImovel}
+                </code>
+              </div>
+            )}
+            
+            {codigoParceiro && codigoParceiro !== codigoImovel && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Código do Parceiro:</span>
+                <code className="bg-purple-100 px-2 py-1 rounded border text-sm font-mono text-purple-800">
+                  {codigoParceiro}
+                </code>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

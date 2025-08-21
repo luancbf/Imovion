@@ -9,7 +9,9 @@ interface FiltroCadastroImoveisProps {
     tipoNegocio: string;
     setorNegocio: string;
     patrocinador: string;
-    codigoImovel: string; // <-- Adicione aqui
+    codigoImovel: string;
+    fonte_api: string;     // ✅ ADICIONADO
+    status_sync: string;   // ✅ ADICIONADO
   }) => void;
 }
 
@@ -21,7 +23,9 @@ export default function FiltroCadastroImoveis({
     tipoNegocio: '',
     setorNegocio: '',
     patrocinador: '',
-    codigoImovel: '', // <-- Adicione aqui
+    codigoImovel: '',
+    fonte_api: '',     // ✅ ADICIONADO
+    status_sync: '',   // ✅ ADICIONADO
   });
 
   useEffect(() => {
@@ -41,15 +45,20 @@ export default function FiltroCadastroImoveis({
       tipoNegocio: '',
       setorNegocio: '',
       patrocinador: '',
-      codigoImovel: '', // <-- Adicione aqui
+      codigoImovel: '',
+      fonte_api: '',     // ✅ ADICIONADO
+      status_sync: '',   // ✅ ADICIONADO
     });
   };
 
-  const hasActiveFilters = filtros.tipoNegocio || filtros.setorNegocio || filtros.patrocinador || filtros.codigoImovel;
+  // ✅ ATUALIZADO - incluir novos campos na verificação
+  const hasActiveFilters = filtros.tipoNegocio || filtros.setorNegocio || 
+                          filtros.patrocinador || filtros.codigoImovel || 
+                          filtros.fonte_api || filtros.status_sync;
 
   return (
     <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100">
-      {/* Header da Seção - MAIS COMPACTO */}
+      {/* Header da Seção */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-100 rounded-xl">
@@ -73,8 +82,9 @@ export default function FiltroCadastroImoveis({
         )}
       </div>
 
-      {/* Formulário de Filtros - ESPAÇAMENTO REDUZIDO */}
+      {/* Formulário de Filtros */}
       <div className="space-y-4">
+        {/* PRIMEIRA LINHA - 4 campos principais */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Filtro Setor */}
           <div className="space-y-2">
@@ -154,14 +164,54 @@ export default function FiltroCadastroImoveis({
           </div>
         </div>
 
-        {/* Seção de Ações - MAIS COMPACTA */}
+        {/* SEGUNDA LINHA - Filtros de API */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Filtro por Fonte da API */}
+          <div className="space-y-2">
+            <label className="font-poppins block text-sm font-semibold text-blue-900">
+              📡 Fonte dos Dados
+            </label>
+            <select
+              name="fonte_api"
+              value={filtros.fonte_api}
+              onChange={handleFiltroChange}
+              className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
+            >
+              <option value="">🌐 Todas as fontes</option>
+              <option value="internal">🏢 Imóveis internos</option>
+              <option value="api">📡 APIs externas</option>
+            </select>
+          </div>
+
+          {/* Filtro por Status de Sync */}
+          <div className="space-y-2">
+            <label className="font-poppins block text-sm font-semibold text-blue-900">
+              🔄 Status Sincronização
+            </label>
+            <select
+              name="status_sync"
+              value={filtros.status_sync}
+              onChange={handleFiltroChange}
+              className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
+            >
+              <option value="">📊 Todos os status</option>
+              <option value="active">✅ Ativo</option>
+              <option value="error">❌ Com erro</option>
+              <option value="inactive">⏸️ Inativo</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Seção de Ações */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-blue-100">
           {/* Informações dos Filtros */}
           <div className="flex items-center gap-4 text-sm text-gray-600">
             {hasActiveFilters ? (
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span>Filtros aplicados com sucesso</span>
+                <span>
+                  {Object.values(filtros).filter(v => v).length} filtro(s) ativo(s)
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-2">

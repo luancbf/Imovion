@@ -21,9 +21,16 @@ export interface Imovel {
   longitude?: number;
   codigoimovel?: string;
 
-  // Novos campos para integração
-  fonte_api?: string; // ID da configuração da API de origem
-  data_sincronizacao?: Date | string; // Quando foi sincronizado
-  external_id?: string; // ID original da API externa
-  data_atualizacao?: Date | string; // Última atualização
+  // Campos para integração de APIs
+  fonte_api?: string;           // 'internal' | 'parceiro' | nome da API
+  external_id?: string;         // ID original da API externa
+  data_sincronizacao?: Date | string;
+  data_atualizacao?: Date | string;
+  api_source_name?: string;     // Nome amigável da fonte
+  api_logo?: string;           // Logo da imobiliária parceira
+  
+  // Novos campos que podem vir das APIs
+  codigo_parceiro?: string;     // Código usado pela imobiliária parceira
+  url_original?: string;       // Link para o anúncio original
+  status_sync?: 'active' | 'inactive' | 'error';
 }

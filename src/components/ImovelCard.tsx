@@ -113,20 +113,38 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           ))}
         </Swiper>
         
-        {/* Adicione um badge para mostrar a fonte */}
-        {imovel.fonte_api && (
-          <div className="absolute top-2 right-2">
-            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-              {imovel.fonte_api === 'internal' ? 'Interno' : 'Parceiro'}
-            </span>
-          </div>
-        )}
+        {/* BADGES DE FONTE DA API - ATUALIZADOS */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1">
+          {imovel.fonte_api && imovel.fonte_api !== 'internal' && (
+            <div className="flex items-center gap-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-2 py-1 rounded-full shadow-md">
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <span className="font-medium">
+                {imovel.api_source_name || 'Parceiro'}
+              </span>
+            </div>
+          )}
+          
+          {/* Badge de sincronização recente */}
+          {imovel.data_sincronizacao && (
+            (() => {
+              const syncDate = new Date(imovel.data_sincronizacao);
+              const now = new Date();
+              const diffHours = (now.getTime() - syncDate.getTime()) / (1000 * 60 * 60);
+              
+              if (diffHours < 24) {
+                return (
+                  <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-md">
+                    🔄 Recente
+                  </div>
+                );
+              }
+              return null;
+            })()
+          )}
+        </div>
       </div>
       
-      {/* Container do conteúdo com flex-1 para ocupar espaço disponível */}
       <div className="p-4 flex-1 flex flex-col">
-        
-        {/* Conteúdo principal que cresce */}
         <div className="flex-1 flex flex-col gap-2">
           <h3 className="font-poppins text-lg md:text-xl font-bold text-blue-800">
             {contexto === "patrocinador"
@@ -134,12 +152,20 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
               : formatarTexto(imovel.tipoimovel)}
           </h3>
           
-          {/* CÓDIGO DO IMÓVEL - só exibe se existir */}
-          {imovel.codigoimovel && imovel.codigoimovel.trim() && (
-            <div className="font-inter text-sm text-gray-600">
-              <span className="font-poppins font-bold">Cód. Imóvel:</span> {imovel.codigoimovel}
-            </div>
-          )}
+          {/* CÓDIGOS DO IMÓVEL - ATUALIZADOS */}
+          <div className="space-y-1">
+            {imovel.codigoimovel && imovel.codigoimovel.trim() && (
+              <div className="font-inter text-sm text-gray-600">
+                <span className="font-poppins font-bold">Cód. Imóvel:</span> {imovel.codigoimovel}
+              </div>
+            )}
+            
+            {imovel.codigo_parceiro && imovel.codigo_parceiro !== imovel.codigoimovel && (
+              <div className="font-inter text-sm text-purple-600">
+                <span className="font-poppins font-bold">Cód. Parceiro:</span> {imovel.codigo_parceiro}
+              </div>
+            )}
+          </div>
           
           <p className="font-poppins text-green-700 font-bold text-xl md:text-2xl">
             {imovel.valor && typeof imovel.valor === 'number'
@@ -177,15 +203,28 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           </div>
         </div>
 
-        {/* Botões sempre na parte inferior */}
+        {/* BOTÕES ATUALIZADOS */}
         <div className="font-poppins flex flex-wrap gap-2 mt-4 pt-4">
           <Link
             href={`/imoveis/${imovel.id}`}
             className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white text-sm px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105"
-            aria-label={`Ver detalhes do imóvel ${imovel.tipoimovel} em ${imovel.cidade}`}
           >
             Ver detalhes
           </Link>
+          
+          {/* Botão para ver no site original */}
+          {imovel.url_original && imovel.fonte_api !== 'internal' && (
+            <a
+              href={imovel.url_original}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105"
+              title="Ver no site original"
+            >
+              🔗
+            </a>
+          )}
+          
           {imovel.whatsapp && (
             <a
               href={`https://wa.me/55${imovel.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(

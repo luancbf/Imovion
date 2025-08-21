@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
+import Image from "next/image"; // ✅ IMPORTAR Image do Next.js
 import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
 import PatrocinadorBadge from "@/components/imovel/PatrocinadorBadge";
@@ -98,7 +99,7 @@ export default function ImovelPage() {
       try {
         const { data, error } = await supabase
           .from("patrocinadores")
-          .select("nome, creci") // <-- inclua o campo creci aqui
+          .select("nome, creci")
           .eq("id", imovel.patrocinadorid)
           .single();
 
@@ -109,7 +110,7 @@ export default function ImovelPage() {
         }
 
         setPatrocinadorNome(data?.nome || 'Nome não disponível');
-        setPatrocinadorCreci(data?.creci || undefined); // <-- salve o creci aqui
+        setPatrocinadorCreci(data?.creci || undefined);
       } catch {
         setPatrocinadorNome('Erro ao carregar');
         setPatrocinadorCreci(undefined);
@@ -258,7 +259,62 @@ export default function ImovelPage() {
       <Header />
       <main className="flex-1 flex flex-col items-center lg:py-8 relative z-10">
         <div className="w-full max-w-4xl mx-auto bg-white lg:rounded-3xl shadow-xl border border-blue-100 p-4 sm:p-8">
-          {/* Carousel de imagens */}
+          
+          {/* ✅ SEÇÃO API - CORRIGIDA COM Image */}
+          {imovel.fonte_api && imovel.fonte_api !== 'internal' && (
+            <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {imovel.api_logo && (
+                    <div className="relative w-12 h-12 bg-white rounded-lg p-1">
+                      <Image
+                        src={imovel.api_logo}
+                        alt={imovel.api_source_name || 'Logo do parceiro'}
+                        width={44}
+                        height={44}
+                        className="rounded-lg object-contain"
+                        sizes="44px"
+                        priority={false}
+                        onError={(e) => {
+                          // Fallback em caso de erro na imagem
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-purple-900">
+                        Imóvel disponibilizado por parceiro
+                      </h4>
+                      <span className="bg-purple-200 text-purple-800 text-xs px-2 py-1 rounded-full">
+                        {imovel.api_source_name || 'Parceiro'}
+                      </span>
+                    </div>
+                    {imovel.data_sincronizacao && (
+                      <p className="text-sm text-purple-700 mt-1">
+                        Sincronizado em: {new Date(imovel.data_sincronizacao).toLocaleString('pt-BR')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                {imovel.url_original && (
+                  <a
+                    href={imovel.url_original}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                  >
+                    Ver Original
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Carousel existente */}
           <ImovelCarousel
             imagens={imovel.imagens || ["/imoveis/sem-imagem.jpg"]}
             cidade={imovel.cidade}
@@ -267,7 +323,7 @@ export default function ImovelPage() {
             onImageClick={abrirModal}
           />
 
-          {/* Badge do patrocinador */}
+          {/* Badge do patrocinador existente */}
           {imovel.patrocinadorid && patrocinadorNome && (
             <div className="mb-6 flex justify-start">
               <PatrocinadorBadge 
@@ -278,7 +334,7 @@ export default function ImovelPage() {
             </div>
           )}
 
-          {/* Detalhes do imóvel (valor, tipo, metragem, etc) */}
+          {/* DETALHES ATUALIZADOS */}
           <ImovelDetalhes
             tipoNegocio={imovel.setornegocio || ""}
             valor={imovel.valor || 0}
@@ -288,6 +344,8 @@ export default function ImovelPage() {
             metragem={imovel.metragem || 0}
             enderecoDetalhado={formatarTexto(imovel.enderecodetalhado)}
             descricao={imovel.descricao || ""}
+            codigoImovel={imovel.codigoimovel}
+            codigoParceiro={imovel.codigo_parceiro}
           />
 
           {/* Características do imóvel */}
