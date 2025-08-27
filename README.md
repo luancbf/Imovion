@@ -25,14 +25,11 @@ Revolucionar a forma como imóveis são apresentados e comercializados online, o
 - Categorização automática por tipo (Residencial, Comercial, Rural)
 - Upload e compressão automática de imagens com múltiplas resoluções
 - Sistema de códigos únicos para cada imóvel
-- Geolocalização e integração com mapas
 
 ### 👥 **Sistema de Parceiros**
-- Portal exclusivo para corretores e imobiliárias
 - Gestão completa de CRECI e certificações
 - Banners personalizados e branding individual
 - Dashboard com métricas de performance
-- Sistema de comissões e relatórios
 
 ### 🔍 **Busca Inteligente**
 - Filtros avançados com múltiplos critérios
@@ -77,13 +74,6 @@ Revolucionar a forma como imóveis são apresentados e comercializados online, o
 - **Error Tracking** - Monitoramento de erros em produção
 - **Performance Analytics** - Métricas de performance
 
-### **Escalabilidade**
-
-A plataforma foi projetada para escalar horizontalmente, suportando:
-- **100.000+** imóveis simultâneos
-- **10.000+** usuários concurrent
-- **99.9%** uptime garantido
-- **< 2s** tempo de carregamento médio
 
 ## 🚀 Performance & Otimizações
 
@@ -96,7 +86,6 @@ A plataforma foi projetada para escalar horizontalmente, suportando:
 - **100%** acessibilidade (WCAG 2.1 AA)
 - **Meta tags** dinâmicas por página
 - **Schema.org** markup para rich snippets
-- **Sitemap** automático com 50.000+ URLs
 - **AMP** ready para páginas críticas
 
 ### **Otimizações Técnicas**
@@ -124,23 +113,15 @@ A plataforma foi projetada para escalar horizontalmente, suportando:
 ## 📊 Analytics & Business Intelligence
 
 ### **Métricas de Negócio**
-- Conversão de leads por fonte
 - Performance de anúncios por região
 - Tempo médio de permanência
 - Taxa de rejeição por categoria
 - ROI por canal de marketing
 
-### **Dashboard Executivo**
-- KPIs em tempo real
-- Relatórios personalizáveis
-- Análise de tendências de mercado
-- Previsão de demanda por região
-- Comparativo de performance
-
 ## 🎨 Design System
 
 ### **Identidade Visual**
-- **Palette**: Azuis corporativos com acentos verdes
+- **Palette**: Azuis corporativos
 - **Typography**: Poppins (títulos) + Inter (corpo)
 - **Icons**: React Icons com set personalizado
 - **Spacing**: Sistema baseado em 8px grid
@@ -156,41 +137,16 @@ A plataforma foi projetada para escalar horizontalmente, suportando:
 ## 🌐 Integrações
 
 ### **APIs Externas**
+- **Integração com API'S das imobiliárias**
 - **WhatsApp Business API** - Comunicação direta
-- **Google Maps API** - Geolocalização e mapas
-- **ViaCEP** - Validação de endereços
-- **IBGE** - Dados geográficos oficiais
-- **Payment Gateways** - Múltiplas opções de pagamento
 
 ### **Webhooks & Automações**
-- **Slack** - Notificações para equipe
-- **Email Marketing** - Mailchimp integration
 - **CRM** - Sincronização automática
 - **Analytics** - Google Analytics 4 + GTM
-
-## 📈 Roadmap
-
-### **Q1 2025**
-- [ ] Sistema de tours virtuais 360°
-- [ ] IA para precificação automática
-- [ ] App mobile nativo
-- [ ] Integração com cartórios
-
-### **Q2 2025**
-- [ ] Marketplace de serviços imobiliários
-- [ ] Sistema de leilões online
-- [ ] Blockchain para contratos
-- [ ] Expansão internacional
 
 ## 🏢 Sobre a Empresa
 
 **Imovion** é uma proptech brasileira fundada em 2024, focada em revolucionar o mercado imobiliário através da tecnologia. Nossa missão é conectar pessoas aos seus novos lares de forma simples, rápida e transparente.
-
-### **Equipe**
-- **CTO**: Desenvolvimento e arquitetura técnica
-- **Product Owner**: Estratégia de produto
-- **UX/UI Designer**: Experiência do usuário
-- **DevOps Engineer**: Infraestrutura e deploy
 
 ## 📞 Contato Comercial
 
@@ -199,15 +155,9 @@ A plataforma foi projetada para escalar horizontalmente, suportando:
 - **WhatsApp Business**: +55 (65) 99999-9999
 - **LinkedIn**: [Imovion](https://linkedin.com/company/imovion)
 
-### **Suporte Técnico**
-- **Email Técnico**: suporte@imovion.com.br
-- **Portal de Suporte**: [help.imovion.com.br](https://help.imovion.com.br)
-- **Status Page**: [status.imovion.com.br](https://status.imovion.com.br)
-
 ### **Desenvolvimento**
 - **Tech Lead**: [CapistranoDev](https://www.capistranodev.com.br)
-- **Portfolio**: Mais de 50 projetos entregues
-- **Especialização**: Next.js, React, TypeScript
+- **Especialização**: Html, CSS, Next.js, React, TypeScript
 
 ## 📄 Licenciamento
 
@@ -219,7 +169,7 @@ Este software é propriedade da **Imovion Tecnologia Ltda.** Todos os direitos r
 
 <div align="center">
 
-**🚀 Plataforma em produção desde 2024 | ⭐ 99.9% uptime | 🏠 10.000+ imóveis ativos**
+**🚀 Plataforma em produção desde 2024**
 
 **Desenvolvido com ❤️ no Brasil 🇧🇷**
 
