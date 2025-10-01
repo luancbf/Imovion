@@ -48,7 +48,7 @@ export default function Anunciar() {
                 {/* Individual */}
                 <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-200 text-center hover:shadow-xl transition-shadow">
                   <h3 className="text-xl font-bold text-blue-700 mb-3">Proprietário</h3>
-                  <div className="text-3xl font-bold text-green-600 mb-2">R$ 39,90</div>
+                  <div className="text-3xl font-bold text-green-600 mb-2">R$ 49,90</div>
                   <p className="text-sm text-gray-500 mb-4">por imóvel</p>
                   
                   <div className="text-left mb-6 space-y-2">
