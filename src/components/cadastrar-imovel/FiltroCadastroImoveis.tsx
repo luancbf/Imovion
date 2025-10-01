@@ -10,8 +10,8 @@ interface FiltroCadastroImoveisProps {
     setorNegocio: string;
     patrocinador: string;
     codigoImovel: string;
-    fonte_api: string;     // ✅ ADICIONADO
-    status_sync: string;   // ✅ ADICIONADO
+    fonte_api: string;
+    status_sync: string;
   }) => void;
 }
 
@@ -24,8 +24,8 @@ export default function FiltroCadastroImoveis({
     setorNegocio: '',
     patrocinador: '',
     codigoImovel: '',
-    fonte_api: '',     // ✅ ADICIONADO
-    status_sync: '',   // ✅ ADICIONADO
+    fonte_api: '',
+    status_sync: '',
   });
 
   useEffect(() => {
@@ -46,15 +46,14 @@ export default function FiltroCadastroImoveis({
       setorNegocio: '',
       patrocinador: '',
       codigoImovel: '',
-      fonte_api: '',     // ✅ ADICIONADO
-      status_sync: '',   // ✅ ADICIONADO
+      fonte_api: '',
+      status_sync: '',
     });
   };
 
-  // ✅ ATUALIZADO - incluir novos campos na verificação
-  const hasActiveFilters = filtros.tipoNegocio || filtros.setorNegocio || 
-                          filtros.patrocinador || filtros.codigoImovel || 
-                          filtros.fonte_api || filtros.status_sync;
+  const hasActiveFilters = filtros.tipoNegocio || filtros.setorNegocio ||
+                           filtros.patrocinador || filtros.codigoImovel ||
+                           filtros.fonte_api || filtros.status_sync;
 
   return (
     <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100">
@@ -66,7 +65,7 @@ export default function FiltroCadastroImoveis({
           </div>
           <div>
             <h2 className="font-poppins text-lg sm:text-xl font-bold text-blue-900">
-              🔍 Filtros de Busca
+              Filtros de Busca
             </h2>
           </div>
         </div>
@@ -84,7 +83,6 @@ export default function FiltroCadastroImoveis({
 
       {/* Formulário de Filtros */}
       <div className="space-y-4">
-        {/* PRIMEIRA LINHA - 4 campos principais */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Filtro Setor */}
           <div className="space-y-2">
@@ -133,7 +131,7 @@ export default function FiltroCadastroImoveis({
               disabled={patrocinadores.length === 0}
               className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">🏢 Todos os patrocinadores</option>
+              <option value="">Todos os patrocinadores</option>
               {patrocinadores.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nome}

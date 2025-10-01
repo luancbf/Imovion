@@ -1,9 +1,5 @@
-import { createBrowserClient } from "@supabase/ssr";
 import type { Imovel } from "@/types/Imovel";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+import { supabase } from '@/lib/supabase'
 
 interface ImovelBanco {
   id: string;
@@ -56,7 +52,7 @@ const mapearImovelDoBanco = (item: ImovelBanco): Imovel => ({
   itens: item.itens ?? {},
   ativo: item.ativo ?? true,
   patrocinadorid: item.patrocinadorid ?? "",
-  codigoimovel: item.codigoimovel ?? undefined, // MAPEAMENTO ADICIONADO
+  codigoimovel: item.codigoimovel ?? undefined,
 });
 
 export async function buscarImoveis(
@@ -67,7 +63,7 @@ export async function buscarImoveis(
   try {
     let query = supabase
       .from("imoveis")
-      .select("*") // Já seleciona todos os campos, incluindo codigoimovel
+      .select("*")
       .eq("setornegocio", setor)
       .eq("tiponegocio", tipoNegocio)
       .eq("ativo", true);
@@ -111,23 +107,13 @@ export async function buscarImoveis(
     const { data, error } = await query;
     
     if (error) {
-      console.error("❌ [ERRO BUSCA]:", error.message);
       return [];
     }
 
     const imoveisProcessados = (data as ImovelBanco[])?.map(mapearImovelDoBanco) ?? [];
-    
-    // Debug para verificar se codigoimovel está sendo retornado
-    console.log("🔍 [DEBUG] Primeiros imóveis com código:", 
-      imoveisProcessados
-        .filter(imovel => imovel.codigoimovel)
-        .slice(0, 3)
-        .map(imovel => ({ id: imovel.id, codigo: imovel.codigoimovel }))
-    );
 
     return imoveisProcessados;
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO]:", error);
+  } catch {
     return [];
   }
 }
@@ -140,7 +126,7 @@ export async function buscarImoveisPorCategoria(
   try {
     let query = supabase
       .from("imoveis")
-      .select("*") // Seleciona todos os campos, incluindo codigoimovel
+      .select("*")
       .eq("ativo", true);
 
     if (categoria && categoria.trim() !== "") {
@@ -156,32 +142,13 @@ export async function buscarImoveisPorCategoria(
     const { data, error } = await query;
     
     if (error) {
-      console.error("❌ [ERRO BUSCA CATEGORIA]:", error.message);
       return [];
     }
     
     const imoveisProcessados = (data as ImovelBanco[])?.map(mapearImovelDoBanco) ?? [];
-    
-    // Debug específico para busca por categoria
-    console.log("🔍 [DEBUG CATEGORIA] Total de imóveis:", imoveisProcessados.length);
-    console.log("🔍 [DEBUG CATEGORIA] Imóveis com código:", 
-      imoveisProcessados
-        .filter(imovel => imovel.codigoimovel)
-        .slice(0, 3)
-        .map(imovel => ({ id: imovel.id, codigo: imovel.codigoimovel }))
-    );
-    console.log("🔍 [DEBUG CATEGORIA] Amostra de dados brutos:", 
-      (data as ImovelBanco[])?.slice(0, 2).map(item => ({
-        id: item.id,
-        codigoimovel: item.codigoimovel,
-        tipoimovel: item.tipoimovel
-      }))
-    );
-    
     return imoveisProcessados;
-    
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO CATEGORIA]:", error);
+
+  } catch {
     return [];
   }
 }
@@ -196,14 +163,12 @@ export async function buscarImoveisDestaque(limite: number = 8): Promise<Imovel[
       .limit(limite);
 
     if (error) {
-      console.error("❌ [ERRO BUSCA DESTAQUE]:", error.message);
       return [];
     }
 
     return (data as ImovelBanco[])?.map(mapearImovelDoBanco) ?? [];
-    
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO DESTAQUE]:", error);
+
+  } catch {
     return [];
   }
 }
@@ -220,14 +185,12 @@ export async function buscarImovelPorId(id: string): Promise<Imovel | null> {
       .single();
 
     if (error) {
-      console.error("❌ [ERRO BUSCA POR ID]:", error.message);
       return null;
     }
 
     return data ? mapearImovelDoBanco(data as ImovelBanco) : null;
 
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO BUSCA ID]:", error);
+  } catch {
     return null;
   }
 }
@@ -241,15 +204,13 @@ export async function buscarCidadesDisponiveis(): Promise<string[]> {
       .not("cidade", "is", null);
 
     if (error) {
-      console.error("❌ [ERRO BUSCA CIDADES]:", error.message);
       return [];
     }
 
     const cidades = [...new Set(data?.map(item => item.cidade).filter(Boolean))] as string[];
     return cidades.sort();
 
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO CIDADES]:", error);
+  } catch {
     return [];
   }
 }
@@ -266,15 +227,13 @@ export async function buscarBairrosPorCidade(cidade: string): Promise<string[]> 
       .not("bairro", "is", null);
 
     if (error) {
-      console.error("❌ [ERRO BUSCA BAIRROS]:", error.message);
       return [];
     }
 
     const bairros = [...new Set(data?.map(item => item.bairro).filter(Boolean))] as string[];
     return bairros.sort();
 
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO BAIRROS]:", error);
+  } catch {
     return [];
   }
 }
@@ -292,7 +251,6 @@ export async function buscarEstatisticas(): Promise<{
       .eq("ativo", true);
 
     if (error || !data) {
-      console.error("❌ [ERRO BUSCA ESTATÍSTICAS]:", error?.message);
       return { total: 0, porSetor: {}, porTipo: {}, cidadesAtendidas: 0 };
     }
 
@@ -318,8 +276,7 @@ export async function buscarEstatisticas(): Promise<{
       cidadesAtendidas: cidades.size
     };
 
-  } catch (error) {
-    console.error("❌ [ERRO INESPERADO ESTATÍSTICAS]:", error);
+  } catch {
     return { total: 0, porSetor: {}, porTipo: {}, cidadesAtendidas: 0 };
   }
 }

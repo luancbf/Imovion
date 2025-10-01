@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { supabase } from '@/lib/supabase'
 
 interface PatrocinioConfig {
   id: string;
@@ -18,10 +18,6 @@ interface PatrocinioConfig {
     slug: string;
   } | null;
 }
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 export default function Patrocinios() {
   const [patrocinios, setPatrocinios] = useState<PatrocinioConfig[]>([]);
@@ -89,13 +85,13 @@ export default function Patrocinios() {
 
   if (loading) {
     return (
-      <section className="py-8 px-6 bg-gradient-to-b from-gray-50 to-white">
+      <section className="px-4">
         <div className="mx-auto w-fit">
           <div className="grid grid-cols-4 gap-2 sm:gap-5">
-            {[...Array(24)].map((_, index) => (
+            {[...Array(16)].map((_, index) => (
               <div 
                 key={`loading-${index}`}
-                className="w-22 h-22 sm:w-40 sm:h-40 lg:w-50 lg:h-50 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl shadow-sm animate-pulse"
+                className="w-20 h-20 sm:w-40 sm:h-40 lg:w-50 lg:h-50 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl shadow-sm animate-pulse"
               />
             ))}
           </div>
@@ -128,9 +124,8 @@ export default function Patrocinios() {
                 <Image
                   src={patrocinio.image_url}
                   alt={patrocinio.image_alt}
-                  width={160}
-                  height={160}
-                  quality={100}
+                  width={80}
+                  height={80}
                   className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out w-full h-full"
                   sizes="(max-width: 640px) 128px, (max-width: 1024px) 160px, 200px"
                   onError={(e) => {

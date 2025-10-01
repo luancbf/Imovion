@@ -1,8 +1,17 @@
-'use client';
+"use client";
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import ApiConfigForm from '@/components/admin/ApiConfigForm';
+import dynamic from 'next/dynamic';
+
+const ApiConfigForm = dynamic(() => import('@/components/admin/ApiConfigForm'), {
+  loading: () => (
+    <div className="flex items-center justify-center p-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+      <span className="ml-3 text-gray-600">Carregando formulário...</span>
+    </div>
+  )
+});
 
 export default function NewAPIConfigPage() {
   const router = useRouter();

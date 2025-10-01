@@ -1,14 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import FormularioImovel from '@/components/cadastrar-imovel/FormularioImovel';
-import FiltroCadastroImoveis from '@/components/cadastrar-imovel/FiltroCadastroImoveis';
-import ListaImoveis from '@/components/cadastrar-imovel/ListaImoveis';
+import dynamic from 'next/dynamic';
 import { opcoesTipoImovel } from '@/constants/opcoesTipoImovel';
 import { supabase } from '@/lib/supabase';
 import type { Imovel } from '@/types/Imovel';
 import type { ImovelEdicao } from '@/types/formularios';
 import type { Patrocinador } from '@/types/cadastrar-patrocinador';
+
+const FormularioImovel = dynamic(() => import('@/components/cadastrar-imovel/FormularioImovel'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-96 rounded-lg"></div>
+});
+
+const ListaImoveis = dynamic(() => import('@/components/cadastrar-imovel/ListaImoveis'), {
+  loading: () => (
+    <div className="space-y-4">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>
+      ))}
+    </div>
+  )
+});
 
 export default function CadastrarImovel() {
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
@@ -179,17 +191,14 @@ export default function CadastrarImovel() {
         onLimpar={handleLimparEdicao}
       />
 
-      <FiltroCadastroImoveis
-        patrocinadores={patrocinadores}
-        onFiltroChange={setFiltros}
-      />
-
       <ListaImoveis
         imoveis={imoveis}
         carregando={carregando}
         onDelete={handleDelete}
         onEdit={handleEditarNoFormulario}
         patrocinadores={patrocinadores}
+        filtros={filtros}
+        onFiltroChange={setFiltros}
       />
     </div>
   );

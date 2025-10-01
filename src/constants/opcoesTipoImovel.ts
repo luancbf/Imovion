@@ -14,7 +14,6 @@ export const getTiposPorCategoriaFinalidade = (categoria: string, finalidade: st
   return opcoesTipoImovel[chave] || [];
 };
 
-// Função para obter todas as opções de uma categoria
 export const getTiposPorCategoria = (categoria: string): string[] => {
   const tipos = new Set<string>();
   const categoriaCapitalizada = categoria.charAt(0).toUpperCase() + categoria.slice(1).toLowerCase();
@@ -27,7 +26,6 @@ export const getTiposPorCategoria = (categoria: string): string[] => {
   return Array.from(tipos).sort();
 };
 
-// Função para verificar se uma combinação existe
 export const existeCombinacao = (categoria: string, finalidade: string): boolean => {
   const categoriaCapitalizada = categoria.charAt(0).toUpperCase() + categoria.slice(1).toLowerCase();
   const finalidadeCapitalizada = finalidade.charAt(0).toUpperCase() + finalidade.slice(1).toLowerCase();
@@ -35,7 +33,6 @@ export const existeCombinacao = (categoria: string, finalidade: string): boolean
   return chave in opcoesTipoImovel;
 };
 
-// Função para mapear URL → valores do banco
 export const mapearUrlParaBanco = (categoria: string, tipoNegocio: string) => {
   return {
     setornegocio: categoria.charAt(0).toUpperCase() + categoria.slice(1).toLowerCase(),
@@ -43,7 +40,6 @@ export const mapearUrlParaBanco = (categoria: string, tipoNegocio: string) => {
   };
 };
 
-// Função para gerar chave do filtro
 export const gerarChaveFiltro = (setor: string, tipoNegocio: string): string => {
   return `${setor}-${tipoNegocio}`;
 };

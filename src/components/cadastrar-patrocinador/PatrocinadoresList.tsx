@@ -15,7 +15,6 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
   const [busca, setBusca] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Carregar dados
   useEffect(() => {
     loadPatrocinadores();
   }, [loadPatrocinadores]);
@@ -26,7 +25,6 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
     }
   }, [refreshTrigger, loadPatrocinadores]);
 
-  // Handlers
   const handleRefresh = () => loadPatrocinadores();
 
   const handleDelete = async (id: string, nome: string) => {
@@ -48,9 +46,10 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
     onEdit?.(patrocinador);
   };
 
-  // Filtros
   const patrocinadoresFiltrados = patrocinadores.filter(p =>
     p.nome?.toLowerCase().includes(busca.toLowerCase()) ||
+    p.user_profile?.nome?.toLowerCase().includes(busca.toLowerCase()) ||
+    p.user_profile?.sobrenome?.toLowerCase().includes(busca.toLowerCase()) ||
     p.slug?.toLowerCase().includes(busca.toLowerCase()) ||
     p.telefone?.toLowerCase().includes(busca.toLowerCase())
   );
@@ -177,6 +176,26 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
                     <div className="flex items-center gap-1 text-blue-600 text-sm mb-1">
                       <FiPhone size={14} />
                       <span>{patrocinador.telefone}</span>
+                    </div>
+                  )}
+
+                  {/* Usuário vinculado */}
+                  {patrocinador.user_profile ? (
+                    <div className="flex items-center gap-1 text-green-600 text-sm mb-1">
+                      <FiUser size={14} />
+                      <span className="font-medium">
+                        {patrocinador.user_profile.nome} {patrocinador.user_profile.sobrenome}
+                      </span>
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-1">
+                        {patrocinador.user_profile.categoria === 'usuario_comum' && 'Usuário'}
+                        {patrocinador.user_profile.categoria === 'corretor' && 'Corretor'}
+                        {patrocinador.user_profile.categoria === 'imobiliaria' && 'Imobiliária'}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-gray-400 text-sm mb-1">
+                      <FiUser size={14} />
+                      <span className="italic">Patrocinador independente</span>
                     </div>
                   )}
 

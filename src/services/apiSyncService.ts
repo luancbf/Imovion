@@ -2,8 +2,53 @@
 import { supabase } from '@/lib/supabase';
 import { transformApiDataToImovel } from '@/utils/apiDataTransform';
 import { Imovel } from '@/types/Imovel';
+// Interfaces para logs
+interface SyncLogData {
+  api_config_id: string;
+  timestamp: string;
+  status: 'success' | 'error' | 'warning' | 'running';
+  total_processed: number;
+  total_errors: number;
+  error_messages: string[];
+  duration: number;
+  total_deleted: number;
+  deleted_ids: string[];
+}
 
-// ✅ Interfaces específicas para configuração da API
+interface SyncLogUpdate {
+  status?: 'success' | 'error' | 'warning' | 'running';
+  total_processed?: number;
+  total_errors?: number;
+  error_messages?: string[];
+  duration?: number;
+  total_deleted?: number;
+  deleted_ids?: string[];
+}
+
+// Funções para logs (não hook, para usar em classes)
+const createSyncLog = async (dados: SyncLogData): Promise<string> => {
+  const { data, error } = await supabase
+    .from('sync_logs')
+    .insert([{
+      ...dados,
+      created_at: new Date().toISOString()
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data.id;
+};
+
+const updateSyncLog = async (id: string, updates: SyncLogUpdate): Promise<void> => {
+  const { error } = await supabase
+    .from('sync_logs')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) throw error;
+};
+
 interface ApiConfig {
   id: string;
   name: string;
@@ -14,7 +59,6 @@ interface ApiConfig {
   timeout?: number;
 }
 
-// ✅ Interface para dados externos da API
 interface ExternalApiData {
   imoveis?: Record<string, unknown>[];
   properties?: Record<string, unknown>[];
@@ -25,39 +69,77 @@ interface ExternalApiData {
 export class ApiSyncService {
   
   async syncFromApi(apiName: string, apiConfig: ApiConfig): Promise<void> {
+    const startTime = Date.now();
+    let logId: string | null = null;
+    
     try {
-      console.log(`🔄 Iniciando sincronização da API: ${apiName}`);
-      
-      // 1. Buscar dados da API externa
+      // Iniciar log de sincronização
+      logId = await createSyncLog({
+        api_config_id: apiConfig.id,
+        timestamp: new Date().toISOString(),
+        status: 'running',
+        total_processed: 0,
+        total_errors: 0,
+        error_messages: [],
+        duration: 0,
+        total_deleted: 0,
+        deleted_ids: []
+      });
+
       const externalData = await this.fetchFromExternalApi(apiConfig);
       
-      // 2. Transformar cada item usando o mapeamento
       const transformedImoveis = externalData.map((item: Record<string, unknown>) => {
         return transformApiDataToImovel(item, apiName);
       });
       
-      // 3. Salvar no banco de dados
+      let processedCount = 0;
+      let errorCount = 0;
+      const errorMessages: string[] = [];
+      
       for (const imovel of transformedImoveis) {
-        await this.saveOrUpdateImovel(imovel, apiName);
+        try {
+          await this.saveOrUpdateImovel(imovel, apiName);
+          processedCount++;
+        } catch (error) {
+          errorCount++;
+          errorMessages.push(error instanceof Error ? error.message : 'Erro desconhecido');
+        }
       }
-      
-      console.log(`✅ Sincronização concluída: ${transformedImoveis.length} imóveis`);
-      
+
+      // Finalizar log com sucesso
+      const duration = Math.round((Date.now() - startTime) / 1000);
+      await updateSyncLog(logId, {
+        status: errorCount > 0 ? 'warning' : 'success',
+        total_processed: processedCount,
+        total_errors: errorCount,
+        error_messages: errorMessages,
+        duration
+      });
+
     } catch (error) {
-      console.error(`❌ Erro na sincronização da API ${apiName}:`, error);
-      throw error;
+      // Finalizar log com erro
+      if (logId) {
+        const duration = Math.round((Date.now() - startTime) / 1000);
+        await updateSyncLog(logId, {
+          status: 'error',
+          total_processed: 0,
+          total_errors: 1,
+          error_messages: [error instanceof Error ? error.message : 'Erro desconhecido'],
+          duration
+        });
+      }
+      throw new Error(`❌ Erro na sincronização da API ${apiName}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   }
 
   private async fetchFromExternalApi(apiConfig: ApiConfig): Promise<Record<string, unknown>[]> {
     try {
-      // Implementação específica para cada API
       const response = await fetch(apiConfig.endpoint, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${apiConfig.token}`,
           'Content-Type': 'application/json',
-          ...apiConfig.headers // Headers adicionais se necessário
+          ...apiConfig.headers
         },
         signal: apiConfig.timeout ? AbortSignal.timeout(apiConfig.timeout) : undefined
       });
@@ -68,7 +150,6 @@ export class ApiSyncService {
       
       const data: ExternalApiData = await response.json();
       
-      // Extrair array de imóveis da resposta (adaptar conforme a estrutura)
       if (data.imoveis && Array.isArray(data.imoveis)) {
         return data.imoveis;
       }
@@ -80,18 +161,14 @@ export class ApiSyncService {
       if (data.data && Array.isArray(data.data)) {
         return data.data;
       }
-      
-      // Se a resposta for diretamente um array
+    
       if (Array.isArray(data)) {
         return data as Record<string, unknown>[];
       }
-      
-      console.warn('Estrutura de dados desconhecida da API:', data);
       return [];
       
     } catch (error) {
       if (error instanceof Error) {
-        console.error(`Erro ao buscar dados da API: ${error.message}`);
         throw new Error(`Falha na comunicação com API: ${error.message}`);
       }
       throw new Error('Erro desconhecido ao buscar dados da API');
@@ -101,20 +178,17 @@ export class ApiSyncService {
   private async saveOrUpdateImovel(imovel: Partial<Imovel>, apiName: string): Promise<void> {
     try {
       if (!imovel.external_id) {
-        console.warn('Imóvel sem external_id, pulando:', imovel);
         return;
       }
 
-      // Verificar se já existe pelo external_id
       const { data: existing, error: selectError } = await supabase
         .from('imoveis')
         .select('id')
         .eq('external_id', imovel.external_id)
         .eq('fonte_api', apiName)
-        .maybeSingle(); // Use maybeSingle em vez de single para evitar erro se não existir
+        .maybeSingle();
 
       if (selectError) {
-        console.error('Erro ao verificar imóvel existente:', selectError);
         throw selectError;
       }
 
@@ -122,24 +196,19 @@ export class ApiSyncService {
         ...imovel,
         data_atualizacao: new Date().toISOString(),
         fonte_api: apiName,
-        ativo: true // Imóveis de API são ativos por padrão
+        ativo: true 
       };
 
       if (existing) {
-        // Atualizar existente
         const { error: updateError } = await supabase
           .from('imoveis')
           .update(imovelData)
           .eq('id', existing.id);
           
         if (updateError) {
-          console.error('Erro ao atualizar imóvel:', updateError);
           throw updateError;
         }
-        
-        console.log(`📝 Imóvel atualizado: ${imovel.external_id}`);
       } else {
-        // Criar novo
         const { error: insertError } = await supabase
           .from('imoveis')
           .insert({
@@ -148,19 +217,14 @@ export class ApiSyncService {
           });
           
         if (insertError) {
-          console.error('Erro ao inserir imóvel:', insertError);
           throw insertError;
         }
-        
-        console.log(`✅ Novo imóvel criado: ${imovel.external_id}`);
       }
     } catch (error) {
-      console.error(`Erro ao salvar imóvel ${imovel.external_id}:`, error);
       throw error;
     }
   }
 
-  // ✅ Método para testar conectividade da API
   async testApiConnection(apiConfig: ApiConfig): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(apiConfig.endpoint, {
@@ -191,7 +255,6 @@ export class ApiSyncService {
     }
   }
 
-  // ✅ Método para obter estatísticas da sincronização
   async getSyncStats(apiName: string): Promise<{
     total: number;
     ativo: number;
@@ -210,7 +273,6 @@ export class ApiSyncService {
       const ativo = data.filter(item => item.ativo).length;
       const inativo = total - ativo;
       
-      // Encontrar a sync mais recente
       const ultimaSync = data.reduce((latest, item) => {
         if (!item.data_sincronizacao) return latest;
         if (!latest) return item.data_sincronizacao;
@@ -220,8 +282,7 @@ export class ApiSyncService {
       }, null as string | null);
 
       return { total, ativo, inativo, ultimaSync };
-    } catch (error) {
-      console.error('Erro ao obter estatísticas:', error);
+    } catch {
       return { total: 0, ativo: 0, inativo: 0, ultimaSync: null };
     }
   }

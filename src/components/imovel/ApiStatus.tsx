@@ -1,4 +1,3 @@
-// src/components/imovel/ApiStatus.tsx
 interface ApiStatusProps {
   fonte_api?: string;
   api_source_name?: string;

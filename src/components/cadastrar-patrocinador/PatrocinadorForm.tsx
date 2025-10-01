@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
-import { FiPlus, FiSave, FiX, FiPhone, FiUser } from 'react-icons/fi';
+import { FiPlus, FiSave, FiX, FiPhone, FiUser, FiAward } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
 import { usePatrocinadores } from '@/hooks/cadastrar-patrocinador/usePatrocinadores';
 import { Patrocinador } from '@/types/cadastrar-patrocinador';
+import { supabase } from '@/lib/supabase';
+import UsuarioSearch from './UsuarioSearch';
 
 interface PatrocinadorFormProps {
   onSuccess?: () => void;
@@ -26,14 +28,19 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
   
   const formRef = useRef<HTMLElement>(null);
   
-  // Estados
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [creci, setCreci] = useState('');
+  const [selectedUser, setSelectedUser] = useState<{
+    id: string;
+    nome: string;
+    sobrenome: string;
+    categoria: string;
+    email?: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  // Estados computados
   const isEditing = !!editingPatrocinador;
   const isDisabled = saving || !user?.id;
 
@@ -77,6 +84,7 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     setNome('');
     setTelefone('');
     setCreci('');
+    setSelectedUser(null);
     setErrors({});
     onCancelEdit?.();
   }, [onCancelEdit]);
@@ -86,6 +94,14 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
       setNome(editingPatrocinador.nome);
       setTelefone(editingPatrocinador.telefone ? formatTelefoneRealTime(editingPatrocinador.telefone) : '');
       setCreci(editingPatrocinador.creci ?? '');
+      
+      // Carregar usuário vinculado se existir
+      if (editingPatrocinador.user_profile) {
+        setSelectedUser(editingPatrocinador.user_profile);
+      } else {
+        setSelectedUser(null);
+      }
+      
       setTimeout(() => {
         scrollToForm();
       }, 100);
@@ -99,7 +115,6 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     if (!nome.trim()) {
       newErrors.nome = 'Nome é obrigatório';
     }
-    // CRECI não obrigatório, mas pode validar formato se quiser
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -140,18 +155,13 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
     setSaving(true);
     
     try {
-      const { createBrowserClient } = await import("@supabase/ssr");
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-
       const dados = {
         nome: nome.trim(),
         slug: gerarSlug(nome.trim()),
         telefone: telefone.trim() || null,
         creci: creci.trim() || null,
-        ownerId: user.id
+        ownerid: user.id,
+        user_id: selectedUser?.id || null
       };
 
       if (isEditing) {
@@ -236,17 +246,17 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
           }`} size={24} />
         </div>
         <div className="flex-1">
-          <h2 className={`text-2xl font-bold transition-colors ${
+          <h2 className={`text-2xl font-poppins font-bold transition-colors ${
             isEditing ? 'text-amber-900' : 'text-blue-900'
           }`}>
             {isEditing ? 'Editar Patrocinador' : 'Novo Patrocinador'}
           </h2>
-          <p className={`text-sm transition-colors ${
+          <p className={`text-sm font-inter transition-colors ${
             isEditing ? 'text-amber-600' : 'text-blue-600'
           }`}>
             {isEditing ? 
               `Editando: ${editingPatrocinador?.nome}` : 
-              'Adicione um novo patrocinador com nome e telefone'
+              ''
             }
           </p>
         </div>
@@ -266,7 +276,7 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Nome */}
         <div>
-          <label htmlFor="nome" className={`block text-sm font-semibold mb-2 transition-colors ${
+          <label htmlFor="nome" className={`block text-sm font-semibold font-poppins mb-2 transition-colors ${
             isEditing ? 'text-amber-900' : 'text-blue-900'
           }`}>
             Nome do Patrocinador*
@@ -299,9 +309,16 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
             <p className="text-red-600 text-sm mt-1">⚠️ {errors.nome}</p>
           )}
         </div>
+
+        {/* Busca de Usuário */}
+        <UsuarioSearch 
+          onSelectUser={setSelectedUser}
+          selectedUser={selectedUser}
+          disabled={isDisabled}
+        />
         
         <div>
-          <label htmlFor="telefone" className={`block text-sm font-semibold mb-2 transition-colors ${
+          <label htmlFor="telefone" className={`block text-sm font-semibold font-poppins mb-2 transition-colors ${
             isEditing ? 'text-amber-900' : 'text-blue-900'
           }`}>
             Telefone
@@ -333,19 +350,22 @@ const PatrocinadorForm = forwardRef<PatrocinadorFormRef, PatrocinadorFormProps>(
         </div>
         
         <div>
-          <label htmlFor="creci" className={`block text-sm font-semibold mb-2 transition-colors ${
+          <label htmlFor="creci" className={`block text-sm font-semibold font-poppins mb-2 transition-colors ${
             isEditing ? 'text-amber-900' : 'text-blue-900'
           }`}>
             CRECI
           </label>
           <div className="relative">
+            <FiAward className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors ${
+              isEditing ? 'text-amber-400' : 'text-blue-400'
+            }`} size={20} />
             <input
               id="creci"
               type="text"
               placeholder="Digite o CRECI"
               value={creci}
               onChange={(e) => setCreci(e.target.value)}
-              className={`w-full pl-4 pr-4 py-3 border rounded-xl transition-all ${
+              className={`w-full pl-12 pr-4 py-3 border rounded-xl transition-all ${
                 isEditing
                   ? 'border-amber-200 focus:ring-amber-500 focus:border-amber-500 bg-amber-50'
                   : 'border-blue-200 focus:ring-blue-500 focus:border-blue-500 bg-blue-50'

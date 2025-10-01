@@ -39,7 +39,6 @@ type ImovelCardProps = {
 export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCardProps) {
   const imagens = imovel.imagens?.length ? imovel.imagens : ["/imoveis/sem-imagem.jpg"];
 
-  // Parse seguro do campo itens
   let itens: Record<string, unknown> = {};
   if (typeof imovel.itens === "string") {
     try {

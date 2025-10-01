@@ -4,7 +4,7 @@ import { FiMessageCircle } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 
 export default function MensagemCliente() {
-  const numeroWhatsApp = "5511999999999"; // Substitua pelo número real
+  const numeroWhatsApp = "65999772500";
   const mensagem = encodeURIComponent(
     "Olá! Não encontrei o imóvel que procuro no site. Vocês podem me ajudar a encontrar o imóvel ideal?"
   );

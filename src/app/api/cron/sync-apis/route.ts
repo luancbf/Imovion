@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { APIIntegrationService } from '@/services/apiIntegration';
 
 export async function GET(request: NextRequest) {
-  // Verificar se a requisição vem do cron autorizado
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -33,5 +32,5 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return GET(request); // Permitir POST também para flexibilidade
+  return GET(request);
 }

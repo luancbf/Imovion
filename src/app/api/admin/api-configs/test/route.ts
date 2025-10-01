@@ -5,8 +5,6 @@ import { DataMapper } from '@/services/dataMapper';
 export async function POST(request: NextRequest) {
   try {
     const config = await request.json();
-    
-    // Testar conexão com a API
     const integrationService = new APIIntegrationService();
     const testData = await integrationService.fetchFromExternalAPI(config);
     
@@ -17,7 +15,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Testar mapeamento
     const mapper = new DataMapper(config.mapping);
     const testResult = mapper.testMapping(testData[0]);
 
@@ -26,7 +23,7 @@ export async function POST(request: NextRequest) {
       mappedData: testResult.mappedData,
       extraFields: testResult.extraFields,
       errors: testResult.errors,
-      sampleData: testData[0] // Primeiro item para debug
+      sampleData: testData[0] 
     });
 
   } catch (error) {

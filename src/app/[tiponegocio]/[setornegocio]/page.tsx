@@ -17,8 +17,6 @@ type NegocioTipo = "Aluguel" | "Venda";
 
 export default function ImoveisCategoriaPage() {
   const params = useParams();
-
-  // COMPUTED VALUES - Parâmetros da URL
   const paramsUrl = useMemo(() => {
     const categoriaParam = String(params.categoria || "").toLowerCase();
     const tiponegocioParam = String(params.tiponegocio || "").toLowerCase();
@@ -41,7 +39,6 @@ export default function ImoveisCategoriaPage() {
     [paramsUrl.setorCapitalizado]
   );
 
-  // STATE
   const [imoveisBrutos, setImoveisBrutos] = useState<Imovel[]>([]);
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -54,7 +51,6 @@ export default function ImoveisCategoriaPage() {
   }));
   const [paginaAtual, setPaginaAtual] = useState(1);
 
-  // PAGINATION
   const itensPorPagina = 20;
   const totalPaginas = Math.ceil(imoveis.length / itensPorPagina);
   const imoveisPaginados = useMemo(() => {
@@ -62,7 +58,6 @@ export default function ImoveisCategoriaPage() {
     return imoveis.slice(inicio, inicio + itensPorPagina);
   }, [imoveis, paginaAtual]);
 
-  // UTILITY FUNCTIONS
   const obterSetor = useCallback((categoria: string): SetorTipo => {
     const map: Record<string, SetorTipo> = {
       residencial: "Residencial",
@@ -103,7 +98,6 @@ export default function ImoveisCategoriaPage() {
     return map[categoria.toLowerCase()] || categoria;
   }, []);
 
-  // FILTROS - Lógica CORRIGIDA
   const aplicarFiltroLocal = useCallback((imoveis: Imovel[], filtros: Record<string, string>): Imovel[] => {
     if (!imoveis?.length) return [];
     
@@ -116,7 +110,6 @@ export default function ImoveisCategoriaPage() {
     }
 
     const imoveisFiltrados = imoveis.filter(imovel => {
-      // Tipo de imóvel
       if (filtros.tipoimovel && filtros.tipoimovel !== "") {
         const tipoFiltro = normalizeString(filtros.tipoimovel);
         const tipoImovel = normalizeString(imovel.tipoimovel || "");
@@ -125,7 +118,6 @@ export default function ImoveisCategoriaPage() {
         }
       }
       
-      // Cidade (busca parcial)
       if (filtros.cidade && filtros.cidade !== "") {
         const cidadeFiltro = normalizeString(filtros.cidade);
         const cidadeImovel = normalizeString(imovel.cidade || "");
@@ -134,7 +126,6 @@ export default function ImoveisCategoriaPage() {
         }
       }
       
-      // Bairro (busca parcial)
       if (filtros.bairro && filtros.bairro !== "") {
         const bairroFiltro = normalizeString(filtros.bairro);
         const bairroImovel = normalizeString(imovel.bairro || "");
@@ -143,38 +134,36 @@ export default function ImoveisCategoriaPage() {
         }
       }
       
-      // Faixas de valor
       if (filtros.valorMin) {
         const valorMin = Number(filtros.valorMin);
         const valorImovel = Number(imovel.valor) || 0;
         if (valorImovel < valorMin) return false;
       }
+
       if (filtros.valorMax) {
         const valorMax = Number(filtros.valorMax);
         const valorImovel = Number(imovel.valor) || 0;
         if (valorImovel > valorMax) return false;
       }
       
-      // Faixas de metragem
       if (filtros.metragemMin) {
         const metragemMin = Number(filtros.metragemMin);
         const metragemImovel = Number(imovel.metragem) || 0;
         if (metragemImovel < metragemMin) return false;
       }
+
       if (filtros.metragemMax) {
         const metragemMax = Number(filtros.metragemMax);
         const metragemImovel = Number(imovel.metragem) || 0;
         if (metragemImovel > metragemMax) return false;
       }
 
-      // Características específicas
       if (imovel.itens) {
         try {
           const itensImovel = typeof imovel.itens === "string" ? 
             JSON.parse(imovel.itens) : imovel.itens;
           
           for (const [chave, valor] of Object.entries(filtros)) {
-            // Pular campos já verificados
             if (['tipoimovel', 'cidade', 'bairro', 'valorMin', 'valorMax', 'metragemMin', 'metragemMax'].includes(chave)) {
               continue;
             }
@@ -201,7 +190,6 @@ export default function ImoveisCategoriaPage() {
     return imoveisFiltrados;
   }, [normalizeString]);
 
-  // COMPUTED VALUES PARA RENDER
   const textos = useMemo(() => ({
     titulo: `${paramsUrl.setornegocioCapitalizado} de imóveis ${pluralizarCategoria(paramsUrl.tiponegocio)}`,
     callToAction: "Encontre aqui o imóvel perfeito para você!",
@@ -210,9 +198,6 @@ export default function ImoveisCategoriaPage() {
       ` ${pluralizarCategoria(paramsUrl.setorCapitalizado)} encontrados`
   }), [paramsUrl, pluralizarCategoria, imoveis.length]);
 
-  // EFFECTS - CORRIGIDOS sem dependências circulares
-  
-  // Effect 1: Buscar imóveis quando URL mudar
   useEffect(() => {
     setCarregando(true);
 
@@ -225,7 +210,6 @@ export default function ImoveisCategoriaPage() {
         
         setImoveisBrutos(imoveis);
         
-        // Aplicar filtros iniciais (vazios)
         const filtrosIniciais = {
           tipoimovel: "",
           cidade: "",
@@ -249,16 +233,14 @@ export default function ImoveisCategoriaPage() {
     buscarImoveis();
   }, [paramsUrl.setornegocioCapitalizado, paramsUrl.tiponegocioCapitalizado, itensQuantitativos, aplicarFiltroLocal]);
 
-  // Effect 2: Aplicar filtros quando mudarem (apenas se já tiver dados)
   useEffect(() => {
     if (imoveisBrutos.length > 0) {
       const imoveisFinais = aplicarFiltroLocal(imoveisBrutos, filtros);
       setImoveis(imoveisFinais);
-      setPaginaAtual(1); // Voltar para primeira página
+      setPaginaAtual(1);
     }
   }, [filtros, imoveisBrutos, aplicarFiltroLocal]);
 
-  // RENDER COMPONENTS
   const LoadingSpinner = () => (
     <div className="flex flex-col items-center justify-center py-20">
       <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>

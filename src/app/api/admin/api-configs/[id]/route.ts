@@ -1,16 +1,10 @@
 // src/app/api/admin/api-configs/[id]/route.ts - CRIAR ESTE ARQUIVO:
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-// ✅ CORRIGIDO: Interface para Next.js 15
 interface RouteParams {
-  params: Promise<{ id: string }>; // ← Mudança aqui: Promise wrapper
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(
@@ -18,7 +12,6 @@ export async function GET(
   context: RouteParams
 ) {
   try {
-    // ✅ CORRIGIDO: Await nos params
     const { id } = await context.params;
     
     const { data, error } = await supabase
@@ -36,7 +29,6 @@ export async function GET(
       }, { status: 404 });
     }
 
-    // Converter snake_case para camelCase para o frontend
     const config = {
       id: data.id,
       name: data.name,
@@ -56,7 +48,6 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: config });
   } catch (error) {
-    console.error('Erro ao buscar configuração:', error);
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Erro desconhecido' 
@@ -69,7 +60,6 @@ export async function PUT(
   context: RouteParams
 ) {
   try {
-    // ✅ CORRIGIDO: Await nos params
     const { id } = await context.params;
     const body = await request.json();
     
@@ -103,7 +93,6 @@ export async function PUT(
       message: 'Configuração atualizada com sucesso' 
     });
   } catch (error) {
-    console.error('Erro ao atualizar configuração:', error);
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Erro desconhecido' 
@@ -116,10 +105,8 @@ export async function DELETE(
   context: RouteParams
 ) {
   try {
-    // ✅ CORRIGIDO: Await nos params
     const { id } = await context.params;
     
-    // Verificar se existe antes de deletar
     const { data: existingConfig, error: checkError } = await supabase
       .from('api_configs')
       .select('id, name')
@@ -145,7 +132,6 @@ export async function DELETE(
       message: `Configuração "${existingConfig.name}" deletada com sucesso`
     });
   } catch (error) {
-    console.error('Erro ao deletar configuração:', error);
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Erro desconhecido' 

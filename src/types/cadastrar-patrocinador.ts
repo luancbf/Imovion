@@ -6,7 +6,15 @@ export interface Patrocinador {
   creci?: string;
   criadoEm?: string;
   atualizadoEm?: string;
-  ownerId?: string;
+  ownerId?: string; // Mantém camelCase para compatibilidade com frontend
+  user_id?: string | null; // Vinculação com usuário da plataforma
+  user_profile?: {
+    id: string;
+    nome: string;
+    sobrenome: string;
+    categoria: string;
+    email?: string;
+  } | null;
 }
 
 export interface PatrocinioConfig {

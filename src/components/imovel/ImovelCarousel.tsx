@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
+import { useRef, forwardRef, useImperativeHandle } from 'react';
+import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -13,15 +15,32 @@ type ImovelCarouselProps = {
   tipo?: string;
   altura?: string;
   onImageClick?: (index: number) => void;
+  onSlideChange?: (index: number) => void;
+  initialSlide?: number;
 };
 
-export default function ImovelCarousel({
+export interface ImovelCarouselRef {
+  slideTo: (index: number) => void;
+}
+
+const ImovelCarousel = forwardRef<ImovelCarouselRef, ImovelCarouselProps>(({
   imagens,
   cidade,
   tipo,
   altura = "h-60 md:h-110",
   onImageClick,
-}: ImovelCarouselProps) {
+  onSlideChange,
+  initialSlide = 0,
+}, ref) => {
+  const swiperRef = useRef<SwiperType | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    slideTo: (index: number) => {
+      if (swiperRef.current) {
+        swiperRef.current.slideTo(index);
+      }
+    },
+  }));
   return (
     <div className={`relative ${altura} bg-gray-100 flex items-center justify-center rounded-2xl mb-6`}>
       {imagens && imagens.length > 0 ? (
@@ -31,6 +50,11 @@ export default function ImovelCarousel({
           pagination={{ clickable: true }}
           className="w-full h-full rounded-2xl"
           style={{ height: '100%' }}
+          initialSlide={initialSlide}
+          onSwiper={(swiper) => {
+            swiperRef.current = swiper;
+          }}
+          onSlideChange={(swiper) => onSlideChange && onSlideChange(swiper.activeIndex)}
         >
           {imagens.map((img, i) => (
             <SwiperSlide key={img + i}>
@@ -42,7 +66,6 @@ export default function ImovelCarousel({
                   src={img}
                   alt={`Imóvel ${tipo || ""} em ${cidade || ""} - Foto ${i + 1}`}
                   fill
-                  quality={100}
                   className="object-cover rounded-2xl transition-all duration-500"
                   unoptimized
                   priority={i === 0}
@@ -57,4 +80,8 @@ export default function ImovelCarousel({
       )}
     </div>
   );
-}
+});
+
+ImovelCarousel.displayName = 'ImovelCarousel';
+
+export default ImovelCarousel;

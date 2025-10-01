@@ -20,6 +20,7 @@ export interface Imovel {
   latitude?: number;
   longitude?: number;
   codigoimovel?: string;
+  user_id?: string; // Referência ao usuário que cadastrou o imóvel
 
   // Campos para integração de APIs
   fonte_api?: string;           // 'internal' | 'parceiro' | nome da API

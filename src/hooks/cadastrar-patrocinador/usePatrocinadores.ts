@@ -1,46 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
-import { createBrowserClient } from "@supabase/ssr";
-import { SupabaseClient } from '@supabase/supabase-js';
 import { Patrocinador } from '@/types/cadastrar-patrocinador';
-
-// CONFIGURAÇÃO
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
-
-let supabase: SupabaseClient | null = null;
-if (isSupabaseConfigured) {
-  try {
-    supabase = createBrowserClient(supabaseUrl!, supabaseKey!);
-  } catch {
-    // Nenhuma ação necessária
-  }
-}
+import { supabase } from '@/lib/supabase';
 
 // TIPOS ATUALIZADOS
-
-// Tipo para dados brutos do Supabase
 interface PatrocinadorDB {
   id: string;
   nome: string;
   slug: string;
   telefone?: string;
   creci?: string;
-  ownerId: string;
-  criadoEm: string;
-  atualizadoEm: string;
+  ownerid: string;
+  criadoem: string;
+  atualizadoem: string;
+  user_id?: string | null;
 }
 
-// Tipo para dados desconhecidos vindos do Supabase
 interface SupabaseRowUnknown {
   id?: unknown;
   nome?: unknown;
   slug?: unknown;
   telefone?: unknown;
   creci?: unknown;
-  ownerId?: unknown;
-  criadoEm?: unknown;
-  atualizadoEm?: unknown;
+  ownerid?: unknown;
+  criadoem?: unknown;
+  atualizadoem?: unknown;
+  user_id?: unknown;
 }
 
 interface PatrocinadorValidation {
@@ -73,23 +57,18 @@ export const usePatrocinadores = () => {
 
   const validarTelefone = useCallback((telefone: string): boolean => {
     if (!telefone?.trim()) return true;
-    
     const numeros = telefone.replace(/\D/g, '');
-    
     return numeros.length >= 10 && numeros.length <= 11;
   }, []);
 
   const formatarTelefone = useCallback((telefone: string): string => {
     if (!telefone?.trim()) return '';
-    
     const numeros = telefone.replace(/\D/g, '');
-    
     if (numeros.length === 10) {
       return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
     } else if (numeros.length === 11) {
       return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
     }
-    
     return telefone;
   }, []);
 
@@ -99,18 +78,20 @@ export const usePatrocinadores = () => {
     slug: item.slug,
     telefone: item.telefone || undefined,
     creci: item.creci || undefined,
-    ownerId: item.ownerId,
-    criadoEm: item.criadoEm,
-    atualizadoEm: item.atualizadoEm
+    ownerId: item.ownerid,
+    criadoEm: item.criadoem,
+    atualizadoEm: item.atualizadoem,
+    user_id: item.user_id || null,
+    user_profile: null // Será preenchido posteriormente
   });
 
   const isValidPatrocinadorDB = (item: SupabaseRowUnknown): item is PatrocinadorDB => {
     return typeof item?.id === 'string' && 
            typeof item?.nome === 'string' && 
            typeof item?.slug === 'string' &&
-           typeof item?.ownerId === 'string' &&
-           typeof item?.criadoEm === 'string' &&
-           typeof item?.atualizadoEm === 'string' &&
+           typeof item?.ownerid === 'string' &&
+           typeof item?.criadoem === 'string' &&
+           typeof item?.atualizadoem === 'string' &&
            item.id.length > 0 &&
            item.nome.length > 0 &&
            item.slug.length > 0;
@@ -121,17 +102,11 @@ export const usePatrocinadores = () => {
     setLoading(true);
     setError(null);
 
-    if (!supabase) {
-      setError('Supabase não configurado');
-      setLoading(false);
-      return;
-    }
-
     try {
       const { data, error: supabaseError } = await supabase
         .from('patrocinadores')
-        .select('id, nome, slug, telefone, creci, ownerId, criadoEm, atualizadoEm')
-        .order('criadoEm', { ascending: false });
+        .select('id, nome, slug, telefone, creci, ownerid, criadoem, atualizadoem, user_id')
+        .order('criadoem', { ascending: false });
 
       if (supabaseError) {
         setError(`Erro: ${supabaseError.message}`);
@@ -140,9 +115,29 @@ export const usePatrocinadores = () => {
         return;
       }
 
-      const validPatrocinadores = (data || [])
-        .filter(isValidPatrocinadorDB)
-        .map(mapPatrocinadorFromDB);
+      // Buscar dados dos usuários vinculados em uma query separada
+      const patrocsWithUsers: Patrocinador[] = [];
+      
+      for (const patroc of data || []) {
+        if (isValidPatrocinadorDB(patroc)) {
+          const mapped = mapPatrocinadorFromDB(patroc);
+          
+          // Se tem user_id, buscar dados do usuário
+          if (patroc.user_id) {
+            const { data: userData } = await supabase
+              .from('profiles')
+              .select('id, nome, sobrenome, categoria, email')
+              .eq('id', patroc.user_id)
+              .single();
+            
+            mapped.user_profile = userData || null;
+          }
+          
+          patrocsWithUsers.push(mapped);
+        }
+      }
+
+      const validPatrocinadores = patrocsWithUsers;
 
       setPatrocinadores(validPatrocinadores);
     } catch {
@@ -156,7 +151,6 @@ export const usePatrocinadores = () => {
   // VALIDAÇÕES ATUALIZADAS
   const validatePatrocinador = useCallback((nome: string, telefone?: string, editingId?: string): PatrocinadorValidation => {
     const nomeTrim = nome?.trim();
-    
     if (!nomeTrim) return { valid: false, error: 'Nome é obrigatório' };
     if (nomeTrim.length < 2) return { valid: false, error: 'Mínimo 2 caracteres' };
     if (nomeTrim.length > 100) return { valid: false, error: 'Máximo 100 caracteres' };
@@ -167,7 +161,6 @@ export const usePatrocinadores = () => {
 
     const slug = gerarSlug(nomeTrim);
     const slugExists = patrocinadores.some(p => p.slug === slug && p.id !== editingId);
-    
     if (slugExists) return { valid: false, error: 'Nome já existe' };
     return { valid: true };
   }, [patrocinadores, gerarSlug, validarTelefone]);
@@ -180,13 +173,11 @@ export const usePatrocinadores = () => {
       const validation = validatePatrocinador(nome, telefone);
       if (!validation.valid) throw new Error(validation.error);
 
-      if (!supabase) throw new Error('Supabase não configurado');
-
       const dados = {
         nome: nome.trim(),
         slug: gerarSlug(nome.trim()),
         telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null,
-        creci: creci?.trim() || null, // <-- Agora funciona!
+        creci: creci?.trim() || null,
         ownerId: userId
       };
 
@@ -212,13 +203,11 @@ export const usePatrocinadores = () => {
       const validation = validatePatrocinador(nome, telefone, id);
       if (!validation.valid) throw new Error(validation.error);
 
-      if (!supabase) throw new Error('Supabase não configurado');
-
       const dados = {
         nome: nome.trim(),
         slug: gerarSlug(nome.trim()),
         telefone: telefone?.trim() ? formatarTelefone(telefone.trim()) : null,
-        creci: creci?.trim() || null // <-- Adicione aqui
+        creci: creci?.trim() || null
       };
 
       const { error: supabaseError } = await supabase
@@ -255,7 +244,6 @@ export const usePatrocinadores = () => {
 
   const searchPatrocinadores = useCallback((term: string): Patrocinador[] => {
     if (!term?.trim()) return patrocinadores;
-    
     const search = term.toLowerCase().trim();
     return patrocinadores.filter(p => 
       p.nome?.toLowerCase().includes(search) ||
@@ -287,33 +275,22 @@ export const usePatrocinadores = () => {
   }, [loadPatrocinadores]);
 
   return {
-    // Estados
     patrocinadores,
     loading,
     error,
-    
-    // CRUD
     loadPatrocinadores,
     createPatrocinador,
     updatePatrocinador,
     deletePatrocinador,
-    
-    // Consultas
     getPatrocinadorById,
     searchPatrocinadores,
     getStats,
-    
-    // Validações
     validatePatrocinador,
     gerarSlug,
     validarTelefone,
     formatarTelefone,
-    
-    // Controles
     clearError,
-    
-    // Info
-    isConfigured: isSupabaseConfigured,
+    isConfigured: true,
     stats: getStats()
   } as const;
 };

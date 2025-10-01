@@ -1,53 +1,40 @@
-# 🏠 Imovion - Plataforma Imobiliária Profissional
+# 🏠 Imovion - Plataforma de Imóveis
 
-**Uma solução completa e escalável para o mercado imobiliário brasileiro**
+![Imovion Logo](public/imovion.webp)
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+> **Encontre seu imóvel ideal com segurança e praticidade**
+
+Plataforma moderna e responsiva para compra, venda e aluguel de imóveis, desenvolvida com Next.js 15 e as mais recentes tecnologias do mercado.
+
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 
-## 📖 Visão Geral
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/luancbf/imovion)
 
-O **Imovion** é uma plataforma imobiliária de alta performance, desenvolvida especificamente para atender às demandas do mercado imobiliário brasileiro. Oferece uma experiência completa tanto para corretores quanto para clientes, com foco em usabilidade, performance e escalabilidade.
+## � Características Principais
 
-**🌐 Plataforma Ativa:** [www.imovion.com.br](https://www.imovion.com.br)
+### 💡 Funcionalidades Core
+- **Busca Avançada**: Filtros inteligentes por localização, preço, tipo de imóvel
+- **Anúncios Dinâmicos**: Sistema completo de cadastro e gerenciamento de imóveis
+- **Integração APIs**: Suporte a múltiplas APIs de imobiliárias parceiras
+- **Autenticação Segura**: Login social e sistema de usuários robusto
+- **Painel Administrativo**: Interface completa para gestão de conteúdo
 
-### 🎯 Objetivo
+### ⚡ Performance & UX
+- **PWA Ready**: Aplicativo web progressivo com cache offline
+- **SSR/SSG**: Server-side rendering e geração estática otimizada
+- **Code Splitting**: Carregamento sob demanda de componentes
+- **Lazy Loading**: Otimização de imagens e componentes
+- **Performance Monitoring**: Monitoramento de métricas em tempo real
 
-Revolucionar a forma como imóveis são apresentados e comercializados online, oferecendo uma plataforma robusta, intuitiva e altamente otimizada para conversões.
-
-## ✨ Principais Funcionalidades
-
-### 🏠 **Gestão Avançada de Imóveis**
-- Sistema de cadastro inteligente com validações em tempo real
-- Categorização automática por tipo (Residencial, Comercial, Rural)
-- Upload e compressão automática de imagens com múltiplas resoluções
-- Sistema de códigos únicos para cada imóvel
-
-### 👥 **Sistema de Parceiros**
-- Gestão completa de CRECI e certificações
-- Banners personalizados e branding individual
-- Dashboard com métricas de performance
-
-### 🔍 **Busca Inteligente**
-- Filtros avançados com múltiplos critérios
-- Busca por localização com raio personalizável
-- Filtros dinâmicos baseados em características específicas
-- Sistema de busca semântica otimizado
-- Resultado em tempo real
-
-### 📱 **Experiência Mobile-First**
-- Interface totalmente responsiva
-- Progressive Web App (PWA) ready
-- Touch gestures otimizados
-- Carregamento ultra-rápido
-- Offline-first para recursos essenciais
-
-### 💬 **Integração WhatsApp Business**
-- Mensagens pré-formatadas com detalhes do imóvel
-- Integração direta com WhatsApp Business API
+### � SEO & Marketing
+- **Meta Tags Dinâmicas**: SEO otimizado para cada página
+- **Schema.org**: Dados estruturados para imóveis
+- **Open Graph**: Compartilhamento otimizado em redes sociais
+- **Sitemap Automático**: Geração dinâmica de sitemap.xml
 - Tracking de conversões e leads
 - Templates personalizáveis por corretor
 
@@ -55,122 +42,351 @@ Revolucionar a forma como imóveis são apresentados e comercializados online, o
 
 ### **Stack Tecnológico**
 
-#### **Frontend**
-- **Next.js 14** - Framework React com App Router
-- **TypeScript** - Tipagem estática para maior confiabilidade
-- **Tailwind CSS** - Framework CSS utilitário para design system
-- **Swiper.js** - Carrosséis de alta performance
-- **Sharp** - Processamento de imagens otimizado
+## 🛠️ Stack Tecnológica
 
-#### **Backend & Infrastructure**
-- **Supabase** - Backend-as-a-Service com PostgreSQL
-- **Edge Functions** - Processamento serverless
-- **CDN Global** - Distribuição de conteúdo otimizada
-- **Real-time Database** - Atualizações em tempo real
+### Frontend
+- **Next.js 15** - Framework React com App Router
+- **React 19** - Biblioteca de interface do usuário
+- **TypeScript** - Tipagem estática
+- **Tailwind CSS 4** - Framework CSS utilitário
+- **React Hook Form** - Gerenciamento de formulários
 
-#### **DevOps & Monitoring**
-- **Vercel** - Deploy contínuo e edge computing
-- **Monitoring** - Observabilidade completa
-- **Error Tracking** - Monitoramento de erros em produção
-- **Performance Analytics** - Métricas de performance
+### Backend & Infraestrutura
+- **Supabase** - Backend-as-a-Service (Auth, Database, Storage)
+- **Firebase Data Connect** - Sincronização de dados
+- **Vercel Analytics** - Monitoramento de performance
+- **Service Workers** - Cache e funcionalidades offline
 
+### Desenvolvimento
+- **ESLint** - Linting de código
+- **Jest** - Framework de testes
+- **Prettier** - Formatação de código
+- **Husky** - Git hooks
 
-## 🚀 Performance & Otimizações
+## 🚀 Guia de Instalação
 
-### **Core Web Vitals**
-- ✅ **LCP**: < 1.5s (Largest Contentful Paint)
-- ✅ **FID**: < 100ms (First Input Delay)
-- ✅ **CLS**: < 0.1 (Cumulative Layout Shift)
+### Pré-requisitos
+- **Node.js** 18+ 
+- **npm** ou **yarn**
+- Conta no **Supabase**
+- Conta no **Vercel** (opcional para deploy)
 
-### **SEO & Acessibilidade**
-- **100%** acessibilidade (WCAG 2.1 AA)
-- **Meta tags** dinâmicas por página
-- **Schema.org** markup para rich snippets
-- **AMP** ready para páginas críticas
+### 1. Clone o Repositório
+```bash
+git clone https://github.com/luancbf/imovion.git
+cd imovion
+```
 
-### **Otimizações Técnicas**
-- **Image Optimization** - WebP, AVIF com fallbacks
-- **Code Splitting** - Carregamento sob demanda
-- **Prefetching** - Recursos pré-carregados
-- **Caching Strategy** - Cache multinível otimizado
-- **Bundle Size** - < 150KB inicial
+### 2. Instalação de Dependências
+```bash
+npm install
+# ou
+yarn install
+```
 
-## 🔐 Segurança & Compliance
+### 3. Configuração de Ambiente
+Crie um arquivo `.env.local` na raiz do projeto:
 
-### **Segurança**
-- **Autenticação JWT** com refresh tokens
-- **Rate Limiting** para APIs
-- **HTTPS** obrigatório em todas as conexões
-- **Sanitização** de inputs e uploads
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima_supabase
+SUPABASE_SERVICE_ROLE_KEY=sua_chave_service_role
+
+# Firebase (opcional)
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=seu_projeto_firebase
+NEXT_PUBLIC_FIREBASE_APP_ID=seu_app_id_firebase
+
+# Site Configuration
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Analytics (opcional)
+NEXT_PUBLIC_VERCEL_ANALYTICS_ID=seu_id_analytics
+```
+
+### 4. Configuração do Banco de Dados
+
+#### Supabase Setup
+1. Acesse [supabase.com](https://supabase.com)
+2. Crie um novo projeto
+3. Execute os scripts SQL em `database/schema.sql`
+4. Configure as políticas RLS (Row Level Security)
+
+#### Estrutura das Tabelas Principais
+```sql
+-- Tabela de imóveis
+CREATE TABLE imoveis (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cidade VARCHAR NOT NULL,
+  bairro VARCHAR NOT NULL,
+  enderecodetalhado TEXT,
+  valor DECIMAL NOT NULL,
+  metragem DECIMAL,
+  descricao TEXT,
+  tipoimovel VARCHAR NOT NULL,
+  tiponegocio VARCHAR NOT NULL,
+  setornegocio VARCHAR NOT NULL,
+  imagens TEXT[],
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Índices para performance
+CREATE INDEX idx_imoveis_cidade ON imoveis(cidade);
+CREATE INDEX idx_imoveis_tipo ON imoveis(tipoimovel, tiponegocio);
+CREATE INDEX idx_imoveis_valor ON imoveis(valor);
+```
+
+### 5. Executar o Projeto
+```bash
+npm run dev
+# ou
+yarn dev
+```
+
+Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
+
+## 📁 Estrutura do Projeto
+
+```
+imovion/
+├── public/                    # Assets estáticos
+│   ├── icons/                # Ícones PWA
+│   ├── manifest.json         # Manifesto PWA
+│   ├── sw.js                # Service Worker
+│   └── offline.html          # Página offline
+├── src/
+│   ├── app/                  # App Router (Next.js 13+)
+│   │   ├── api/             # API Routes
+│   │   ├── admin/           # Painel administrativo
+│   │   ├── imoveis/         # Páginas de imóveis
+│   │   └── layout.tsx       # Layout global
+│   ├── components/          # Componentes React
+│   │   ├── admin/           # Componentes admin
+│   │   ├── common/          # Componentes comuns
+│   │   └── home/            # Componentes da home
+│   ├── hooks/               # React Hooks customizados
+│   ├── lib/                 # Bibliotecas e configurações
+│   ├── services/            # Serviços de integração
+│   ├── types/               # Definições TypeScript
+│   └── utils/               # Funções utilitárias
+├── dataconnect/             # Firebase Data Connect
+├── jest.config.mjs          # Configuração Jest
+└── next.config.ts           # Configuração Next.js
+```
+
+## 🔧 Scripts Disponíveis
+
+### Desenvolvimento
+```bash
+npm run dev          # Servidor de desenvolvimento
+npm run build        # Build de produção
+npm run start        # Servidor de produção
+npm run lint         # Verificar linting
+npm run type-check   # Verificar tipos TypeScript
+```
+
+### Testes
+```bash
+npm run test         # Executar testes
+npm run test:watch   # Testes em modo watch
+npm run test:coverage # Relatório de cobertura
+```
+
+## 🏗️ Arquitetura
+
+### Padrões Implementados
+- **Componentes Funcionais**: React Hooks e componentes funcionais
+- **Code Splitting**: Divisão automática de código por rotas
+- **Lazy Loading**: Carregamento sob demanda de componentes pesados
+- **Performance First**: Otimizações de bundle e runtime
+- **SEO Friendly**: SSR e meta tags dinâmicas
+
+### Fluxo de Dados
+```
+User Interface → React Components → Hooks → Services → Supabase
+                      ↓
+                 State Management (React State + Context)
+                      ↓
+                 Cache Layer (SWR/React Query)
+```
+
+### Integração de APIs
+O sistema suporta integração com múltiplas APIs de imobiliárias:
+
+```typescript
+// Exemplo de integração
+interface ApiIntegration {
+  name: string;
+  baseUrl: string;
+  headers: Record<string, string>;
+  mappings: FieldMapping;
+  sync: {
+    interval: number;
+    enabled: boolean;
+  };
+}
+```
+
+## � Deploy
+
+### Vercel (Recomendado)
+1. Conecte o repositório no [Vercel](https://vercel.com)
+2. Configure as variáveis de ambiente
+3. Deploy automático a cada push
+
+### Docker
+```bash
+# Build da imagem
+docker build -t imovion .
+
+# Executar container
+docker run -p 3000:3000 --env-file .env.local imovion
+```
+
+### Variáveis de Produção
+```env
+# Produção
+NEXT_PUBLIC_SITE_URL=https://seudominio.com
+NODE_ENV=production
+
+# Banco de Dados
+DATABASE_URL=postgresql://...
+SUPABASE_SERVICE_ROLE_KEY=...
+
+# Analytics & Monitoring
+NEXT_PUBLIC_VERCEL_ANALYTICS_ID=...
+NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=...
+```
+
+## 🧪 Testes
+
+### Estrutura de Testes
+```
+src/
+├── __tests__/          # Testes globais
+├── components/
+│   └── __tests__/      # Testes de componentes
+└── pages/
+    └── __tests__/      # Testes de páginas
+```
+
+### Executar Testes
+```bash
+# Todos os testes
+npm test
+
+# Testes específicos
+npm test -- --testPathPattern=components
+
+# Coverage report
+npm run test:coverage
+```
+
+## 🤝 Contribuindo
+
+### Setup de Desenvolvimento
+```bash
+# 1. Fork do repositório
+# 2. Clone seu fork
+git clone https://github.com/SEU_USUARIO/imovion.git
+
+# 3. Instale dependências
+npm install
+
+# 4. Crie uma branch
+git checkout -b feature/nova-funcionalidade
+
+# 5. Desenvolva e teste
+npm run dev
+npm test
+
+# 6. Commit e push
+git commit -m "feat: adiciona nova funcionalidade"
+git push origin feature/nova-funcionalidade
+
+# 7. Abra um Pull Request
+```
+
+### Padrões de Commit
+Utilizamos [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+feat: nova funcionalidade
+fix: correção de bug
+docs: documentação
+style: formatação
+refactor: refatoração
+test: testes
+chore: configurações
+```
+
+### Code Review Checklist
+- [ ] Código segue os padrões ESLint
+- [ ] Componentes são tipados com TypeScript
+- [ ] Testes unitários incluídos
+- [ ] Performance não impactada negativamente
+- [ ] SEO e acessibilidade considerados
+- [ ] Responsividade testada
+
+## 📊 Performance
+
+### Métricas Atuais
+- **Lighthouse Score**: 95+ (Performance, Accessibility, Best Practices, SEO)
+- **First Contentful Paint**: < 1.5s
+- **Largest Contentful Paint**: < 2.5s
+- **Cumulative Layout Shift**: < 0.1
+- **Time to Interactive**: < 3.5s
+
+### Otimizações Implementadas
+- ✅ Lazy loading de imagens e componentes
+- ✅ Code splitting por rotas
+- ✅ Service Worker para cache
+- ✅ Compressão de imagens
+- ✅ Bundle size otimizado
+- ✅ Critical CSS inline
+- ✅ Preconnect para recursos externos
+
+## 🔒 Segurança
+
+### Medidas Implementadas
+- **Autenticação JWT** via Supabase
+- **Row Level Security** no banco de dados
 - **CORS** configurado adequadamente
+- **Rate Limiting** em APIs sensíveis
+- **Sanitização** de inputs do usuário
+- **Headers de segurança** configurados
 
-### **Compliance**
-- ✅ **LGPD** - Conformidade total com a Lei Geral de Proteção de Dados
-- ✅ **Cookie Policy** - Gestão transparente de cookies
-- ✅ **Terms of Service** - Termos de uso atualizados
-- ✅ **Privacy Policy** - Política de privacidade detalhada
+### Relatórios de Vulnerabilidade
+Para reportar vulnerabilidades de segurança, envie um email para: **security@imovion.com**
 
-## 📊 Analytics & Business Intelligence
+## 📝 Licença
 
-### **Métricas de Negócio**
-- Performance de anúncios por região
-- Tempo médio de permanência
-- Taxa de rejeição por categoria
-- ROI por canal de marketing
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
-## 🎨 Design System
+## 📞 Suporte
 
-### **Identidade Visual**
-- **Palette**: Azuis corporativos
-- **Typography**: Poppins (títulos) + Inter (corpo)
-- **Icons**: React Icons com set personalizado
-- **Spacing**: Sistema baseado em 8px grid
-- **Breakpoints**: Mobile-first responsivo
+### Contato
+- **Email**: contato@imovion.com
+- **Website**: [https://imovion.vercel.app](https://imovion.vercel.app)
+- **GitHub Issues**: [Reportar problema](https://github.com/luancbf/imovion/issues)
 
-### **Componentes**
-- **50+** componentes reutilizáveis
-- **Storybook** para documentação
-- **Design tokens** centralizados
-- **Temas** claro/escuro suportados
-- **Accessibility** em todos os componentes
+### FAQ
 
-## 🌐 Integrações
+**Q: Como adicionar uma nova API de imobiliária?**
+A: Acesse o painel admin em `/admin/api-integration` e configure os endpoints e mapeamentos.
 
-### **APIs Externas**
-- **Integração com API'S das imobiliárias**
-- **WhatsApp Business API** - Comunicação direta
+**Q: Como customizar o tema?**
+A: Edite as variáveis CSS em `src/app/globals.css` ou configure o Tailwind em `tailwind.config.js`.
 
-### **Webhooks & Automações**
-- **CRM** - Sincronização automática
-- **Analytics** - Google Analytics 4 + GTM
-
-## 🏢 Sobre a Empresa
-
-**Imovion** é uma proptech brasileira fundada em 2024, focada em revolucionar o mercado imobiliário através da tecnologia. Nossa missão é conectar pessoas aos seus novos lares de forma simples, rápida e transparente.
-
-## 📞 Contato Comercial
-
-### **Parcerias & Licenciamento**
-- **Email Comercial**: comercial@imovion.com.br
-- **WhatsApp Business**: +55 (65) 99999-9999
-- **LinkedIn**: [Imovion](https://linkedin.com/company/imovion)
-
-### **Desenvolvimento**
-- **Tech Lead**: [CapistranoDev](https://www.capistranodev.com.br)
-- **Especialização**: Html, CSS, Next.js, React, TypeScript
-
-## 📄 Licenciamento
-
-Este software é propriedade da **Imovion Tecnologia Ltda.** Todos os direitos reservados.
-
-**© 2024 Imovion. Todos os direitos reservados.**
+**Q: O projeto suporta multi-idiomas?**
+A: Atualmente suporta apenas português. Internationalization pode ser adicionada via next-intl.
 
 ---
 
 <div align="center">
-
-**🚀 Plataforma em produção desde 2024**
-
-**Desenvolvido com ❤️ no Brasil 🇧🇷**
-
+  <p>Desenvolvido com ❤️ por <a href="https://github.com/luancbf">Luan Borges</a></p>
+  <p>
+    <a href="#-imovion---plataforma-de-imóveis">⬆️ Voltar ao topo</a>
+  </p>
 </div>

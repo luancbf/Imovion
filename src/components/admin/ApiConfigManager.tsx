@@ -4,12 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit, FiTrash2, FiPlay } from 'react-icons/fi';
 import { ExternalAPIConfig } from '@/types/apiIntegration';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from '@/lib/supabase'
 
 export default function APIConfigManager() {
   const [configs, setConfigs] = useState<ExternalAPIConfig[]>([]);

@@ -3,14 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { ExternalAPIConfig } from '@/types/apiIntegration';
 
-// ✅ CORRIGIDO: Interface tipada corretamente
 interface APIConfigFormProps {
-  config?: ExternalAPIConfig | null; // ✅ Tipo específico em vez de any
+  config?: ExternalAPIConfig | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-// ✅ ADICIONADO: Interface para os dados do formulário
 interface FormData {
   name: string;
   baseUrl: string;
@@ -41,7 +39,6 @@ export default function APIConfigForm({ config, onSuccess, onCancel }: APIConfig
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
 
-  // ✅ ADICIONADO: Carregar dados do config quando disponível
   useEffect(() => {
     if (config) {
       setFormData({
@@ -72,7 +69,6 @@ export default function APIConfigForm({ config, onSuccess, onCancel }: APIConfig
 
       const payload = {
         ...formData,
-        // ✅ ADICIONADO: Campos básicos de mapeamento para funcionar
         mapping: config?.mapping || {
           id: 'id',
           cidade: 'city',
@@ -113,7 +109,6 @@ export default function APIConfigForm({ config, onSuccess, onCancel }: APIConfig
     }
   };
 
-  // ✅ ADICIONADO: Função para testar conectividade básica
   const handleTestAPI = async () => {
     if (!formData.baseUrl) {
       alert('Por favor, preencha a URL da API primeiro');
@@ -131,12 +126,12 @@ export default function APIConfigForm({ config, onSuccess, onCancel }: APIConfig
       const result = await response.json();
       
       if (result.success) {
-        alert('✅ Teste bem-sucedido! API está respondendo.');
+        alert('Teste bem-sucedido! API está respondendo.');
       } else {
-        alert(`❌ Erro no teste: ${result.error}`);
+        alert(`Erro no teste: ${result.error}`);
       }
     } catch (error) {
-      alert('❌ Erro ao testar API: Verifique a URL e conectividade');
+      alert('Erro ao testar API: Verifique a URL e conectividade');
       console.error('Erro no teste:', error);
     } finally {
       setTesting(false);

@@ -1,10 +1,8 @@
-// src/services/apiIntegration.ts
 import { DataMapper } from './dataMapper';
 import { ExternalAPIConfig, ExternalImovelData, FieldMapping, SyncResult } from '@/types/apiIntegration';
 import { Imovel } from '@/types/Imovel';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
-// ✅ Interfaces otimizadas
 interface ImovelExtended extends Partial<Imovel> {
   fonte_api?: string;
   data_sincronizacao?: string;
@@ -29,7 +27,6 @@ interface DatabaseAPIConfig {
   webhook_secret: string | null;
 }
 
-// ✅ Função utilitária para conversão de mapping
 function convertToFieldMapping(data: Record<string, unknown>): FieldMapping {
   const defaults: FieldMapping = {
     id: 'id',
@@ -63,19 +60,10 @@ function convertToFieldMapping(data: Record<string, unknown>): FieldMapping {
 }
 
 export class APIIntegrationService {
-  private readonly supabase;
   private readonly BATCH_SIZE = 25;
   private readonly MAX_RETRIES = 3;
   private readonly REQUEST_TIMEOUT = 30000;
 
-  constructor() {
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-  }
-
-  // ✅ Requisição com retry otimizada
   private async makeRequest(url: string, headers: Record<string, string>): Promise<Response> {
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
@@ -92,7 +80,6 @@ export class APIIntegrationService {
 
         if (response.ok) return response;
 
-        // Rate limit handling
         if (response.status === 429 && attempt < this.MAX_RETRIES) {
           await this.delay(2000 * attempt);
           continue;
@@ -108,7 +95,6 @@ export class APIIntegrationService {
     throw new Error('Max retries exceeded');
   }
 
-  // ✅ Normalização de resposta da API
   private normalizeAPIResponse(data: unknown): ExternalImovelData[] {
     if (Array.isArray(data)) return data;
     
@@ -126,7 +112,6 @@ export class APIIntegrationService {
     throw new Error('Invalid API response format');
   }
 
-  // ✅ Configuração de headers de autenticação
   private getAuthHeaders(config: ExternalAPIConfig): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -149,15 +134,11 @@ export class APIIntegrationService {
     return headers;
   }
 
-  // ✅ Delay helper
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // ✅ Busca dados de API externa
   async fetchFromExternalAPI(config: ExternalAPIConfig, limit = 100): Promise<ExternalImovelData[]> {
-    console.log(`🔄 Fetching from ${config.name}`);
-    
     const headers = this.getAuthHeaders(config);
     const url = new URL(config.baseUrl);
     
@@ -173,11 +154,9 @@ export class APIIntegrationService {
     const data = await response.json();
     const items = this.normalizeAPIResponse(data);
 
-    console.log(`✅ ${items.length} items fetched from ${config.name}`);
     return items;
   }
 
-  // ✅ Sincronização de uma API
   async syncAPI(config: DatabaseAPIConfig): Promise<SyncResult> {
     const startTime = Date.now();
     
@@ -231,11 +210,8 @@ export class APIIntegrationService {
     }
   }
 
-  // ✅ Sincronização de todas as APIs
   async syncAllAPIs(): Promise<SyncResult[]> {
-    console.log('🔄 Starting full sync...');
-    
-    const { data: configs, error } = await this.supabase
+    const { data: configs, error } = await supabase
       .from('api_configs')
       .select('*')
       .eq('is_active', true);
@@ -250,7 +226,6 @@ export class APIIntegrationService {
         const result = await this.syncAPI(config);
         results.push(result);
         
-        // Rate limiting
         const delay = Math.max(1000, 60000 / config.rate_limit);
         await this.delay(delay);
         
@@ -266,12 +241,9 @@ export class APIIntegrationService {
         results.push(errorResult);
       }
     }
-
-    console.log(`✅ Sync complete: ${results.length} APIs processed`);
     return results;
   }
 
-  // ✅ Processamento de dados
   async processData(config: ExternalAPIConfig, payload: unknown): Promise<{
     processed: number;
     errors: number;
@@ -316,7 +288,6 @@ export class APIIntegrationService {
     };
   }
 
-  // ✅ Compatibilidade com webhook (alias para processData)
   async processWebhookData(config: ExternalAPIConfig, payload: unknown): Promise<{
     processed: number;
     errors: number;
@@ -325,16 +296,13 @@ export class APIIntegrationService {
     return this.processData(config, payload);
   }
 
-  // ✅ Upsert otimizado em lotes
   private async upsertImoveis(imoveis: ImovelExtended[]): Promise<void> {
     if (imoveis.length === 0) return;
-    
-    console.log(`💾 Upserting ${imoveis.length} properties...`);
 
     for (let i = 0; i < imoveis.length; i += this.BATCH_SIZE) {
       const batch = imoveis.slice(i, i + this.BATCH_SIZE);
       
-      const { error } = await this.supabase
+      const { error } = await supabase
         .from('imoveis')
         .upsert(batch, {
           onConflict: 'external_id,fonte_api',
@@ -343,20 +311,13 @@ export class APIIntegrationService {
 
       if (error) throw new Error(`Batch upsert failed: ${error.message}`);
       
-      // Progress logging
-      const batchNum = Math.floor(i / this.BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(imoveis.length / this.BATCH_SIZE);
-      console.log(`✅ Batch ${batchNum}/${totalBatches} completed`);
-      
       if (i + this.BATCH_SIZE < imoveis.length) {
         await this.delay(200);
       }
     }
 
-    console.log(`✅ ${imoveis.length} properties upserted successfully`);
   }
 
-  // ✅ Helper para criar SyncResult
   private createSyncResult(
     apiConfigId: string,
     status: 'success' | 'error' | 'partial',
@@ -377,10 +338,9 @@ export class APIIntegrationService {
     };
   }
 
-  // ✅ Salvar log de sincronização
   private async saveSyncLog(result: SyncResult): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const { error } = await supabase
         .from('sync_logs')
         .insert([{
           api_config_id: result.apiConfigId,
@@ -395,14 +355,11 @@ export class APIIntegrationService {
         }]);
 
       if (error) {
-        console.error('⚠️ Failed to save sync log:', error);
       }
-    } catch (error) {
-      console.error('⚠️ Error saving sync log:', error);
+    } catch {
     }
   }
 
-  // ✅ Teste de conectividade
   async testConnection(config: ExternalAPIConfig): Promise<{
     success: boolean;
     message: string;
@@ -425,7 +382,6 @@ export class APIIntegrationService {
     }
   }
 
-  // ✅ Limpeza de dados antigos
   async cleanOldData(apiConfigId: string, daysOld: number): Promise<{
     deleted: number;
     errors: number;
@@ -434,7 +390,7 @@ export class APIIntegrationService {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
-      const { data, error } = await this.supabase
+      const { data, error } = await supabase
         .from('imoveis')
         .update({ 
           deleted_at: new Date().toISOString(),
@@ -452,13 +408,11 @@ export class APIIntegrationService {
         errors: 0
       };
 
-    } catch (error) {
-      console.error('❌ Cleanup failed:', error);
+    } catch {
       return { deleted: 0, errors: 1 };
     }
   }
 
-  // ✅ Estatísticas de sincronização
   async getStats(apiConfigId?: string): Promise<{
     totalSyncs: number;
     successfulSyncs: number;
@@ -467,7 +421,7 @@ export class APIIntegrationService {
     avgDuration?: number;
   }> {
     try {
-      let query = this.supabase
+      let query = supabase
         .from('sync_logs')
         .select('status, duration, timestamp');
 
@@ -498,8 +452,7 @@ export class APIIntegrationService {
         avgDuration
       };
 
-    } catch (error) {
-      console.error('❌ Stats fetch failed:', error);
+    } catch {
       return { totalSyncs: 0, successfulSyncs: 0, errorSyncs: 0 };
     }
   }

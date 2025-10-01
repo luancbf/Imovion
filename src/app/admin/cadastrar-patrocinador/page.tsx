@@ -1,33 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { Patrocinador } from '@/types/cadastrar-patrocinador';
-import AdminHeader from '@/components/cadastrar-patrocinador/AdminHeader';
-import PatrocinadorForm from '@/components/cadastrar-patrocinador/PatrocinadorForm';
-import PatrocinadoresList from '@/components/cadastrar-patrocinador/PatrocinadoresList';
-import SliderConfiguration from '@/components/cadastrar-patrocinador/SliderConfiguration';
-import PatrocinioConfiguration from '@/components/cadastrar-patrocinador/PatrocinioConfiguration';
+import dynamic from 'next/dynamic';
 
-export default function CadastrarPatrocinador() {
+const AdminHeader = dynamic(() => import('@/components/cadastrar-patrocinador/AdminHeader'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-16 rounded-lg mb-4"></div>
+});
 
+const UsuariosPatrocinadores = dynamic(() => import('../../../components/cadastrar-patrocinador/UsuariosPatrocinadores'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-96 rounded-lg"></div>
+});
+
+const SliderConfiguration = dynamic(() => import('@/components/cadastrar-patrocinador/SliderConfiguration'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>
+});
+
+const PatrocinioConfiguration = dynamic(() => import('@/components/cadastrar-patrocinador/PatrocinioConfiguration'), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>
+});
+
+export default function GerenciarPatrocinadores() {
   const [showSliderConfig, setShowSliderConfig] = useState(false);
   const [showPatrocinioConfig, setShowPatrocinioConfig] = useState(false);
-  const [editingPatrocinador, setEditingPatrocinador] = useState<Patrocinador | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  const handleFormSuccess = () => {
-    setEditingPatrocinador(null);
-    setRefreshTrigger(prev => prev + 1);
-  };
-
-  const handleEditPatrocinador = (patrocinador: Patrocinador) => {
-    setEditingPatrocinador(patrocinador);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleCancelEdit = () => {
-    setEditingPatrocinador(null);
-  };
 
   const handleToggleSlider = () => {
     setShowSliderConfig(!showSliderConfig);
@@ -54,12 +48,10 @@ export default function CadastrarPatrocinador() {
 
       <main className="space-y-8 px-0 sm:px-2">
         
-        {/* 1. Formulário de Cadastro/Edição */}
-        <PatrocinadorForm
-          onSuccess={handleFormSuccess}
-          editingPatrocinador={editingPatrocinador}
-          onCancelEdit={handleCancelEdit}
-        />
+        {/* 1. Usuários Elegíveis para Patrocínio (quando não há configurações abertas) */}
+        {!showSliderConfig && !showPatrocinioConfig && (
+          <UsuariosPatrocinadores />
+        )}
 
         {/* 2. Configuração do Slider (Condicional) */}
         <SliderConfiguration
@@ -71,12 +63,6 @@ export default function CadastrarPatrocinador() {
         <PatrocinioConfiguration
           isVisible={showPatrocinioConfig}
           onClose={() => setShowPatrocinioConfig(false)}
-        />
-
-        {/* 4. Lista de Patrocinadores */}
-        <PatrocinadoresList
-          onEdit={handleEditPatrocinador}
-          refreshTrigger={refreshTrigger}
         />
         
         {/* Indicador de Seções Ativas */}

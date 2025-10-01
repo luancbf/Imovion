@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imovion - Offline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .wifi-off {
+            width: 40px;
+            height: 40px;
+            stroke: #6b7280;
+            stroke-width: 2;
+            fill: none;
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+        
+        p {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .primary {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .primary:hover {
+            background: #1d4ed8;
+        }
+        
+        .secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .status {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        
+        .online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg class="wifi-off" viewBox="0 0 24 24">
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+                <path d="m16.72 11.06 2.07 2.07a1.64 1.64 0 0 1 0 2.31l-4.24 4.24a1.64 1.64 0 0 1-2.31 0l-1.04-1.04"></path>
+                <path d="m11.06 16.72-1.38 1.38a1.64 1.64 0 0 1-2.31 0l-4.24-4.24a1.64 1.64 0 0 1 0-2.31l1.38-1.38"></path>
+                <path d="M5.93 8.93 7 10"></path>
+                <path d="m10.07 2.57 1.38 1.38"></path>
+                <path d="m17 7 1.07-1.07"></path>
+            </svg>
+        </div>
+        
+        <h1>Você está offline</h1>
+        <p>Parece que você perdeu a conexão com a internet. Algumas funcionalidades podem não estar disponíveis.</p>
+        
+        <div class="actions">
+            <button class="primary" onclick="tryReconnect()">
+                Tentar novamente
+            </button>
+            <button class="secondary" onclick="goHome()">
+                Ir para página inicial
+            </button>
+        </div>
+        
+        <div id="status" class="status offline">
+            📡 Sem conexão com a internet
+        </div>
+    </div>
+
+    <script>
+        // Check connection status
+        function updateConnectionStatus() {
+            const status = document.getElementById('status');
+            
+            if (navigator.onLine) {
+                status.textContent = '✅ Conectado à internet';
+                status.className = 'status online';
+            } else {
+                status.textContent = '📡 Sem conexão com a internet';
+                status.className = 'status offline';
+            }
+        }
+
+        // Listen for connection changes
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // Initial status check
+        updateConnectionStatus();
+
+        function tryReconnect() {
+            window.location.reload();
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+        
+        // Auto-reload when back online
+        window.addEventListener('online', function() {
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

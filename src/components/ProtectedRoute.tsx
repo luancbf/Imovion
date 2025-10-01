@@ -2,14 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// ✅ CORRIGIDO: Interface para aceitar children
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: string;
@@ -97,7 +91,7 @@ export default function ProtectedRoute({ children, requiredRole = 'admin' }: Pro
           <p className="text-gray-600">Você não tem permissão para acessar esta página.</p>
           <button
             onClick={() => router.push('/')}
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 cursor-pointer"
           >
             Voltar ao Início
           </button>

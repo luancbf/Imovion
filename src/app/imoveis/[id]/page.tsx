@@ -1,23 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, notFound } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
-import Image from "next/image"; // ✅ IMPORTAR Image do Next.js
+import Image from "next/image";
 import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
 import PatrocinadorBadge from "@/components/imovel/PatrocinadorBadge";
-import ImovelCarousel from "@/components/imovel/ImovelCarousel";
+import ImovelCarousel, { type ImovelCarouselRef } from "@/components/imovel/ImovelCarousel";
 import ImovelDetalhes from "@/components/imovel/ImovelDetalhes";
 import ImoveisPatrocinadorList from "@/components/imovel/ImoveisPatrocinadorList";
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import ImovelModal from "@/components/imovel/ImovelModal";
 import type { Imovel } from "@/types/Imovel";
 import { FaWhatsapp } from "react-icons/fa"; 
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+import { supabase } from '@/lib/supabase'
 
 function formatarTexto(texto?: string) {
   return texto ? texto.replace(/_/g, " ") : "";
@@ -50,6 +46,8 @@ export default function ImovelPage() {
   const [patrocinadorCreci, setPatrocinadorCreci] = useState<string | undefined>(undefined);
   const [modalAberto, setModalAberto] = useState(false);
   const [imagemIndex, setImagemIndex] = useState(0);
+  const [imagemPrincipal, setImagemPrincipal] = useState(0);
+  const swiperRef = useRef<ImovelCarouselRef>(null);
 
   const abrirModal = (index: number) => {
     setImagemIndex(index);
@@ -62,7 +60,6 @@ export default function ImovelPage() {
     if (e.target === e.currentTarget) fecharModal();
   };
 
-  // Buscar imóvel
   useEffect(() => {
     async function buscarImovel() {
       setLoading(true);
@@ -159,7 +156,7 @@ export default function ImovelPage() {
           <div className="flex flex-col items-center justify-center py-15">
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
             <span className="font-inter text-blue-700 font-semibold text-lg">
-              🔄 Carregando imóvel...
+              Carregando imóvel...
             </span>
           </div>
         </main>
@@ -258,9 +255,8 @@ export default function ImovelPage() {
     <div className="min-h-screen w-full flex flex-col bg-gradient-to-b from-blue-100 to-white relative">
       <Header />
       <main className="flex-1 flex flex-col items-center lg:py-8 relative z-10">
-        <div className="w-full max-w-4xl mx-auto bg-white lg:rounded-3xl shadow-xl border border-blue-100 p-4 sm:p-8">
+        <div className="w-full max-w-7xl mx-auto bg-white lg:rounded-3xl shadow-xl border border-blue-100 p-4 sm:p-8">
           
-          {/* ✅ SEÇÃO API - CORRIGIDA COM Image */}
           {imovel.fonte_api && imovel.fonte_api !== 'internal' && (
             <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
               <div className="flex items-center justify-between">
@@ -276,7 +272,6 @@ export default function ImovelPage() {
                         sizes="44px"
                         priority={false}
                         onError={(e) => {
-                          // Fallback em caso de erro na imagem
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
                         }}
@@ -314,43 +309,192 @@ export default function ImovelPage() {
             </div>
           )}
 
-          {/* Carousel existente */}
-          <ImovelCarousel
-            imagens={imovel.imagens || ["/imoveis/sem-imagem.jpg"]}
-            cidade={imovel.cidade}
-            tipo={imovel.tipoimovel}
-            altura="h-60 sm:h-110"
-            onImageClick={abrirModal}
-          />
+          {/* Layout responsivo: Grid para desktop, stack para mobile */}
+          <div className="lg:grid lg:grid-cols-2 lg:gap-8">
+            
+            {/* Coluna Esquerda - Imagens (apenas desktop) */}
+            <div className="hidden lg:block">
+              {/* Swiper para Desktop com borda */}
+              <div className="border-2 border-gray-300 hover:border-blue-400 transition-colors duration-200 rounded-2xl overflow-hidden mb-4">
+                <ImovelCarousel
+                  ref={swiperRef}
+                  imagens={imovel.imagens || ["/imoveis/sem-imagem.jpg"]}
+                  cidade={imovel.cidade}
+                  tipo={imovel.tipoimovel}
+                  altura="h-96"
+                  onImageClick={abrirModal}
+                  onSlideChange={(index) => setImagemPrincipal(index)}
+                  initialSlide={imagemPrincipal}
+                />
+              </div>
 
-          {/* Badge do patrocinador existente */}
-          {imovel.patrocinadorid && patrocinadorNome && (
-            <div className="mb-6 flex justify-start">
-              <PatrocinadorBadge 
-                patrocinador={imovel.patrocinadorid} 
-                nome={patrocinadorNome}
-                creci={patrocinadorCreci}
-              />
+              {/* Preview das Outras Imagens */}
+              {imovel.imagens && imovel.imagens.length > 1 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {imovel.imagens.slice(0, 8).map((imagem, index) => (
+                    <div
+                      key={index}
+                      className={`relative h-20 bg-gray-200 rounded-lg overflow-hidden cursor-pointer border-2 transition-all duration-200 ${
+                        index === imagemPrincipal 
+                          ? 'border-blue-500 ring-2 ring-blue-200' 
+                          : 'border-transparent hover:border-blue-300'
+                      }`}
+                      onClick={() => {
+                        setImagemPrincipal(index);
+                        swiperRef.current?.slideTo(index);
+                      }}
+                    >
+                      <Image
+                        src={imagem}
+                        alt={`Imagem ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="120px"
+                      />
+                      {index === imagemPrincipal && (
+                        <div className="absolute inset-0 bg-blue-500/20" />
+                      )}
+                    </div>
+                  ))}
+                  {imovel.imagens.length > 8 && (
+                    <div 
+                      className="relative h-20 bg-gray-800 rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-blue-300 flex items-center justify-center"
+                      onClick={() => abrirModal(0)}
+                    >
+                      <span className="text-white font-bold text-sm">
+                        +{imovel.imagens.length - 8}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
 
-          {/* DETALHES ATUALIZADOS */}
-          <ImovelDetalhes
-            tipoNegocio={imovel.setornegocio || ""}
-            valor={imovel.valor || 0}
-            cidade={formatarTexto(imovel.cidade)}
-            bairro={formatarTexto(imovel.bairro)}
-            tipoImovel={formatarTexto(imovel.tipoimovel)}
-            metragem={imovel.metragem || 0}
-            enderecoDetalhado={formatarTexto(imovel.enderecodetalhado)}
-            descricao={imovel.descricao || ""}
-            codigoImovel={imovel.codigoimovel}
-            codigoParceiro={imovel.codigo_parceiro}
-          />
+            {/* Coluna Direita - Informações (desktop) / Conteúdo completo (mobile) */}
+            <div className="lg:pl-4">
+              
+              {/* Mobile: Carousel */}
+              <div className="block lg:hidden mb-6">
+                <ImovelCarousel
+                  imagens={imovel.imagens || ["/imoveis/sem-imagem.jpg"]}
+                  cidade={imovel.cidade}
+                  tipo={imovel.tipoimovel}
+                  altura="h-60 sm:h-80"
+                  onImageClick={abrirModal}
+                />
+              </div>
 
-          {/* Características do imóvel */}
+              {/* Badge do patrocinador */}
+              {imovel.patrocinadorid && patrocinadorNome && (
+                <div className="mb-6 flex justify-start">
+                  <PatrocinadorBadge 
+                    patrocinador={imovel.patrocinadorid} 
+                    nome={patrocinadorNome}
+                    creci={patrocinadorCreci}
+                  />
+                </div>
+              )}
+
+              {/* Detalhes do Imóvel */}
+              <div className="mb-6">
+                <ImovelDetalhes
+                  tipoNegocio={imovel.setornegocio || ""}
+                  valor={imovel.valor || 0}
+                  cidade={formatarTexto(imovel.cidade)}
+                  bairro={formatarTexto(imovel.bairro)}
+                  tipoImovel={formatarTexto(imovel.tipoimovel)}
+                  metragem={imovel.metragem || 0}
+                  enderecoDetalhado={formatarTexto(imovel.enderecodetalhado)}
+                  descricao={imovel.descricao || ""}
+                  codigoImovel={imovel.codigoimovel}
+                  codigoParceiro={imovel.codigo_parceiro}
+                />
+              </div>
+
+              {/* Características do imóvel - Desktop apenas */}
+              {imovel.tipoimovel?.toLowerCase() !== "terreno" && (
+                <div className="hidden lg:block mb-6">
+                  <h4 className="font-poppins font-semibold text-blue-900 mb-4 text-lg flex items-center gap-2">
+                    🏠 Características do Imóvel
+                  </h4>
+                  {itensDisponiveis.length === 0 ? (
+                    <div className="text-center py-6 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="text-3xl mb-2">📋</div>
+                      <p className="text-gray-600 font-medium text-sm">
+                        Características não definidas para este tipo de imóvel.
+                      </p>
+                    </div>
+                  ) : itensComValor.length === 0 ? (
+                    <div className="text-center py-6 bg-blue-50 rounded-xl border border-blue-200">
+                      <div className="text-3xl mb-2">ℹ️</div>
+                      <p className="text-blue-700 font-medium text-sm">
+                        Nenhuma característica específica foi informada para este imóvel.
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Entre em contato para mais informações sobre as características.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-5 gap-2">
+                      {itensComValor.map((item) => {
+                        const valor = itensImovel[item.chave];
+                        const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
+                        const valorNumerico = typeof valor === 'number' ? valor : Number(valor) || 0;
+                        return (
+                          <div
+                            key={item.chave}
+                            className={`rounded-lg p-2 border transition-all duration-200 text-center flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg
+                              ${isQuant
+                                ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100"
+                                : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:from-green-100 hover:to-emerald-100"
+                              }`}
+                            style={{ minHeight: 60, maxWidth: 100 }}
+                          >
+                            <div className={isQuant ? "text-lg mb-1" : "text-base mb-1"}>{item.icone}</div>
+                            <span
+                              className={`font-medium block leading-tight ${isQuant ? "text-blue-900 text-xs" : "text-green-900 text-xs"} mb-1`}
+                            >
+                              {item.nome}
+                            </span>
+                            <div
+                              className={`${isQuant ? "bg-blue-600 text-white px-1 py-0.5 rounded font-bold text-xs" : "bg-green-600 text-white px-1 py-0.5 rounded font-bold text-xs"}`}
+                            >
+                              {isQuant ? valorNumerico : "✓"}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Botão WhatsApp - Desktop apenas */}
+              <div className="mb-6 hidden lg:block">
+                {whatsappLink ? (
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-poppins inline-flex items-center justify-center gap-3 w-full text-center bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:scale-105 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer"
+                  >
+                    <FaWhatsapp className="text-2xl text-white" />
+                    Falar no WhatsApp
+                  </a>
+                ) : (
+                  <div className="text-center bg-gray-100 rounded-2xl p-6 border border-gray-200">
+                    <p className="text-gray-600 font-medium">
+                      📞 Contato não disponível para este imóvel
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Características do imóvel - Mobile apenas */}
           {imovel.tipoimovel?.toLowerCase() !== "terreno" && (
-            <section className="mt-8">
+            <section className="mt-8 lg:hidden">
               <h4 className="font-poppins font-semibold text-blue-900 mb-6 text-lg sm:text-2xl text-center flex items-center justify-center gap-2">
                 🏠 Características do Imóvel
               </h4>
@@ -372,7 +516,7 @@ export default function ImovelPage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 xl:grid-cols-10 gap-3">
                   {itensComValor.map((item) => {
                     const valor = itensImovel[item.chave];
                     const isQuant = ITENS_QUANTITATIVOS.includes(item.chave);
@@ -380,23 +524,21 @@ export default function ImovelPage() {
                     return (
                       <div
                         key={item.chave}
-                        className={`rounded-lg p-2 border transition-all duration-200 text-center flex flex-col items-center justify-center
+                        className={`rounded-lg p-3 border transition-all duration-200 text-center flex flex-col items-center justify-center hover:scale-105 hover:shadow-lg
                           ${isQuant
-                            ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow"
-                            : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow"
+                            ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100"
+                            : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:from-green-100 hover:to-emerald-100"
                           }`}
-                        style={{ minHeight: 70, maxWidth: 110 }}
+                        style={{ minHeight: 80, maxWidth: 120 }}
                       >
-                        <div className={isQuant ? "text-lg mb-1" : "text-base mb-1"}>{item.icone}</div>
+                        <div className={isQuant ? "text-xl mb-2" : "text-lg mb-2"}>{item.icone}</div>
                         <span
-                          className={`font-medium block leading-tight ${isQuant ? "text-blue-900 text-xs" : "text-green-900 text-xs"} mb-0.5`}
-                          style={{ marginBottom: '2px' }}
+                          className={`font-medium block leading-tight ${isQuant ? "text-blue-900 text-xs" : "text-green-900 text-xs"} mb-1`}
                         >
                           {item.nome}
                         </span>
                         <div
-                          className={`${isQuant ? "bg-blue-600 text-white px-2 py-0.5 rounded font-bold text-base" : "bg-green-600 text-white px-2 py-0.5 rounded font-bold text-sm"}`}
-                          style={{ marginTop: '2px' }}
+                          className={`${isQuant ? "bg-blue-600 text-white px-2 py-1 rounded font-bold text-sm" : "bg-green-600 text-white px-2 py-1 rounded font-bold text-xs"}`}
                         >
                           {isQuant ? valorNumerico : "✓"}
                         </div>
@@ -408,14 +550,14 @@ export default function ImovelPage() {
             </section>
           )}
 
-          {/* Botão WhatsApp */}
-          <div className="flex justify-center mt-8">
+          {/* Botão WhatsApp - Mobile apenas */}
+          <div className="mt-8 lg:hidden">
             {whatsappLink ? (
               <a
                 href={whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-poppins inline-flex items-center justify-center gap-3 w-full sm:w-auto text-center bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-2xl font-bold text-lg sm:text-xl shadow-lg hover:scale-105 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer font-poppins"
+                className="font-poppins inline-flex items-center justify-center gap-3 w-full text-center bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-4 rounded-2xl font-bold text-lg shadow-lg hover:scale-105 hover:from-green-700 hover:to-green-800 transition-all duration-200 cursor-pointer"
               >
                 <FaWhatsapp className="text-2xl text-white" />
                 Falar no WhatsApp

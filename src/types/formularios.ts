@@ -13,9 +13,11 @@ export interface ImovelEdicao extends Partial<Imovel> {
 }
 
 export interface FormularioImovelProps {
-  patrocinadores: { id: string; nome: string; telefone?: string; creci?: string }[];
-  opcoesTipoImovel: Record<string, string[]>;
+  patrocinadores?: { id: string; nome: string; telefone?: string; creci?: string }[];
+  opcoesTipoImovel?: Record<string, string[]>;
   onSuccess?: () => void;
   dadosIniciais?: ImovelEdicao | null;
   onLimpar?: () => void;
+  onImovelCadastrado?: () => void;
+  isUserPanel?: boolean;
 }

@@ -5,7 +5,6 @@ import { FiList, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { FaPlus, FaMinus } from "react-icons/fa";
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 
-// TIPOS
 interface ItemImovel {
   chave: string;
   nome: string;

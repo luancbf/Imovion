@@ -27,10 +27,10 @@ export default function AdminHeader({
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-blue-900">
-                  🎯 Gestão de Patrocinadores
+                  Gerenciar Patrocinadores
                 </h1>
                 <p className="text-xs text-blue-600 hidden sm:block">
-                  Painel administrativo
+                  Promover usuários e configurar exibição
                 </p>
               </div>
             </div>

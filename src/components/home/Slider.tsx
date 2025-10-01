@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useState, useMemo } from "react";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import { createBrowserClient } from "@supabase/ssr";
+import { supabase } from '@/lib/supabase'
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -28,11 +28,6 @@ interface SliderProps {
   autoplay?: boolean;
   type?: 'principal' | 'secundario';
 }
-
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const newArray = [...array];
@@ -62,54 +57,79 @@ export default function Slider({
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('slider_banners')
-        .select(`
-          id,
-          image_name,
-          image_url,
-          image_alt,
-          order_index,
-          is_active,
-          is_clickable,
-          patrocinadores (
-            slug,
-            nome
-          )
-        `)
-        .eq('is_active', true)
-        .not('image_url', 'is', null)
-        .like('image_name', `${type}%`)
-        .order('order_index', { ascending: true });
+      try {
+        // Query sem JOIN para evitar problemas de relação
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('slider_banners')
+          .select(`
+            id,
+            image_name,
+            image_url,
+            image_alt,
+            order_index,
+            is_active,
+            is_clickable,
+            patrocinador_id
+          `)
+          .eq('is_active', true)
+          .not('image_url', 'is', null);
 
-      if (error) {
-        setError('Erro ao carregar slider');
-        setBanners([]);
-      } else {
-        const processed = (data ?? []).map((config: Record<string, unknown>) => {
-          const patrocinador = Array.isArray(config.patrocinadores)
-            ? (config.patrocinadores[0] as { slug?: string; nome?: string })
-            : (config.patrocinadores as { slug?: string; nome?: string } | undefined);
+        if (simpleError) {
+          setError('Erro ao carregar slider');
+          setBanners([]);
+          setLoading(false);
+          return;
+        }
 
-          if (typeof config.image_url === 'string' && config.image_url) {
-            if (config.is_clickable && !patrocinador) return null;
-            return {
-              id: config.id as string,
-              image_name: config.image_name as string,
-              image_url: config.image_url as string,
-              image_alt: (config.image_alt as string) || `Banner ${config.image_name}`,
-              patrocinador_slug: patrocinador?.slug || null,
-              patrocinador_nome: patrocinador?.nome || null,
-              order_index: config.order_index as number,
-              is_active: config.is_active as boolean,
-              is_clickable: config.is_clickable as boolean || false
-            };
+
+
+        // Filtrar por tipo (principal/secundario)
+        const filteredData = (simpleData || []).filter(banner => 
+          banner.image_name && banner.image_name.toLowerCase().startsWith(type.toLowerCase())
+        );
+
+
+
+        // Buscar dados dos patrocinadores separadamente se necessário
+        const processedBanners: SliderBanner[] = [];
+        
+        for (const banner of filteredData) {
+          let patrocinadorData = null;
+          
+          if (banner.patrocinador_id) {
+            const { data: patData } = await supabase
+              .from('patrocinadores')
+              .select('slug, nome')
+              .eq('id', banner.patrocinador_id)
+              .single();
+            patrocinadorData = patData;
           }
-          return null;
-        }).filter(Boolean) as SliderBanner[];
 
-        setBanners(processed);
+          // Só rejeita se é clicável MAS não tem patrocinador
+          if (banner.is_clickable && !patrocinadorData) {
+            continue;
+          }
+
+          processedBanners.push({
+            id: banner.id,
+            image_name: banner.image_name,
+            image_url: banner.image_url,
+            image_alt: banner.image_alt || `Banner ${banner.image_name}`,
+            patrocinador_slug: patrocinadorData?.slug || null,
+            patrocinador_nome: patrocinadorData?.nome || null,
+            order_index: banner.order_index || 0,
+            is_active: banner.is_active,
+            is_clickable: banner.is_clickable || false
+          });
+        }
+
+        setBanners(processedBanners);
+        
+      } catch {
+        setError('Erro de conexão ao carregar slider');
+        setBanners([]);
       }
+      
       setLoading(false);
     };
 
@@ -134,21 +154,11 @@ export default function Slider({
             <p className="text-red-800 font-medium mb-2">Erro ao carregar slider</p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm transition-colors"
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm transition-colors cursor-pointer"
             >
               Tentar Novamente
             </button>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!shuffledBanners.length) {
-    return (
-      <div className={`w-full ${className}`}>
-        <div className="relative w-full h-50 sm:h-80 lg:h-130 flex items-center justify-center bg-gray-100 border border-gray-200 rounded-xl">
-          <span className="text-gray-500 text-sm">Nenhum banner configurado para exibição.</span>
         </div>
       </div>
     );
@@ -204,7 +214,6 @@ export default function Slider({
                       priority={idx === 0 && type === 'principal'}
                       className="object-cover w-full h-full transition-transform duration-500 hover:scale-105"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
-                      quality={100}
                     />
                   </Link>
                 </SwiperSlide>

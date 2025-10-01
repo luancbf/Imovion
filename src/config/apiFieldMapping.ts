@@ -1,12 +1,10 @@
-// ✅ Tipos específicos para transformações
 type TransformValue = string | number | boolean | null | undefined;
 type TransformFunction = (value: TransformValue) => TransformValue;
 
 export interface ApiFieldMapping {
   [apiName: string]: {
-    // Mapeamento: campo_da_api -> campo_interno
     fieldMap: Record<string, string>;
-    transforms?: Record<string, TransformFunction>; // ✅ CORRIGIDO
+    transforms?: Record<string, TransformFunction>;
   };
 }
 
@@ -29,7 +27,6 @@ export const API_FIELD_MAPPINGS: ApiFieldMapping = {
       'linkoriginal': 'url_original'
     },
     transforms: {
-      // ✅ Transformações com tipos específicos
       'valor': (value: TransformValue): number => {
         if (typeof value === 'string') {
           return parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) || 0;

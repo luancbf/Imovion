@@ -1,21 +1,31 @@
 'use client';
 
-import { FiHome, FiSearch } from 'react-icons/fi';
+import { useState } from 'react';
+import { FiHome, FiSearch, FiFilter } from 'react-icons/fi';
 import ImovelCardCadastro from './ImovelCardCadastro';
+import FiltroCadastroImoveis from './FiltroCadastroImoveis';
 import type { Imovel } from '@/types/Imovel';
-import { createBrowserClient } from "@supabase/ssr";
-
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import type { Patrocinador } from '@/types/cadastrar-patrocinador';
+import { supabase } from '@/lib/supabase'
 
 interface ListaImoveisProps {
   imoveis: Imovel[];
   carregando: boolean;
   onDelete: (id: string) => Promise<void>;
   onEdit: (imovel: Imovel) => void;
-  patrocinadores: { id: string; nome: string }[];
+  patrocinadores: Patrocinador[];
+  filtros: {
+    tipoNegocio: string;
+    setorNegocio: string;
+    patrocinador: string;
+    codigoImovel: string;
+  };
+  onFiltroChange: (filtros: {
+    tipoNegocio: string;
+    setorNegocio: string;
+    patrocinador: string;
+    codigoImovel: string;
+  }) => void;
 }
 
 export default function ListaImoveis({
@@ -24,22 +34,22 @@ export default function ListaImoveis({
   onDelete,
   onEdit,
   patrocinadores,
+  filtros,
+  onFiltroChange,
 }: ListaImoveisProps) {
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
   
   const handleDeleteImovel = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este imóvel?')) {
       try {
-        // 1. Buscar imagens do imóvel
         const { data: imovel } = await supabase
           .from('imoveis')
           .select('imagens')
           .eq('id', id)
           .single();
 
-        // 2. Remover imagens do storage
         if (imovel?.imagens && Array.isArray(imovel.imagens)) {
           for (const url of imovel.imagens) {
-            // Ajuste o split conforme seu bucket/pasta
             const path = url.split('/storage/v1/object/public/imagens/')[1];
             if (path) {
               await supabase.storage.from('imagens').remove([path]);
@@ -47,13 +57,11 @@ export default function ListaImoveis({
           }
         }
 
-        // 3. Excluir imóvel do banco
         const { error } = await supabase.from('imoveis').delete().eq('id', id);
         
         if (error) {
           alert('Erro ao excluir imóvel: ' + error.message);
         } else {
-          // 4. Chamar o callback do componente pai
           await onDelete(id);
           alert('Imóvel excluído com sucesso!');
         }
@@ -67,7 +75,7 @@ export default function ListaImoveis({
 
   return (
     <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100">
-      {/* Header da Seção - MAIS COMPACTO */}
+      {/* Header da Seção */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-100 rounded-xl">
@@ -75,19 +83,47 @@ export default function ListaImoveis({
           </div>
           <div>
             <h2 className="font-poppins text-lg sm:text-xl font-bold text-blue-900">
-              🏠 Imóveis Cadastrados
+              Imóveis Cadastrados ({imoveis.length})
             </h2>
             <p className="text-blue-600 text-sm">
-              {imoveis.length === 0 
-                ? 'Nenhum imóvel encontrado' 
-                : `${imoveis.length} ${imoveis.length === 1 ? 'imóvel' : 'imóveis'} no sistema`
-              }
+              Gerencie todos os imóveis cadastrados na plataforma
             </p>
           </div>
         </div>
+
+        {/* Botão de Filtro */}
+        <button
+          onClick={() => setMostrarFiltros(!mostrarFiltros)}
+          className={`
+            flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200
+            ${mostrarFiltros 
+              ? 'bg-blue-600 text-white shadow-lg' 
+              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+            }
+          `}
+        >
+          <FiFilter className={`w-4 h-4 transition-transform duration-200 ${mostrarFiltros ? 'rotate-180' : ''}`} />
+          {mostrarFiltros ? 'Ocultar Filtros' : 'Filtrar Imóveis'}
+          {(filtros.tipoNegocio || filtros.setorNegocio || filtros.patrocinador || filtros.codigoImovel) && (
+            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+              {[filtros.tipoNegocio, filtros.setorNegocio, filtros.patrocinador, filtros.codigoImovel]
+                .filter(Boolean).length}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Estados da Lista - MESMA LÓGICA, ESPAÇAMENTO REDUZIDO */}
+      {/* Filtros Expansíveis */}
+      {mostrarFiltros && (
+        <div className="mb-6 transition-all duration-300 ease-in-out">
+          <FiltroCadastroImoveis
+            patrocinadores={patrocinadores}
+            onFiltroChange={onFiltroChange}
+          />
+        </div>
+      )}
+
+      {/* Estados da Lista */}
       {carregando ? (
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent" />
@@ -104,7 +140,7 @@ export default function ListaImoveis({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {imoveis.map((imovel) => (
             <div
               key={imovel.id}

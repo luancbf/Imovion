@@ -4,7 +4,6 @@ export default function Footer() {
   return (
     <footer className="w-full bg-gradient-to-r from-blue-100 to-blue-200 pt-10 pb-10 border-t border-blue-200">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center px-4 gap-8">
-        {/* Contato - Esquerda */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left md:ml-20">
           <h3 className="font-poppins text-lg font-semibold mb-2 text-blue-900">CONTATO</h3>
           <ul className="font-inter space-y-1 text-sm text-blue-700">
@@ -16,7 +15,7 @@ export default function Footer() {
             </li>
             <li>
               <a
-                href="https://wa.me/5599999999999"
+                href="https://wa.me/65999772500"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:underline flex items-center gap-1 justify-center md:justify-start"
@@ -29,14 +28,12 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Logo / Nome - Direita */}
         <div className="flex flex-col items-center md:items-end text-center md:text-right md:mr-20">
           <Image
-            src="/imovion.png"
+            src="/imovion.webp"
             alt="Imovion Logo"
             width={320}
             height={80}
-            quality={100}
             className="h-12 w-auto mb-2"
             priority
           />

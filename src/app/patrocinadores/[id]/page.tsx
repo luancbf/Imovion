@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, usePathname } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 import Image from "next/image";
 import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
@@ -12,6 +11,7 @@ import { FiltroImovel } from "@/components/FiltroImoveis";
 import { opcoesTipoImovel } from "@/constants/opcoesTipoImovel";
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
 import { FiFilter } from "react-icons/fi";
+import { supabase } from '@/lib/supabase'
 
 interface Patrocinador {
   id: string;
@@ -24,10 +24,6 @@ interface Patrocinador {
   creci?: string;
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createBrowserClient(supabaseUrl, supabaseKey);
-
 export default function PatrocinadorPage() {
   const params = useParams();
   const patrocinadorSlug = String(params.id || "");
@@ -37,14 +33,12 @@ export default function PatrocinadorPage() {
   const [carregando, setCarregando] = useState(true);
   const [carregandoPatrocinador, setCarregandoPatrocinador] = useState(true);
 
-  // Filtros
   const [mostrarFiltro, setMostrarFiltro] = useState(false);
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   
   const [setor, setSetor] = useState<"" | "Residencial" | "Comercial" | "Rural">("");
   const [tipoNegocio, setTipoNegocio] = useState<"" | "Aluguel" | "Venda">("");
 
-  // Função para aplicar filtro local (igual categoria/tiponegocio)
   const aplicarFiltroLocal = useCallback(
     (imoveis: Imovel[], filtros: Record<string, string>): Imovel[] => {
       const normalize = (str: string) => (str || "").trim().toLowerCase();
@@ -66,11 +60,7 @@ export default function PatrocinadorPage() {
         if (filtros.valorMax && Number(imovel.valor) > Number(filtros.valorMax)) return false;
         if (filtros.metragemMin && Number(imovel.metragem) < Number(filtros.metragemMin)) return false;
         if (filtros.metragemMax && Number(imovel.metragem) > Number(filtros.metragemMax)) return false;
-
-        // Corrigido: filtra por setor usando função
         if (setor && determinarSetor(imovel) !== setor) return false;
-
-        // Corrigido: filtra por tipoNegocio
         if (tipoNegocio && normalize(imovel.setornegocio ?? "") !== normalize(tipoNegocio)) return false;
         if (imovel.itens) {
           let itensImovel: Record<string, string | number | boolean | null | undefined> = {};
@@ -160,13 +150,11 @@ export default function PatrocinadorPage() {
     fetchImoveis();
   }, [patrocinador]);
 
-  // Imóveis filtrados localmente
   const imoveisFiltrados = useMemo(
     () => aplicarFiltroLocal(imoveis, filtros),
     [imoveis, filtros, aplicarFiltroLocal]
   );
 
-  // Atualize o useEffect para limpar filtros ao trocar setor/tipoNegocio:
   useEffect(() => {
     setFiltros({
       tipoimovel: "",
