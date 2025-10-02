@@ -48,7 +48,7 @@ export default function PainelUsuarioDashboard() {
   const [userInfo, setUserInfo] = useState<UserInfo>({
     nome: '',
     sobrenome: '',
-    categoria: 'usuario_comum',
+    categoria: 'proprietario',
     limite_imoveis: 1,
   });
   const [carregando, setCarregando] = useState(true);
@@ -68,7 +68,7 @@ export default function PainelUsuarioDashboard() {
           .single();
 
         if (!profileError && profileData) {
-          const categoria: CategoriaUsuario = profileData.categoria || 'usuario_comum';
+          const categoria: CategoriaUsuario = profileData.categoria || 'proprietario';
           setUserInfo({
             nome: profileData.nome || '',
             sobrenome: profileData.sobrenome || '',

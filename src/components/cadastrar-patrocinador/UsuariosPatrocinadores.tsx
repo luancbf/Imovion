@@ -41,7 +41,7 @@ export default function UsuariosPatrocinadores() {
       categoria: usuario.categoria,
       total_imoveis: usuario.total_imoveis,
       created_at: usuario.created_at,
-      pode_ser_patrocinador: usuario.categoria === 'usuario_comum' && usuario.total_imoveis > 0
+      pode_ser_patrocinador: usuario.categoria === 'proprietario' && usuario.total_imoveis > 0
     }));
 
     setUsuariosElegiveis(usuariosProcessados);
@@ -62,7 +62,7 @@ export default function UsuariosPatrocinadores() {
 
   const rebaixarPatrocinador = async (usuarioId: string) => {
     if (confirm('Rebaixar este patrocinador para usuário comum? Ele voltará ao limite de 1 imóvel.')) {
-      const sucesso = await alterarCategoriaUsuario(usuarioId, 'usuario_comum');
+      const sucesso = await alterarCategoriaUsuario(usuarioId, 'proprietario');
       if (sucesso) {
         carregarUsuarios();
       }
@@ -76,7 +76,7 @@ export default function UsuariosPatrocinadores() {
       case 'patrocinadores':
         return usuario.categoria === 'proprietario_com_plano';
       default:
-        return usuario.categoria === 'usuario_comum' || usuario.categoria === 'proprietario_com_plano';
+        return usuario.categoria === 'proprietario' || usuario.categoria === 'proprietario_com_plano';
     }
   });
 
@@ -84,7 +84,7 @@ export default function UsuariosPatrocinadores() {
     total: usuariosElegiveis.length,
     elegiveis: usuariosElegiveis.filter(u => u.pode_ser_patrocinador).length,
     patrocinadores: usuariosElegiveis.filter(u => u.categoria === 'proprietario_com_plano').length,
-    usuariosComuns: usuariosElegiveis.filter(u => u.categoria === 'usuario_comum').length
+    proprietarios: usuariosElegiveis.filter(u => u.categoria === 'proprietario').length
   };
 
   if (loading) {
@@ -157,7 +157,7 @@ export default function UsuariosPatrocinadores() {
       <div className="p-6 bg-gray-50 border-b border-gray-200">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{estatisticas.usuariosComuns}</div>
+            <div className="text-2xl font-bold text-blue-600">{estatisticas.proprietarios}</div>
             <div className="text-sm text-gray-600">Usuários Comuns</div>
           </div>
           <div className="text-center">
@@ -218,7 +218,7 @@ export default function UsuariosPatrocinadores() {
                             </span>
                           )}
                           
-                          {usuario.pode_ser_patrocinador && usuario.categoria === 'usuario_comum' && (
+                          {usuario.pode_ser_patrocinador && usuario.categoria === 'proprietario' && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               <FiTrendingUp size={10} />
                               Elegível
@@ -250,7 +250,7 @@ export default function UsuariosPatrocinadores() {
 
                   {/* Ações */}
                   <div className="flex gap-2">
-                    {usuario.categoria === 'usuario_comum' && usuario.pode_ser_patrocinador && (
+                    {usuario.categoria === 'proprietario' && usuario.pode_ser_patrocinador && (
                       <button
                         onClick={() => promoverParaPatrocinador(usuario.id)}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center gap-2"
@@ -269,7 +269,7 @@ export default function UsuariosPatrocinadores() {
                       </button>
                     )}
                     
-                    {usuario.categoria === 'usuario_comum' && !usuario.pode_ser_patrocinador && (
+                    {usuario.categoria === 'proprietario' && !usuario.pode_ser_patrocinador && (
                       <span className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm">
                         Sem imóveis
                       </span>

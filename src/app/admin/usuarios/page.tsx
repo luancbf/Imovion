@@ -84,7 +84,7 @@ export default function UsuariosPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Usuarios Comum</p>
-              <p className="text-2xl font-bold text-emerald-600">{stats.usuarios_comuns || 0}</p>
+              <p className="text-2xl font-bold text-emerald-600">{stats.proprietarios || 0}</p>
             </div>
             <FiUsers className="text-emerald-600" size={24} />
           </div>
@@ -195,11 +195,11 @@ export default function UsuariosPage() {
 
           <select
             value={filtros.categoria}
-            onChange={(e) => setFiltros(prev => ({ ...prev, categoria: e.target.value as 'todos' | 'usuario_comum' | 'corretor' | 'imobiliaria' | 'proprietario_com_plano' }))}
+            onChange={(e) => setFiltros(prev => ({ ...prev, categoria: e.target.value as 'todos' | 'proprietario' | 'corretor' | 'imobiliaria' | 'proprietario_com_plano' }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="todos">Todas as categorias</option>
-            <option value="usuario_comum">Usuario Comum</option>
+            <option value="proprietario">Proprietário</option>
             <option value="corretor">Corretor</option>
             <option value="imobiliaria">Imobiliaria</option>
             <option value="proprietario_com_plano">Proprietario com Plano</option>

@@ -1,6 +1,9 @@
 "use client";
 
 import { FiDollarSign } from "react-icons/fi";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
 
 const CLASSES = {
   input: "w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-500",
@@ -8,30 +11,45 @@ const CLASSES = {
   textarea: "w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-500 resize-none",
 };
 
-interface Patrocinador {
-  id: string;
-  nome: string;
-  telefone?: string;
-  creci?: string;
-}
-
 interface FormularioState {
   valor: string;
   metragem: string;
   descricao: string;
   codigoImovel: string;
-  whatsapp: string;
-  patrocinador: string;
-  creci: string;
+  usuario_id: string;
 }
 
 interface Etapa3Props {
   formulario: FormularioState;
-  patrocinadores: Patrocinador[];
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
 }
 
-export default function Etapa3Detalhes({ formulario, patrocinadores, onChange }: Etapa3Props) {
+export default function Etapa3Detalhes({ formulario, onChange }: Etapa3Props) {
+  const { user } = useAuth();
+  const [userCategoria, setUserCategoria] = useState<string>("");
+  
+  // Buscar categoria do usuário no perfil
+  useEffect(() => {
+    if (user) {
+      const fetchUserProfile = async () => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('categoria')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile) {
+          setUserCategoria(profile.categoria || '');
+        }
+      };
+      
+      fetchUserProfile();
+    }
+  }, [user]);
+  
+  // Verificar se o usuário é corretor ou imobiliária
+  const mostrarCodigoImovel = userCategoria === 'corretor' || userCategoria === 'imobiliaria';
+
   return (
     <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
       <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2 font-poppins">
@@ -84,69 +102,22 @@ export default function Etapa3Detalhes({ formulario, patrocinadores, onChange }:
         />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <div className="space-y-2">
+      {mostrarCodigoImovel && (
+        <div className="mt-6 space-y-2">
           <label className="block text-sm font-semibold text-purple-900 font-inter">
             Código do Imóvel
           </label>
           <input
             name="codigoImovel"
-            placeholder="Digite o código do imóvel"
+            placeholder="Digite o código do imóvel (opcional)"
             value={formulario.codigoImovel || ""}
             onChange={onChange}
             className={CLASSES.input}
             autoComplete="off"
           />
+          <p className="text-xs text-purple-600">Campo opcional para organização interna</p>
         </div>
-        
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-purple-900 font-inter">
-            WhatsApp para Contato
-          </label>
-          <input
-            name="whatsapp"
-            placeholder="(00) 00000-0000"
-            value={formulario.whatsapp}
-            onChange={onChange}
-            className={CLASSES.input}
-            required
-          />
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-purple-900 font-inter">
-            Patrocinador (Opcional)
-          </label>
-          <select
-            name="patrocinador"
-            value={formulario.patrocinador || ''}
-            onChange={onChange}
-            className={CLASSES.select}
-          >
-            <option value="">🏢 Selecionar patrocinador</option>
-            {patrocinadores.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-purple-900 font-inter">
-            CRECI
-          </label>
-          <input
-            name="creci"
-            placeholder="Digite o CRECI"
-            value={formulario.creci || ""}
-            onChange={onChange}
-            className={CLASSES.input}
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

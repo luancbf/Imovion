@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { FiUser, FiLogOut, FiPlus } from 'react-icons/fi';
 import { supabase } from '@/lib/supabase'
@@ -13,31 +14,30 @@ type UserProfile = {
 };
 
 export default function Header() {
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data } = await supabase.auth.getUser();
-      if (data?.user && data.user.id && data.user.email) {
+      
+      if (data?.user?.id && data?.user?.email) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("role, nome, email")
           .eq("id", data.user.id)
           .single();
 
-        // Debug removido
-
-        // Se encontrar perfil e tiver role válida
-        if (profile && profile.role) {
+        if (profile?.role) {
           setUser({
             email: profile.email || data.user.email,
             role: profile.role,
             nome: profile.nome || "",
           });
         } else {
-          // Se não encontrar perfil, defina como user comum
           setUser({
             email: data.user.email,
             role: "user",
@@ -51,33 +51,32 @@ export default function Header() {
 
     fetchUser();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user && session.user.id && session.user.email) {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setUser(null);
+        return;
+      }
+      
+      if (session?.user?.id && session?.user?.email) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("role, nome, email")
           .eq("id", session.user.id)
           .single();
 
-        // Debug removido
-
-        // Se encontrar perfil e tiver role válida
-        if (profile && profile.role) {
+        if (profile?.role) {
           setUser({
             email: profile.email || session.user.email,
             role: profile.role,
             nome: profile.nome || "",
           });
         } else {
-          // Se não encontrar perfil, defina como user comum
           setUser({
             email: session.user.email,
             role: "user",
             nome: "",
           });
         }
-      } else {
-        setUser(null);
       }
     });
 
@@ -103,10 +102,33 @@ export default function Header() {
     };
   }, [menuOpen]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    setMenuOpen(false);
     setUser(null);
-    window.location.href = '/';
+    
+    // Logout do Supabase (não esperar resposta)
+    supabase.auth.signOut().catch(console.error);
+    
+    // Limpar tudo imediatamente
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Limpar todos os cookies de forma mais agressiva
+    const cookies = document.cookie.split(";");
+    for (const cookie of cookies) {
+      const eqPos = cookie.indexOf("=");
+      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+      // Limpar em todos os paths e domínios possíveis
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+    }
+    
+    // Forçar reload total da página
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
   };
 
   // Função para direcionar corretamente conforme o tipo de usuário
@@ -114,9 +136,9 @@ export default function Header() {
     // Debug removido
     
     if (user?.role === "admin") {
-      window.location.href = "/admin/cadastrar-imovel";
+      router.push("/admin/cadastrar-imovel");
     } else {
-      window.location.href = "/painel-usuario";
+      router.push("/painel-usuario");
     }
   };
 
@@ -198,12 +220,22 @@ export default function Header() {
                     <button
                       onClick={() => {
                         handleLogout();
-                        setMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      disabled={isLoggingOut}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+                        isLoggingOut 
+                          ? 'text-gray-400 bg-gray-50 cursor-not-allowed' 
+                          : 'text-red-600 hover:bg-red-50'
+                      }`}
                     >
-                      <FiLogOut size={18} />
-                      <span className="font-medium">Sair</span>
+                      {isLoggingOut ? (
+                        <div className="w-[18px] h-[18px] border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                      ) : (
+                        <FiLogOut size={18} />
+                      )}
+                      <span className="font-medium">
+                        {isLoggingOut ? 'Saindo...' : 'Sair'}
+                      </span>
                     </button>
                   </nav>
                 </div>

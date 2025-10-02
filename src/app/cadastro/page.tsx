@@ -17,7 +17,7 @@ export default function CadastroPage() {
   const [nome, setNome] = useState("");
   const [sobrenome, setSobrenome] = useState("");
   const [telefone, setTelefone] = useState("");
-  const [categoria, setCategoria] = useState<CategoriaUsuario>('usuario_comum');
+  const [categoria, setCategoria] = useState<CategoriaUsuario>('proprietario');
   const [creci, setCreci] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -105,6 +105,13 @@ export default function CadastroPage() {
     }
 
     try {
+      // Primeiro, verificar se o e-mail já existe
+      const { data: existingUser } = await supabase.auth.getUser();
+      if (existingUser) {
+        // Se já temos um usuário logado, deslogar primeiro
+        await supabase.auth.signOut();
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -120,10 +127,17 @@ export default function CadastroPage() {
       });
 
       if (error) {
-        if (error.message.includes("already registered")) {
-          setError("Este e-mail já está cadastrado. Tente fazer login.");
+        if (error.message.includes("already") || 
+            error.message.includes("registered") || 
+            error.message.includes("exists") ||
+            error.message.includes("User already registered")) {
+          setError("Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.");
+        } else if (error.message.includes("Invalid email")) {
+          setError("E-mail inválido. Verifique se digitou corretamente.");
+        } else if (error.message.includes("Password")) {
+          setError("Erro na senha. Verifique se atende aos critérios de segurança.");
         } else {
-          setError(error.message);
+          setError(`Erro no cadastro: ${error.message}`);
         }
       } else if (data.user) {
         setSuccess("Cadastro realizado! Verifique seu e-mail para confirmar sua conta.");
@@ -141,7 +155,7 @@ export default function CadastroPage() {
         setPassword("");
         setConfirmPassword("");
         setCreci("");
-        setCategoria('usuario_comum');
+        setCategoria('proprietario');
         setAcceptTerms(false);
 
         setTimeout(() => {
@@ -168,7 +182,7 @@ export default function CadastroPage() {
       password.length >= 6 && 
       confirmPassword.length >= 6 &&
       acceptTerms &&
-      ((categoria === 'usuario_comum' || categoria === 'proprietario_com_plano') || creci.trim())
+      ((categoria === 'proprietario' || categoria === 'proprietario_com_plano') || creci.trim())
     );
   };
 
@@ -346,13 +360,13 @@ export default function CadastroPage() {
             
             {/* Usuário Comum */}
             <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
-              categoria === 'usuario_comum' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+              categoria === 'proprietario' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
             }`}>
               <input
                 type="radio"
                 name="categoria"
-                value="usuario_comum"
-                checked={categoria === 'usuario_comum'}
+                value="proprietario"
+                checked={categoria === 'proprietario'}
                 onChange={(e) => setCategoria(e.target.value as CategoriaUsuario)}
                 className="sr-only"
                 disabled={isLoading}
@@ -364,7 +378,7 @@ export default function CadastroPage() {
                 <p className="font-semibold text-gray-900">Usuário Comum</p>
                 <p className="text-sm text-gray-600">Até 1 imóvel gratuito</p>
               </div>
-              {categoria === 'usuario_comum' && (
+              {categoria === 'proprietario' && (
                 <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                   <div className="w-2 h-2 bg-white rounded-full"></div>
                 </div>

@@ -51,14 +51,26 @@ export default function ItensImovel({
         const valorAtual = Number(itens[item.chave] || 0);
         const isAtivo = isQuant ? valorAtual > 0 : Number(itens[item.chave]) > 0;
 
+        // Para itens quantitativos, o click no card incrementa
+        const handleCardClick = () => {
+          if (isQuant) {
+            incrementar(item.chave);
+          } else {
+            handleItemChange(item.chave, isAtivo ? 0 : 1);
+          }
+        };
+
         return (
           <div
             key={item.chave}
-            className="bg-white rounded-lg border border-indigo-200 p-2 flex flex-col items-center justify-center transition-all duration-200 hover:shadow-md w-full min-h-[70px] select-none"
+            className={`bg-white rounded-lg border border-indigo-200 p-2 flex flex-col items-center justify-center transition-all duration-200 hover:shadow-md w-full min-h-[70px] select-none cursor-pointer hover:border-indigo-300 ${
+              isAtivo ? 'ring-2 ring-indigo-300 bg-indigo-50' : ''
+            }`}
             tabIndex={-1}
             onMouseDown={e => e.preventDefault()}
+            onClick={handleCardClick}
           >
-            <div className="flex items-center gap-2 mb-1 select-none">
+            <div className="flex items-center gap-2 mb-1 select-none pointer-events-none">
               <span className="text-xl select-none">{item.icone}</span>
               <span className="font-medium text-indigo-900 text-xs select-none">{item.nome}</span>
             </div>
@@ -68,14 +80,17 @@ export default function ItensImovel({
                   type="button"
                   tabIndex={-1}
                   onMouseDown={e => e.preventDefault()}
-                  onClick={() => decrementar(item.chave)}
-                  className="w-7 h-7 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-full flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Impede o click no card
+                    decrementar(item.chave);
+                  }}
+                  className="w-7 h-7 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-full flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer z-10"
                   disabled={valorAtual <= 0}
                   aria-label={`Diminuir ${item.nome}`}
                 >
                   <FiMinus size={10} />
                 </button>
-                <div className="bg-indigo-50 rounded px-2 py-1 min-w-[32px] text-center select-none">
+                <div className="bg-indigo-50 rounded px-2 py-1 min-w-[32px] text-center select-none pointer-events-none">
                   <span className="text-base font-bold text-indigo-900 select-none">
                     {valorAtual}
                   </span>
@@ -84,20 +99,19 @@ export default function ItensImovel({
                   type="button"
                   tabIndex={-1}
                   onMouseDown={e => e.preventDefault()}
-                  onClick={() => incrementar(item.chave)}
-                  className="w-7 h-7 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Impede o click no card
+                    incrementar(item.chave);
+                  }}
+                  className="w-7 h-7 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer z-10"
                   aria-label={`Aumentar ${item.nome}`}
                 >
                   <FiPlus size={10} />
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                tabIndex={-1}
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleItemChange(item.chave, isAtivo ? 0 : 1)}
-                className={`mt-1 w-5 h-5 rounded-full border-4 flex items-center justify-center transition-colors duration-200 cursor-pointer ${
+              <div
+                className={`mt-1 w-5 h-5 rounded-full border-4 flex items-center justify-center transition-colors duration-200 pointer-events-none ${
                   isAtivo
                     ? 'bg-green-500 border-green-600'
                     : 'bg-gray-100 border-gray-300'
@@ -108,7 +122,7 @@ export default function ItensImovel({
                 {isAtivo && (
                   <span className="w-3 h-3 bg-white rounded-full block select-none" />
                 )}
-              </button>
+              </div>
             )}
           </div>
         );

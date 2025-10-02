@@ -15,17 +15,10 @@ import Etapa4Imagens from "./formulario/Etapa4Imagens";
 import Etapa5Caracteristicas from "./formulario/Etapa5Caracteristicas";
 import AlertModal from "@/components/common/AlertModal";
 import { ITENS_POR_SETOR, ITENS_QUANTITATIVOS } from "@/constants/itensImovel";
-import { formatarParaMoeda, formatarMetragem, formatarTelefone } from "@/utils/formatters";
+import { formatarParaMoeda, formatarMetragem } from "@/utils/formatters";
 import type { FormularioImovelProps, ImovelEdicao } from "@/types/formularios";
 
 // TIPOS ADICIONAIS
-interface Patrocinador {
-  id: string;
-  nome: string;
-  telefone?: string;
-  creci?: string;
-}
-
 interface FormularioState {
   codigoImovel: string;
   cidade: string;
@@ -37,9 +30,7 @@ interface FormularioState {
   tipoImovel: string;
   setorNegocio: string;
   tipoNegocio: string;
-  whatsapp: string;
-  patrocinador: string;
-  creci: string;
+  usuario_id: string; // Substitui patrocinador, whatsapp e creci
 }
 
 // CONSTANTES
@@ -59,9 +50,7 @@ const FORMULARIO_INICIAL: FormularioState = {
   tipoImovel: "",
   setorNegocio: "",
   tipoNegocio: "",
-  whatsapp: "",
-  patrocinador: "",
-  creci: "",
+  usuario_id: "",
 };
 
 // Constantes removidas - movidas para subcomponentes
@@ -85,7 +74,7 @@ function useAlert() {
   return { alertModal, showAlert, closeAlert };
 }
 
-function useFormulario(dadosIniciais: ImovelEdicao | null | undefined, patrocinadores: Patrocinador[]) {
+function useFormulario(dadosIniciais: ImovelEdicao | null | undefined) {
   const [formulario, setFormulario] = useState<FormularioState>(FORMULARIO_INICIAL);
   const [modoEdicao, setModoEdicao] = useState(false);
 
@@ -94,7 +83,6 @@ function useFormulario(dadosIniciais: ImovelEdicao | null | undefined, patrocina
     const formatters: Record<string, (val: string) => string> = {
       valor: formatarParaMoeda,
       metragem: formatarMetragem,
-      whatsapp: formatarTelefone,
     };
     const formatter = formatters[name];
     const valorFormatado = formatter ? formatter(value) : value;
@@ -148,27 +136,11 @@ function useFormulario(dadosIniciais: ImovelEdicao | null | undefined, patrocina
       tipoImovel: dadosIniciais.tipoimovel || "",
       setorNegocio: dadosIniciais.setornegocio || "",
       tipoNegocio: dadosIniciais.tiponegocio || "",
-      whatsapp: dadosIniciais.whatsapp || "",
-      patrocinador: dadosIniciais.patrocinadorid || "",
-      creci: "", // Campo não existe no tipo ImovelEdicao, então mantemos vazio
+      usuario_id: dadosIniciais.usuario_id || "",
     });
   }, [dadosIniciais, limparFormulario]);
 
-  // Auto-preencher dados do patrocinador
-  useEffect(() => {
-    if (formulario.patrocinador) {
-      const patrocinador = patrocinadores.find(p => p.id === formulario.patrocinador);
-      if (patrocinador) {
-        setFormulario(prev => ({
-          ...prev,
-          whatsapp: patrocinador.telefone || prev.whatsapp,
-          creci: patrocinador.creci || "",
-        }));
-      }
-    }
-  }, [formulario.patrocinador, patrocinadores]);
-
-  return { formulario, modoEdicao, handleChange, limparFormulario };
+  return { formulario, modoEdicao, handleChange, setFormulario, limparFormulario };
 }
 
 function useImagens(dadosIniciais: ImovelEdicao | null | undefined) {
@@ -275,7 +247,6 @@ function useItens(dadosIniciais: ImovelEdicao | null | undefined, formulario: Fo
 
 // COMPONENTE PRINCIPAL
 export default function FormularioImovel({
-  patrocinadores,
   opcoesTipoImovel,
   onSuccess,
   dadosIniciais,
@@ -287,9 +258,21 @@ export default function FormularioImovel({
   
   // Hooks customizados
   const { alertModal, showAlert, closeAlert } = useAlert();
-  const { formulario, modoEdicao, handleChange, limparFormulario } = useFormulario(dadosIniciais, patrocinadores as Patrocinador[]);
+  const { formulario, modoEdicao, handleChange, setFormulario, limparFormulario } = useFormulario(dadosIniciais);
   const { previews, imagensNovas, imagensExistentes, handleFileChange, handleDrop, removeImagem, limparImagens } = useImagens(dadosIniciais);
   const { itens, setItens, itensDisponiveis, limparItens } = useItens(dadosIniciais, formulario);
+
+  // Estado para usuários - removido pois não é mais necessário
+
+  // Definir automaticamente o usuário logado no formulário
+  useEffect(() => {
+    if (user && !modoEdicao) {
+      setFormulario(prev => ({
+        ...prev,
+        usuario_id: user.id
+      }));
+    }
+  }, [user, modoEdicao, setFormulario]);
 
   // Função para verificar limite de imóveis
   const verificarLimiteImoveis = useCallback(async (): Promise<boolean> => {
@@ -314,7 +297,7 @@ export default function FormularioImovel({
         return false;
       }
 
-      const categoria: CategoriaUsuario = profile.categoria || 'usuario_comum';
+      const categoria: CategoriaUsuario = profile.categoria || 'proprietario';
       const limite = profile.limite_imoveis || LIMITES_POR_CATEGORIA[categoria];
 
       // Contar imóveis existentes do usuário
@@ -353,7 +336,7 @@ export default function FormularioImovel({
     const validacoes: Record<number, () => boolean> = {
       1: () => !!(formulario.tipoNegocio && formulario.setorNegocio && formulario.tipoImovel),
       2: () => !!(formulario.cidade && formulario.bairro && formulario.enderecoDetalhado),
-      3: () => !!(formulario.valor && formulario.metragem && formulario.descricao && formulario.whatsapp),
+      3: () => !!(formulario.valor && formulario.metragem && formulario.descricao),
       4: () => (imagensExistentes.length + imagensNovas.length) > 0,
     };
     return validacoes[etapa]?.() ?? true;
@@ -421,6 +404,18 @@ export default function FormularioImovel({
 
       const capitalizar = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
+      // Buscar telefone do usuário para usar como WhatsApp
+      let whatsappUsuario = "";
+      if (user?.id) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("telefone")
+          .eq("id", user.id)
+          .single();
+        
+        whatsappUsuario = profileData?.telefone || "";
+      }
+
       const dadosImovel = {
         codigoimovel: formulario.codigoImovel?.trim() || "",
         cidade: formulario.cidade.trim(),
@@ -432,8 +427,8 @@ export default function FormularioImovel({
         tipoimovel: formulario.tipoImovel.trim(),
         tiponegocio: capitalizar(formulario.tipoNegocio.trim()),
         setornegocio: capitalizar(formulario.setorNegocio.trim()),
-        whatsapp: formulario.whatsapp.replace(/\D/g, ""),
-        patrocinadorid: formulario.patrocinador || null,
+        user_id: formulario.usuario_id || user?.id || null,
+        whatsapp: whatsappUsuario, // Usar o telefone do usuário como WhatsApp
         itens: Object.fromEntries(
           itensDisponiveis.map(item => [item.chave, itens[item.chave] || 0])
         ),
@@ -504,7 +499,7 @@ export default function FormularioImovel({
     }
   }, [
     formulario, imagensExistentes, imagensNovas, itensDisponiveis, itens,
-    modoEdicao, dadosIniciais, showAlert, cancelarEdicao, onSuccess, router, verificarLimiteImoveis
+    modoEdicao, dadosIniciais, showAlert, cancelarEdicao, onSuccess, router, verificarLimiteImoveis, user?.id
   ]);
 
   return (
@@ -570,7 +565,6 @@ export default function FormularioImovel({
           {etapaAtual === 3 && (
             <Etapa3Detalhes
               formulario={formulario}
-              patrocinadores={patrocinadores as Patrocinador[]}
               onChange={handleChange}
             />
           )}

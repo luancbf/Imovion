@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import logger from '@/utils/logger';
 import { 
   UsuarioComEstatisticas, 
   EstatisticasUsuarios, 
@@ -15,14 +16,47 @@ export const useGerenciamentoUsuarios = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Ref para evitar múltiplas chamadas
+  // Refs para controle de cache e lifecycle
   const isLoadingRef = useRef(false);
   const hasLoadedRef = useRef(false);
+  const isMountedRef = useRef(true);
+  const cacheRef = useRef<UsuarioComEstatisticas[] | null>(null);
+  const lastLoadTimeRef = useRef<number>(0);
+  
+  // Cache duration: 5 minutos (constante)
+  const CACHE_DURATION = 5 * 60 * 1000;
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-  // Carregar usuários (uma única vez)
-  const carregarUsuarios = useCallback(async () => {
+  // Carregar usuários (com cache)
+  const carregarUsuarios = useCallback(async (forceReload = false) => {
+    // Verificar se o componente ainda está montado
+    if (!isMountedRef.current) return;
+    
+    // Verificar cache válido
+    const now = Date.now();
+    const isCacheValid = cacheRef.current && 
+                        !forceReload &&
+                        (now - lastLoadTimeRef.current) < CACHE_DURATION;
+    
+    if (isCacheValid) {
+      logger.hooks.debug('useGerenciamentoUsuarios', 'Usando cache de usuários');
+      if (!isMountedRef.current) return;
+      setUsuarios(cacheRef.current!);
+      return;
+    }
+    
     // Evitar múltiplas chamadas simultâneas
-    if (isLoadingRef.current) return;
+    if (isLoadingRef.current) {
+      logger.hooks.debug('useGerenciamentoUsuarios', 'Já existe uma requisição em andamento');
+      return;
+    }
     
     isLoadingRef.current = true;
     setLoading(true);
@@ -95,7 +129,7 @@ export const useGerenciamentoUsuarios = () => {
         updated_at?: string;
       }) => {
         // Determinar categoria (simplificado)
-        const categoria: CategoriaUsuario = (profile.categoria as CategoriaUsuario) || 'usuario_comum';
+        const categoria: CategoriaUsuario = (profile.categoria as CategoriaUsuario) || 'proprietario';
         
         // Limite baseado na categoria automaticamente
         const limite_imoveis = profile.limite_imoveis || LIMITES_POR_CATEGORIA[categoria] || 1;
@@ -129,7 +163,7 @@ export const useGerenciamentoUsuarios = () => {
             created_at: profile.created_at || new Date().toISOString(),
             plano: {
               id: categoria,
-              nome: categoria === 'usuario_comum' ? 'Usuário Comum' :
+              nome: categoria === 'proprietario' ? 'Proprietário' :
                     categoria === 'corretor' ? 'Corretor' :
                     categoria === 'imobiliaria' ? 'Imobiliária' :
                     categoria === 'proprietario_com_plano' ? 'Proprietário com Plano' : 'Padrão',
@@ -145,7 +179,13 @@ export const useGerenciamentoUsuarios = () => {
       });
 
       setUsuarios(usuariosTransformados);
-      hasLoadedRef.current = true;
+      
+      // Atualizar cache apenas se componente ainda montado
+      if (isMountedRef.current) {
+        cacheRef.current = usuariosTransformados;
+        lastLoadTimeRef.current = Date.now();
+        hasLoadedRef.current = true;
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido ao carregar usuários');
@@ -153,7 +193,7 @@ export const useGerenciamentoUsuarios = () => {
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, []);
+  }, [CACHE_DURATION]);
 
   // Alterar categoria do usuário
   const alterarCategoriaUsuario = useCallback(async (
@@ -210,7 +250,7 @@ export const useGerenciamentoUsuarios = () => {
               created_at: usuario.plano_atual?.created_at || new Date().toISOString(),
               plano: {
                 id: novaCategoria,
-                nome: novaCategoria === 'usuario_comum' ? 'Usuário Comum' :
+                nome: novaCategoria === 'proprietario' ? 'Proprietário' :
                       novaCategoria === 'corretor' ? 'Corretor' :
                       novaCategoria === 'imobiliaria' ? 'Imobiliária' :
                       novaCategoria === 'proprietario_com_plano' ? 'Proprietário com Plano' : 'Padrão',
@@ -237,8 +277,13 @@ export const useGerenciamentoUsuarios = () => {
   }, []);
 
   // Filtrar usuários
+  // Filtrar usuários com memoização
   const filtrarUsuarios = useCallback((filtros: FiltrosUsuarios) => {
-    return usuarios.filter(usuario => {
+    if (!usuarios.length) {
+      return [];
+    }
+    
+    const resultado = usuarios.filter(usuario => {
       // Busca textual
       if (filtros.busca) {
         const busca = filtros.busca.toLowerCase();
@@ -286,12 +331,14 @@ export const useGerenciamentoUsuarios = () => {
 
       return ordem === 'desc' ? -compareValue : compareValue;
     });
+    
+    return resultado;
   }, [usuarios]);
 
   // Calcular estatísticas
   const obterEstatisticas = useCallback((): EstatisticasUsuarios => {
     const total = usuarios.length;
-    const usuarios_comuns = usuarios.filter(u => u.categoria === 'usuario_comum').length;
+    const proprietarios = usuarios.filter(u => u.categoria === 'proprietario').length;
     const corretores = usuarios.filter(u => u.categoria === 'corretor').length;
     const imobiliarias = usuarios.filter(u => u.categoria === 'imobiliaria').length;
     const proprietarios_com_plano = usuarios.filter(u => u.categoria === 'proprietario_com_plano').length;
@@ -317,7 +364,7 @@ export const useGerenciamentoUsuarios = () => {
 
     return {
       total,
-      usuarios_comuns,
+      proprietarios,
       corretores,
       imobiliarias,
       proprietarios_com_plano,

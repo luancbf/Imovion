@@ -12,6 +12,7 @@
   font-family: var(--font-inter), sans-serif;
 }
 
+/* Swiper customization - Geral */
 .swiper-button-next,
 .swiper-button-prev {
   width: 40px !important;
@@ -37,6 +38,62 @@
 }
 .swiper-pagination-bullet-active {
   background: #1b1b1b !important;
+}
+
+/* Swiper específico para ImovelCard - SEM OVERLAY */
+.swiper-imovel-card {
+  border-radius: 1.5rem 1.5rem 0 0;
+  overflow: hidden;
+}
+
+.swiper-imovel-card .swiper-button-next,
+.swiper-imovel-card .swiper-button-prev {
+  width: 32px !important;
+  height: 32px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #374151 !important;
+  border-radius: 50% !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  transition: all 0.2s ease !important;
+}
+
+.swiper-imovel-card .swiper-button-next:after,
+.swiper-imovel-card .swiper-button-prev:after {
+  font-size: 14px !important;
+  font-weight: bold !important;
+}
+
+.swiper-imovel-card .swiper-button-next:hover,
+.swiper-imovel-card .swiper-button-prev:hover {
+  background: rgba(255, 255, 255, 1) !important;
+  color: #1f2937 !important;
+  transform: scale(1.05) !important;
+}
+
+.swiper-imovel-card .swiper-button-next {
+  right: 8px !important;
+}
+
+.swiper-imovel-card .swiper-button-prev {
+  left: 8px !important;
+}
+
+.swiper-imovel-card .swiper-pagination {
+  bottom: 8px !important;
+  padding: 0 8px !important;
+}
+
+.swiper-imovel-card .swiper-pagination-bullet {
+  width: 8px !important;
+  height: 8px !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  margin: 0 3px !important;
+  transition: all 0.2s ease !important;
+}
+
+.swiper-imovel-card .swiper-pagination-bullet-active {
+  background: rgba(255, 255, 255, 1) !important;
+  transform: scale(1.2) !important;
 }
 
 body {

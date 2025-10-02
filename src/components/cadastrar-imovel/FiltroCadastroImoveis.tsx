@@ -1,59 +1,63 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, memo } from 'react';
 import { FiFilter, FiX, FiSearch } from 'react-icons/fi';
+import type { UsuarioFormulario } from '@/types/formularios';
 
 interface FiltroCadastroImoveisProps {
-  patrocinadores: { id: string; nome: string }[];
+  usuarios: UsuarioFormulario[];
   onFiltroChange: (filtros: {
     tipoNegocio: string;
     setorNegocio: string;
-    patrocinador: string;
+    usuario: string;
     codigoImovel: string;
-    fonte_api: string;
-    status_sync: string;
   }) => void;
 }
 
-export default function FiltroCadastroImoveis({
-  patrocinadores,
+function FiltroCadastroImoveis({
+  usuarios,
   onFiltroChange
 }: FiltroCadastroImoveisProps) {
   const [filtros, setFiltros] = useState({
     tipoNegocio: '',
     setorNegocio: '',
-    patrocinador: '',
+    usuario: '',
     codigoImovel: '',
-    fonte_api: '',
-    status_sync: '',
   });
+  
+  const isFirstMount = useRef(true);
 
+  // Aplicar filtros quando mudarem (exceto no primeiro mount)
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    
     onFiltroChange(filtros);
   }, [filtros, onFiltroChange]);
 
-  const handleFiltroChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+  const handleFiltroChange = useCallback((e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const { name, value } = e.target;
     setFiltros(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
-  const limparFiltros = () => {
-    setFiltros({
+  const limparFiltros = useCallback(() => {
+    const filtrosLimpos = {
       tipoNegocio: '',
       setorNegocio: '',
-      patrocinador: '',
+      usuario: '',
       codigoImovel: '',
-      fonte_api: '',
-      status_sync: '',
-    });
-  };
+    };
+    setFiltros(filtrosLimpos);
+    onFiltroChange(filtrosLimpos);
+  }, [onFiltroChange]);
 
   const hasActiveFilters = filtros.tipoNegocio || filtros.setorNegocio ||
-                           filtros.patrocinador || filtros.codigoImovel ||
-                           filtros.fonte_api || filtros.status_sync;
+                           filtros.usuario || filtros.codigoImovel;
 
   return (
     <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100">
@@ -122,25 +126,26 @@ export default function FiltroCadastroImoveis({
           {/* Filtro Patrocinador */}
           <div className="space-y-2">
             <label className="font-poppins block text-sm font-semibold text-blue-900">
-              Patrocinador
+              Usuário
             </label>
             <select
-              name="patrocinador"
-              value={filtros.patrocinador}
+              name="usuario"
+              value={filtros.usuario}
               onChange={handleFiltroChange}
-              disabled={patrocinadores.length === 0}
+              disabled={usuarios.length === 0}
               className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">Todos os patrocinadores</option>
-              {patrocinadores.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nome}
+              <option value="">Todos os usuários</option>
+              {usuarios.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.nome} {u.sobrenome}
+                  {u.categoria !== 'proprietario' && ` (${u.categoria})`}
                 </option>
               ))}
             </select>
-            {patrocinadores.length === 0 && (
+            {usuarios.length === 0 && (
               <p className="text-xs text-gray-500 mt-1">
-                Nenhum patrocinador encontrado
+                Nenhum usuário encontrado
               </p>
             )}
           </div>
@@ -159,44 +164,6 @@ export default function FiltroCadastroImoveis({
               placeholder="Buscar pelo código"
               autoComplete="off"
             />
-          </div>
-        </div>
-
-        {/* SEGUNDA LINHA - Filtros de API */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Filtro por Fonte da API */}
-          <div className="space-y-2">
-            <label className="font-poppins block text-sm font-semibold text-blue-900">
-              📡 Fonte dos Dados
-            </label>
-            <select
-              name="fonte_api"
-              value={filtros.fonte_api}
-              onChange={handleFiltroChange}
-              className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
-            >
-              <option value="">🌐 Todas as fontes</option>
-              <option value="internal">🏢 Imóveis internos</option>
-              <option value="api">📡 APIs externas</option>
-            </select>
-          </div>
-
-          {/* Filtro por Status de Sync */}
-          <div className="space-y-2">
-            <label className="font-poppins block text-sm font-semibold text-blue-900">
-              🔄 Status Sincronização
-            </label>
-            <select
-              name="status_sync"
-              value={filtros.status_sync}
-              onChange={handleFiltroChange}
-              className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900"
-            >
-              <option value="">📊 Todos os status</option>
-              <option value="active">✅ Ativo</option>
-              <option value="error">❌ Com erro</option>
-              <option value="inactive">⏸️ Inativo</option>
-            </select>
           </div>
         </div>
 
@@ -235,3 +202,6 @@ export default function FiltroCadastroImoveis({
     </section>
   );
 }
+
+// Exportar com memo para otimização
+export default memo(FiltroCadastroImoveis);

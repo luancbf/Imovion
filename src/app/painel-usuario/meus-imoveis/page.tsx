@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { FiHome, FiPlus, FiArrowLeft, FiMapPin, FiDollarSign, FiExternalLink, FiEdit3, FiTrash2, FiSearch, FiFilter } from "react-icons/fi";
-import { formatarParaMoeda } from "@/utils/formatters";
-import EditarImovelModal from "@/components/painel-usuario/EditarImovelModal";
+import { FiHome, FiPlus, FiArrowLeft, FiSearch, FiFilter } from "react-icons/fi";
+import ImovelCardCadastro from "@/components/cadastrar-imovel/ImovelCardCadastro";
+import type { UsuarioFormulario } from "@/types/formularios";
 
 interface Imovel {
   id: string;
@@ -18,6 +18,14 @@ interface Imovel {
   ativo: boolean;
   user_id: string;
   datacadastro: string;
+  metragem?: number;
+  tiponegocio?: string;
+  setornegocio?: string;
+  imagens?: string[];
+  itens?: Record<string, number>;
+  codigoimovel?: string;
+  enderecodetalhado?: string;
+  whatsapp?: string; // Adicionar campo WhatsApp
 }
 
 export default function MeusImoveisPage() {
@@ -27,18 +35,15 @@ export default function MeusImoveisPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
-  const [imovelParaEditar, setImovelParaEditar] = useState<Imovel | null>(null);
-  const [modalAberto, setModalAberto] = useState(false);
+  const [usuarios, setUsuarios] = useState<UsuarioFormulario[]>([]);
 
-  const formatarMoeda = (valor: number) => {
-    return formatarParaMoeda(valor.toString());
-  };
+
 
   const carregarImoveis = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       
-      if (!user) {
+      if (!authUser) {
         router.push("/login");
         return;
       }
@@ -46,7 +51,7 @@ export default function MeusImoveisPage() {
       const { data, error } = await supabase
         .from("imoveis")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", authUser.id)
         .order("datacadastro", { ascending: false });
 
       if (error) {
@@ -55,6 +60,27 @@ export default function MeusImoveisPage() {
       }
 
       setImoveis(data || []);
+
+      // Configurar usuário para o card
+      if (authUser) {
+        // Buscar dados do perfil
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("nome, sobrenome, telefone, categoria, creci")
+          .eq("id", authUser.id)
+          .single();
+
+        const usuarioFormatado: UsuarioFormulario = {
+          id: authUser.id,
+          nome: profileData?.nome || "Usuário",
+          sobrenome: profileData?.sobrenome || "",
+          email: authUser.email || "",
+          telefone: profileData?.telefone || "",
+          categoria: profileData?.categoria || "proprietario",
+          creci: profileData?.creci || ""
+        };
+        setUsuarios([usuarioFormatado]);
+      }
     } catch (error) {
       console.error("Erro:", error);
     } finally {
@@ -93,48 +119,8 @@ export default function MeusImoveisPage() {
     aplicarFiltros();
   }, [aplicarFiltros]);
 
-  const abrirModalEdicao = (imovel: Imovel) => {
-    setImovelParaEditar(imovel);
-    setModalAberto(true);
-  };
-
-  const fecharModal = () => {
-    setImovelParaEditar(null);
-    setModalAberto(false);
-  };
-
-  const handleSuccessEdicao = () => {
-    carregarImoveis();
-    fecharModal();
-  };
-
-  const alternarStatus = async (imovel: Imovel) => {
-    try {
-      const { error } = await supabase
-        .from("imoveis")
-        .update({ ativo: !imovel.ativo })
-        .eq("id", imovel.id)
-        .eq("user_id", imovel.user_id); // Segurança extra
-
-      if (error) {
-        console.error("Erro ao alterar status:", error);
-        alert("Erro ao alterar status do imóvel");
-        return;
-      }
-
-      // Atualizar lista local
-      setImoveis(prev => prev.map(item => 
-        item.id === imovel.id ? { ...item, ativo: !item.ativo } : item
-      ));
-
-      alert(`Imóvel ${!imovel.ativo ? 'ativado' : 'desativado'} com sucesso!`);
-    } catch (error) {
-      console.error("Erro:", error);
-      alert("Erro ao alterar status do imóvel");
-    }
-  };
-
-  const excluirImovel = async (imovel: Imovel) => {
+  // Handlers para o ImovelCardCadastro
+  const handleDelete = async (imovelId: string) => {
     if (!confirm("Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita.")) {
       return;
     }
@@ -143,8 +129,7 @@ export default function MeusImoveisPage() {
       const { error } = await supabase
         .from("imoveis")
         .delete()
-        .eq("id", imovel.id)
-        .eq("user_id", imovel.user_id); // Segurança extra
+        .eq("id", imovelId);
 
       if (error) {
         console.error("Erro ao excluir imóvel:", error);
@@ -153,11 +138,18 @@ export default function MeusImoveisPage() {
       }
 
       // Remover da lista local
-      setImoveis(prev => prev.filter(item => item.id !== imovel.id));
+      setImoveis(prev => prev.filter(item => item.id !== imovelId));
       alert("Imóvel excluído com sucesso!");
     } catch (error) {
       console.error("Erro:", error);
       alert("Erro ao excluir imóvel");
+    }
+  };
+
+  const handleEdit = (imovel: { id?: string }) => {
+    // Redirecionar para página de edição ou abrir modal
+    if (imovel.id) {
+      router.push(`/painel-usuario/cadastrar-imovel?edit=${imovel.id}`);
     }
   };
 
@@ -267,104 +259,43 @@ export default function MeusImoveisPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {imoveisFiltrados.map((imovel) => (
-              <div key={imovel.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                
-                {/* Header do Card */}
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {imovel.tipoimovel}
-                      </h3>
-                      <div className="flex items-center gap-2 text-gray-600 text-sm">
-                        <FiMapPin size={14} />
-                        <span>{imovel.cidade} - {imovel.bairro}</span>
-                      </div>
-                    </div>
-                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      imovel.ativo 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {imovel.ativo ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-blue-600 font-semibold">
-                      <FiDollarSign size={16} />
-                      <span>{formatarMoeda(imovel.valor)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Descrição */}
-                {imovel.descricao && (
-                  <div className="px-6 py-4 border-b border-gray-100">
-                    <p className="text-gray-600 text-sm line-clamp-3">
-                      {imovel.descricao}
-                    </p>
-                  </div>
-                )}
-
-                {/* Ações */}
-                <div className="p-6 bg-gray-50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/imoveis/${imovel.id}`}
-                      target="_blank"
-                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"
-                    >
-                      <FiExternalLink size={14} />
-                      Ver Anúncio
-                    </Link>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => abrirModalEdicao(imovel)}
-                      className="flex items-center gap-1 text-gray-600 hover:text-blue-600 text-sm"
-                      title="Editar imóvel"
-                    >
-                      <FiEdit3 size={14} />
-                    </button>
-                    
-                    <button
-                      onClick={() => alternarStatus(imovel)}
-                      className={`text-sm px-2 py-1 rounded ${
-                        imovel.ativo
-                          ? 'text-red-600 hover:bg-red-50'
-                          : 'text-green-600 hover:bg-green-50'
-                      }`}
-                      title={imovel.ativo ? 'Desativar' : 'Ativar'}
-                    >
-                      {imovel.ativo ? 'Desativar' : 'Ativar'}
-                    </button>
-                    
-                    <button
-                      onClick={() => excluirImovel(imovel)}
-                      className="flex items-center gap-1 text-red-600 hover:text-red-800 text-sm"
-                      title="Excluir imóvel"
-                    >
-                      <FiTrash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <ImovelCardCadastro
+                key={imovel.id}
+                imovel={{
+                  id: imovel.id,
+                  tipoimovel: imovel.tipoimovel,
+                  cidade: imovel.cidade,
+                  bairro: imovel.bairro,
+                  valor: imovel.valor,
+                  descricao: imovel.descricao,
+                  ativo: imovel.ativo,
+                  user_id: imovel.user_id,
+                  datacadastro: imovel.datacadastro,
+                  metragem: imovel.metragem || 0,
+                  tiponegocio: imovel.tiponegocio || "",
+                  setornegocio: imovel.setornegocio || "",
+                  imagens: imovel.imagens || [],
+                  itens: typeof imovel.itens === 'string' 
+                    ? (JSON.parse(imovel.itens as string) || {})
+                    : (imovel.itens || {}),
+                  codigoimovel: imovel.codigoimovel || "",
+                  enderecodetalhado: imovel.enderecodetalhado || "",
+                  whatsapp: imovel.whatsapp || "",
+                  tipoImovel: imovel.tipoimovel,
+                  tipoNegocio: imovel.tiponegocio || "",
+                  setorNegocio: imovel.setornegocio || "",
+                  enderecoDetalhado: imovel.enderecodetalhado || "",
+                  codigoImovel: imovel.codigoimovel || "",
+                  dataCadastro: imovel.datacadastro
+                }}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+                usuarios={usuarios}
+              />
             ))}
           </div>
-        )}
-
-        {/* Modal de Edição */}
-        {imovelParaEditar && (
-          <EditarImovelModal 
-            imovel={imovelParaEditar}
-            isOpen={modalAberto}
-            onClose={fecharModal}
-            onSuccess={handleSuccessEdicao}
-          />
         )}
       </div>
     </div>

@@ -26,13 +26,13 @@ export default function UsuarioSearch({ onSelectUser, selectedUser, disabled }: 
   const searchRef = useRef<HTMLDivElement>(null);
 
   const CATEGORIA_LABELS = {
-    usuario_comum: 'Usuário Comum',
+    proprietario: 'Proprietário',
     corretor: 'Corretor', 
     imobiliaria: 'Imobiliária'
   };
 
   const CATEGORIA_COLORS = {
-    usuario_comum: 'bg-blue-100 text-blue-800',
+    proprietario: 'bg-blue-100 text-blue-800',
     corretor: 'bg-green-100 text-green-800',
     imobiliaria: 'bg-purple-100 text-purple-800'
   };

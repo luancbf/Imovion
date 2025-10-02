@@ -91,11 +91,6 @@ export default function LoginPage() {
     return emailRegex.test(email);
   };
 
-  // Função para validar senha (mínimo 6 caracteres)
-  const isValidPassword = (password: string) => {
-    return password.length >= 6;
-  };
-
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetLoading(true);
@@ -149,8 +144,8 @@ export default function LoginPage() {
       return;
     }
 
-    if (!isValidPassword(password)) {
-      setError("A senha deve ter pelo menos 6 caracteres.");
+    if (!password) {
+      setError("Por favor, insira sua senha.");
       return;
     }
 
@@ -189,9 +184,13 @@ export default function LoginPage() {
           logSecurityEvent('USER_BLOCKED', { email: email.toLowerCase().trim(), attempts: newAttempts });
           setError(`Muitas tentativas falharam. Login bloqueado por 15 minutos.`);
         } else {
-          // Mensagens de erro mais seguras (não revelar se email existe)
+          // Mostrar mensagem simples, só avisar quando restar 1 tentativa
           const attemptsLeft = MAX_ATTEMPTS - newAttempts;
-          setError(`Credenciais inválidas. ${attemptsLeft} tentativa(s) restante(s).`);
+          if (attemptsLeft === 1) {
+            setError(`E-mail ou senha incorretos. Atenção: apenas 1 tentativa restante antes do bloqueio.`);
+          } else {
+            setError(`E-mail ou senha incorretos.`);
+          }
         }
         return;
       }
@@ -377,16 +376,6 @@ export default function LoginPage() {
               )}
             </button>
           </div>
-
-          {/* Mostrar tentativas restantes */}
-          {loginAttempts > 0 && !isBlocked && (
-            <div className="text-amber-600 text-sm text-center bg-amber-50 p-2 rounded flex items-center justify-center gap-2">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              {MAX_ATTEMPTS - loginAttempts} tentativa(s) restante(s)
-            </div>
-          )}
 
           {/* Mostrar bloqueio */}
           {isBlocked && (

@@ -187,7 +187,7 @@ export default function PatrocinadoresList({ onEdit, refreshTrigger }: Patrocina
                         {patrocinador.user_profile.nome} {patrocinador.user_profile.sobrenome}
                       </span>
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-1">
-                        {patrocinador.user_profile.categoria === 'usuario_comum' && 'Usuário'}
+                        {patrocinador.user_profile.categoria === 'proprietario' && 'Proprietário'}
                         {patrocinador.user_profile.categoria === 'corretor' && 'Corretor'}
                         {patrocinador.user_profile.categoria === 'imobiliaria' && 'Imobiliária'}
                       </span>

@@ -10,11 +10,11 @@ interface InfoCategoriaUsuarioProps {
 }
 
 const CATEGORIA_INFO = {
-  usuario_comum: {
-    nome: 'Usuário Comum',
+  proprietario: {
+    nome: 'Proprietário',
     icon: FiUser,
     cor: 'blue',
-    descricao: 'Categoria básica para usuários individuais'
+    descricao: 'Categoria básica para proprietários individuais'
   },
   proprietario_com_plano: {
     nome: 'Proprietário com Plano',
@@ -137,7 +137,7 @@ export default function InfoCategoriaUsuario({
       <div className="mt-4 pt-4 border-t border-gray-100">
         <h4 className="text-sm font-medium text-gray-700 mb-2">Benefícios da sua categoria:</h4>
         <ul className="text-sm text-gray-600 space-y-1">
-          {categoria === 'usuario_comum' && (
+          {categoria === 'proprietario' && (
             <li>• Cadastro gratuito de até 1 imóvel</li>
           )}
           {categoria === 'proprietario_com_plano' && (

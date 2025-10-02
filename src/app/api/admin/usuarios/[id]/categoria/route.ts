@@ -12,7 +12,7 @@ export async function PUT(
     const { categoria } = body as { categoria: CategoriaUsuario };
 
     // Validar categoria
-    if (!categoria || !['usuario_comum', 'corretor', 'imobiliaria'].includes(categoria)) {
+    if (!categoria || !['proprietario', 'corretor', 'imobiliaria'].includes(categoria)) {
       return NextResponse.json(
         { error: 'Categoria inválida' },
         { status: 400 }

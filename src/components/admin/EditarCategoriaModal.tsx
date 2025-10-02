@@ -23,7 +23,7 @@ export default function EditarCategoriaModal({
   usuario, 
   onSave 
 }: EditarCategoriaModalProps) {
-  const [categoria, setCategoria] = useState<CategoriaUsuario>('usuario_comum');
+  const [categoria, setCategoria] = useState<CategoriaUsuario>('proprietario');
   const [salvando, setSalvando] = useState(false);
 
   if (!isOpen || !usuario) return null;
@@ -42,10 +42,10 @@ export default function EditarCategoriaModal({
 
   const getCategoriaInfo = (cat: CategoriaUsuario) => {
     switch (cat) {
-      case 'usuario_comum':
+      case 'proprietario':
         return {
-          nome: 'Usuário Comum',
-          limite: LIMITES_POR_CATEGORIA.usuario_comum,
+          nome: 'Proprietário',
+          limite: LIMITES_POR_CATEGORIA.proprietario,
           icone: FiUser,
           cor: 'text-gray-600',
           bgCor: 'bg-gray-100'
@@ -111,7 +111,7 @@ export default function EditarCategoriaModal({
               Nova Categoria:
             </label>
             
-            {(['usuario_comum', 'corretor', 'imobiliaria', 'proprietario_com_plano'] as CategoriaUsuario[]).map((cat) => {
+            {(['proprietario', 'corretor', 'imobiliaria', 'proprietario_com_plano'] as CategoriaUsuario[]).map((cat) => {
               const info = getCategoriaInfo(cat);
               const IconComponent = info.icone;
               

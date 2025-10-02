@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FiArrowLeft, FiHome } from "react-icons/fi";
+import { opcoesTipoImovel } from "@/constants/opcoesTipoImovel";
 
 // Importação dinâmica do formulário para melhor performance
 const FormularioImovel = dynamic(() => import("@/components/cadastrar-imovel/FormularioImovel"), {
@@ -93,8 +94,14 @@ export default function CadastrarImovelPage() {
           </div>
         ) : (
           <>
+            {/* Formulário */}
+            <FormularioImovel
+              opcoesTipoImovel={opcoesTipoImovel}
+              onSuccess={handleImovelCadastrado}
+            />
+
             {/* Informações Importantes */}
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 md:p-6 mb-6 md:mb-8">
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 md:p-6 mt-6 md:mt-8">
               <h3 className="text-base md:text-lg font-semibold text-blue-900 mb-3">📋 Informações Importantes</h3>
               <ul className="space-y-2 text-sm md:text-base text-blue-800">
                 <li className="flex items-start gap-2">
@@ -115,11 +122,6 @@ export default function CadastrarImovelPage() {
                 </li>
               </ul>
             </div>
-
-            {/* Formulário */}
-            <FormularioImovel
-                onSuccess={handleImovelCadastrado}
-              />
           </>
         )}
       </div>

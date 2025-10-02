@@ -130,7 +130,7 @@ export default function GerenciamentoUsuariosList({ filtros }: GerenciamentoUsua
             <div className="flex items-center gap-4 text-sm text-gray-600">
               <span className="flex items-center gap-1">
                 <FiUser className="text-blue-600" />
-                {usuariosFiltrados.filter(u => u.categoria === 'usuario_comum').length} Comum
+                {usuariosFiltrados.filter(u => u.categoria === 'proprietario').length} Comum
               </span>
               <span className="flex items-center gap-1">
                 <FiAward className="text-green-600" />

@@ -3,17 +3,26 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { FiUser, FiMail, FiPhone, FiMapPin, FiSave, FiEdit3 } from "react-icons/fi";
+import { FiUser, FiMail, FiPhone, FiSave, FiEdit3, FiBriefcase, FiAward } from "react-icons/fi";
 
 interface UserProfile {
   id: string;
   nome: string;
+  sobrenome: string;
   email: string;
   telefone: string;
-  cidade: string;
-  estado: string;
   role: string;
   created_at: string;
+  categoria: string;
+  creci?: string;
+  corretor: boolean;
+  is_corretor: boolean;
+}
+
+interface UpdateProfileData {
+  nome: string;
+  telefone: string;
+  sobrenome?: string;
 }
 
 export default function PerfilPage() {
@@ -24,9 +33,8 @@ export default function PerfilPage() {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
+    sobrenome: "",
     telefone: "",
-    cidade: "",
-    estado: "",
   });
 
   const carregarPerfil = useCallback(async () => {
@@ -52,9 +60,8 @@ export default function PerfilPage() {
       setProfile(profile);
       setFormData({
         nome: profile.nome || "",
+        sobrenome: profile.sobrenome || "",
         telefone: profile.telefone || "",
-        cidade: profile.cidade || "",
-        estado: profile.estado || "",
       });
     } catch (error) {
       console.error("Erro:", error);
@@ -72,20 +79,44 @@ export default function PerfilPage() {
 
     setSaving(true);
     try {
+      // Preparar dados para atualização
+      const updateData: UpdateProfileData = {
+        nome: formData.nome,
+        telefone: formData.telefone,
+      };
+
+      // Apenas incluir sobrenome se não for imobiliária
+      if (!isImobiliaria()) {
+        updateData.sobrenome = formData.sobrenome;
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          nome: formData.nome,
-          telefone: formData.telefone,
-          cidade: formData.cidade,
-          estado: formData.estado,
-        })
+        .update(updateData)
         .eq("id", profile.id);
 
       if (error) {
         console.error("Erro ao atualizar perfil:", error);
-        alert("Erro ao salvar alterações");
+        alert(`Erro ao salvar alterações: ${error.message || 'Erro desconhecido'}`);
         return;
+      }
+
+      // Se o telefone foi alterado, atualizar WhatsApp em todos os imóveis do usuário
+      if (formData.telefone !== profile.telefone) {
+        const { error: errorImoveis } = await supabase
+          .from("imoveis")
+          .update({ 
+            whatsapp: formData.telefone,
+            updated_at: new Date().toISOString()
+          })
+          .eq("user_id", profile.id);
+
+        if (errorImoveis) {
+          console.warn("Erro ao atualizar WhatsApp nos imóveis:", errorImoveis);
+          // Não bloquear o salvamento do perfil por causa dos imóveis
+        } else {
+          console.log("WhatsApp atualizado em todos os imóveis do usuário");
+        }
       }
 
       // Atualizar o profile local
@@ -106,6 +137,29 @@ export default function PerfilPage() {
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Função para formatar a categoria de forma correta
+  const formatarCategoria = (categoria: string) => {
+    switch(categoria) {
+      case 'proprietario':
+        return 'Proprietário';
+      case 'corretor':
+        return 'Corretor de Imóveis';
+      case 'imobiliaria':
+        return 'Imobiliária';
+      case 'proprietario_com_plano':
+        return 'Proprietário com Plano';
+      default:
+        return categoria || 'Não informado';
+    }
+  };
+
+  // Verificar se é imobiliária (pode ser pela categoria ou pelos campos booleanos)
+  const isImobiliaria = () => {
+    return profile?.categoria === 'imobiliaria' || 
+           profile?.corretor === true || 
+           profile?.is_corretor === true;
   };
 
   if (loading) {
@@ -157,18 +211,15 @@ export default function PerfilPage() {
                   <FiUser size={32} className="text-blue-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {profile.nome || "Nome não informado"}
+                  {isImobiliaria() 
+                    ? (profile.nome || "Nome da imobiliária não informado")
+                    : (profile.nome 
+                        ? `${profile.nome}${profile.sobrenome ? ` ${profile.sobrenome}` : ''}`
+                        : "Nome não informado"
+                      )
+                  }
                 </h3>
                 <p className="text-gray-600 text-sm mb-4">{profile.email}</p>
-                <div className="flex items-center justify-center gap-2 text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    profile.role === 'admin' 
-                      ? 'bg-purple-100 text-purple-800' 
-                      : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {profile.role === 'admin' ? 'Administrador' : 'Usuário'}
-                  </span>
-                </div>
                 <p className="text-gray-500 text-xs mt-4">
                   Membro desde: {new Date(profile.created_at).toLocaleDateString('pt-BR')}
                 </p>
@@ -187,9 +238,8 @@ export default function PerfilPage() {
                       // Cancelar edição - restaurar dados originais
                       setFormData({
                         nome: profile.nome || "",
+                        sobrenome: profile.sobrenome || "",
                         telefone: profile.telefone || "",
-                        cidade: profile.cidade || "",
-                        estado: profile.estado || "",
                       });
                     }
                     setEditMode(!editMode);
@@ -204,10 +254,10 @@ export default function PerfilPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* Nome */}
-                <div>
+                <div className={isImobiliaria() ? "md:col-span-2" : ""}>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <FiUser size={16} className="inline mr-2" />
-                    Nome Completo
+                    {isImobiliaria() ? "Nome da Imobiliária" : "Nome"}
                   </label>
                   {editMode ? (
                     <input
@@ -215,7 +265,7 @@ export default function PerfilPage() {
                       value={formData.nome}
                       onChange={(e) => handleChange('nome', e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                      placeholder="Digite seu nome completo"
+                      placeholder={isImobiliaria() ? "Digite o nome da imobiliária" : "Digite seu nome"}
                     />
                   ) : (
                     <div className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700">
@@ -223,6 +273,29 @@ export default function PerfilPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Sobrenome (apenas se NÃO for imobiliária) */}
+                {!isImobiliaria() && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <FiUser size={16} className="inline mr-2" />
+                      Sobrenome
+                    </label>
+                    {editMode ? (
+                      <input
+                        type="text"
+                        value={formData.sobrenome}
+                        onChange={(e) => handleChange('sobrenome', e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                        placeholder="Digite seu sobrenome"
+                      />
+                    ) : (
+                      <div className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700">
+                        {profile.sobrenome || "Não informado"}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Email (não editável) */}
                 <div>
@@ -257,73 +330,31 @@ export default function PerfilPage() {
                   )}
                 </div>
 
-                {/* Cidade */}
+                {/* Categoria (apenas informativo) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <FiMapPin size={16} className="inline mr-2" />
-                    Cidade
+                    <FiBriefcase size={16} className="inline mr-2" />
+                    Categoria
                   </label>
-                  {editMode ? (
-                    <input
-                      type="text"
-                      value={formData.cidade}
-                      onChange={(e) => handleChange('cidade', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                      placeholder="Digite sua cidade"
-                    />
-                  ) : (
-                    <div className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700">
-                      {profile.cidade || "Não informado"}
-                    </div>
-                  )}
+                  <div className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-100 text-gray-700">
+                    {formatarCategoria(profile.categoria)}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Categoria não pode ser alterada</p>
                 </div>
 
-                {/* Estado */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Estado
-                  </label>
-                  {editMode ? (
-                    <select
-                      value={formData.estado}
-                      onChange={(e) => handleChange('estado', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                    >
-                      <option value="">Selecione um estado</option>
-                      <option value="AC">Acre</option>
-                      <option value="AL">Alagoas</option>
-                      <option value="AP">Amapá</option>
-                      <option value="AM">Amazonas</option>
-                      <option value="BA">Bahia</option>
-                      <option value="CE">Ceará</option>
-                      <option value="DF">Distrito Federal</option>
-                      <option value="ES">Espírito Santo</option>
-                      <option value="GO">Goiás</option>
-                      <option value="MA">Maranhão</option>
-                      <option value="MT">Mato Grosso</option>
-                      <option value="MS">Mato Grosso do Sul</option>
-                      <option value="MG">Minas Gerais</option>
-                      <option value="PA">Pará</option>
-                      <option value="PB">Paraíba</option>
-                      <option value="PR">Paraná</option>
-                      <option value="PE">Pernambuco</option>
-                      <option value="PI">Piauí</option>
-                      <option value="RJ">Rio de Janeiro</option>
-                      <option value="RN">Rio Grande do Norte</option>
-                      <option value="RS">Rio Grande do Sul</option>
-                      <option value="RO">Rondônia</option>
-                      <option value="RR">Roraima</option>
-                      <option value="SC">Santa Catarina</option>
-                      <option value="SP">São Paulo</option>
-                      <option value="SE">Sergipe</option>
-                      <option value="TO">Tocantins</option>
-                    </select>
-                  ) : (
-                    <div className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-700">
-                      {profile.estado || "Não informado"}
+                {/* CRECI (apenas se tiver - informativo) */}
+                {profile.creci && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <FiAward size={16} className="inline mr-2" />
+                      CRECI
+                    </label>
+                    <div className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-100 text-gray-700">
+                      {profile.creci}
                     </div>
-                  )}
-                </div>
+                    <p className="text-xs text-gray-500 mt-1">CRECI não pode ser alterado</p>
+                  </div>
+                )}
               </div>
 
               {/* Botão de Salvar */}

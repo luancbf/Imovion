@@ -150,22 +150,7 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
               ? `${negocioFormatado(imovel.tiponegocio)} - ${formatarTexto(imovel.setornegocio)} - ${formatarTexto(imovel.tipoimovel)}`
               : formatarTexto(imovel.tipoimovel)}
           </h3>
-          
-          {/* CÓDIGOS DO IMÓVEL - ATUALIZADOS */}
-          <div className="space-y-1">
-            {imovel.codigoimovel && imovel.codigoimovel.trim() && (
-              <div className="font-inter text-sm text-gray-600">
-                <span className="font-poppins font-bold">Cód. Imóvel:</span> {imovel.codigoimovel}
-              </div>
-            )}
-            
-            {imovel.codigo_parceiro && imovel.codigo_parceiro !== imovel.codigoimovel && (
-              <div className="font-inter text-sm text-purple-600">
-                <span className="font-poppins font-bold">Cód. Parceiro:</span> {imovel.codigo_parceiro}
-              </div>
-            )}
-          </div>
-          
+        
           <p className="font-poppins text-green-700 font-bold text-xl md:text-2xl">
             {imovel.valor && typeof imovel.valor === 'number'
               ? imovel.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -202,7 +187,7 @@ export default function ImovelCard({ imovel, contexto = "categoria" }: ImovelCar
           </div>
         </div>
 
-        {/* BOTÕES ATUALIZADOS */}
+        {/* BOTÕES */}
         <div className="font-poppins flex flex-wrap gap-2 mt-4 pt-4">
           <Link
             href={`/imoveis/${imovel.id}`}

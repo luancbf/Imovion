@@ -95,7 +95,7 @@ export async function PUT(
     let categoria;
     switch (tipo_usuario) {
       case 'usuario':
-        categoria = 'usuario_comum';
+        categoria = 'proprietario';
         break;
       case 'imobiliaria':
         categoria = 'imobiliaria';

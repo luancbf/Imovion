@@ -28,6 +28,7 @@ export default function Patrocinios() {
       try {
         setLoading(true);
 
+        // Primeira query: buscar apenas os dados de patrocinio_configs
         const { data, error } = await supabase
           .from('patrocinio_configs')
           .select(`
@@ -36,18 +37,14 @@ export default function Patrocinios() {
             image_alt, 
             display_order,
             is_clickable,
-            patrocinador_id,
-            patrocinadores (
-              id,
-              nome,
-              slug
-            )
+            patrocinador_id
           `)
           .eq('is_active', true)
           .not('image_url', 'is', null)
           .order('display_order', { ascending: true });
 
         if (error) {
+          console.error('Erro ao buscar patrocínios:', error);
           setPatrocinios([]);
           return;
         }
@@ -57,19 +54,36 @@ export default function Patrocinios() {
           return;
         }
 
+        // Segunda query: buscar dados dos patrocinadores apenas para os que têm patrocinador_id
+        const patrocinadorIds = data
+          .filter(item => item.patrocinador_id)
+          .map(item => item.patrocinador_id);
+
+        let patrocinadores: Array<{id: string, nome: string, slug: string}> = [];
+        if (patrocinadorIds.length > 0) {
+          const { data: patrocinadorData } = await supabase
+            .from('patrocinadores')
+            .select('id, nome, slug')
+            .in('id', patrocinadorIds);
+          
+          patrocinadores = patrocinadorData || [];
+        }
+
+        // Mapear dados combinando as duas queries
         const validPatrocinios = data
           .filter(item => item.image_url && typeof item.image_url === 'string' && item.image_url.trim() !== '')
-          .map(item => ({
-            id: item.id,
-            image_url: item.image_url,
-            image_alt: item.image_alt || 'Patrocínio',
-            display_order: item.display_order,
-            is_clickable: item.is_clickable || false,
-            patrocinador_id: item.patrocinador_id,
-            patrocinadores: Array.isArray(item.patrocinadores) 
-              ? item.patrocinadores[0] 
-              : item.patrocinadores
-          }));
+          .map(item => {
+            const patrocinador = patrocinadores.find(p => p.id === item.patrocinador_id);
+            return {
+              id: item.id,
+              image_url: item.image_url,
+              image_alt: item.image_alt || 'Patrocínio',
+              display_order: item.display_order,
+              is_clickable: item.is_clickable || false,
+              patrocinador_id: item.patrocinador_id,
+              patrocinadores: patrocinador || null
+            };
+          });
 
         setPatrocinios(validPatrocinios);
 

@@ -79,7 +79,6 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at
       `)
-      .neq('role', 'admin')
       .eq('ativo', true)
       .order('created_at', { ascending: false });
 

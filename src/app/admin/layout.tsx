@@ -81,7 +81,7 @@ export default function AdminLayout({
 
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+    router.push("/");
   };
 
   const isActiveRoute = (href: string) => {

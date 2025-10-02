@@ -1,7 +1,7 @@
 // Tipos para gerenciamento de usuários
 import { TipoUsuario, PlanoUsuario } from '@/constants/tiposUsuarioPlanos';
 
-export type CategoriaUsuario = 'usuario_comum' | 'corretor' | 'imobiliaria' | 'proprietario_com_plano';
+export type CategoriaUsuario = 'proprietario' | 'corretor' | 'imobiliaria' | 'proprietario_com_plano';
 
 export interface Usuario {
   id: string;
@@ -60,7 +60,7 @@ export interface UsuarioComEstatisticas extends Usuario {
 
 export interface EstatisticasUsuarios {
   total: number;
-  usuarios_comuns: number;
+  proprietarios: number;
   corretores: number;
   imobiliarias: number;
   proprietarios_com_plano: number;
@@ -80,7 +80,7 @@ export interface EstatisticasUsuarios {
 
 export interface FiltrosUsuarios {
   busca: string;
-  categoria: 'todos' | 'usuario_comum' | 'corretor' | 'imobiliaria' | 'proprietario_com_plano';
+  categoria: 'todos' | 'proprietario' | 'corretor' | 'imobiliaria' | 'proprietario_com_plano';
   creci: 'todos' | 'com' | 'sem';
   plano: 'todos' | 'mensal' | 'por_anuncio' | 'sem_plano';
   status: 'todos' | 'ativo' | 'inativo';
@@ -90,7 +90,7 @@ export interface FiltrosUsuarios {
 
 // Configuração de limites por categoria
 export const LIMITES_POR_CATEGORIA = {
-  usuario_comum: 1,
+  proprietario: 1,
   corretor: 50,
   imobiliaria: 150,
   proprietario_com_plano: 25

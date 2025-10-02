@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { FiHome, FiSearch, FiFilter } from 'react-icons/fi';
 import ImovelCardCadastro from './ImovelCardCadastro';
 import FiltroCadastroImoveis from './FiltroCadastroImoveis';
 import type { Imovel } from '@/types/Imovel';
-import type { Patrocinador } from '@/types/cadastrar-patrocinador';
+import type { UsuarioFormulario } from '@/types/formularios';
 import { supabase } from '@/lib/supabase'
 
 interface ListaImoveisProps {
@@ -13,33 +13,33 @@ interface ListaImoveisProps {
   carregando: boolean;
   onDelete: (id: string) => Promise<void>;
   onEdit: (imovel: Imovel) => void;
-  patrocinadores: Patrocinador[];
+  usuarios: UsuarioFormulario[];
   filtros: {
     tipoNegocio: string;
     setorNegocio: string;
-    patrocinador: string;
+    usuario: string;
     codigoImovel: string;
   };
   onFiltroChange: (filtros: {
     tipoNegocio: string;
     setorNegocio: string;
-    patrocinador: string;
+    usuario: string;
     codigoImovel: string;
   }) => void;
 }
 
-export default function ListaImoveis({
+function ListaImoveis({
   imoveis,
   carregando,
   onDelete,
   onEdit,
-  patrocinadores,
+  usuarios,
   filtros,
   onFiltroChange,
 }: ListaImoveisProps) {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   
-  const handleDeleteImovel = async (id: string) => {
+  const handleDeleteImovel = useCallback(async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este imóvel?')) {
       try {
         const { data: imovel } = await supabase
@@ -71,7 +71,7 @@ export default function ListaImoveis({
         alert('Erro inesperado ao excluir imóvel.');
       }
     }
-  };
+  }, [onDelete]);
 
   return (
     <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100">
@@ -104,9 +104,9 @@ export default function ListaImoveis({
         >
           <FiFilter className={`w-4 h-4 transition-transform duration-200 ${mostrarFiltros ? 'rotate-180' : ''}`} />
           {mostrarFiltros ? 'Ocultar Filtros' : 'Filtrar Imóveis'}
-          {(filtros.tipoNegocio || filtros.setorNegocio || filtros.patrocinador || filtros.codigoImovel) && (
+          {(filtros.tipoNegocio || filtros.setorNegocio || filtros.usuario || filtros.codigoImovel) && (
             <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-              {[filtros.tipoNegocio, filtros.setorNegocio, filtros.patrocinador, filtros.codigoImovel]
+              {[filtros.tipoNegocio, filtros.setorNegocio, filtros.usuario, filtros.codigoImovel]
                 .filter(Boolean).length}
             </span>
           )}
@@ -117,7 +117,7 @@ export default function ListaImoveis({
       {mostrarFiltros && (
         <div className="mb-6 transition-all duration-300 ease-in-out">
           <FiltroCadastroImoveis
-            patrocinadores={patrocinadores}
+            usuarios={usuarios}
             onFiltroChange={onFiltroChange}
           />
         </div>
@@ -160,7 +160,7 @@ export default function ListaImoveis({
                 }}
                 onDelete={handleDeleteImovel}
                 onEdit={onEdit}
-                patrocinadores={patrocinadores}
+                usuarios={usuarios}
               />
             </div>
           ))}
@@ -180,3 +180,7 @@ export default function ListaImoveis({
     </section>
   );
 }
+
+// Exportar sem memo temporariamente para debug
+export default ListaImoveis;
+// export default memo(ListaImoveis);
