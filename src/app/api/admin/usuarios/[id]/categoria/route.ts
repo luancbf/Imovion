@@ -4,10 +4,10 @@ import { CategoriaUsuario, LIMITES_POR_CATEGORIA } from '@/types/usuarios';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
     const body = await request.json();
     const { categoria } = body as { categoria: CategoriaUsuario };
 
@@ -73,10 +73,10 @@ export async function PUT(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
     const supabase = await createServerSupabaseClient();
 
     const { data, error } = await supabase

@@ -15,9 +15,10 @@ interface DadosAtualizacao {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: userId } = await params;
     const { tipo_usuario, plano_ativo } = await request.json();
 
     if (!tipo_usuario || !plano_ativo) {
@@ -51,7 +52,7 @@ export async function PUT(
     const { data: usuarioAtual, error: errorBusca } = await supabase
       .from('usuarios')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', userId)
       .single();
 
     if (errorBusca) {
@@ -114,7 +115,7 @@ export async function PUT(
     const { data, error } = await supabase
       .from('usuarios')
       .update(dadosExtras)
-      .eq('id', params.id)
+      .eq('id', userId)
       .select()
       .single();
 
@@ -131,7 +132,7 @@ export async function PUT(
       .from('log_admin_acoes')
       .insert({
         acao: 'CONFIGURAR_USUARIO',
-        usuario_id: params.id,
+        usuario_id: userId,
         dados_anteriores: {
           tipo_usuario: usuarioAtual.tipo_usuario,
           plano_ativo: usuarioAtual.plano_ativo,

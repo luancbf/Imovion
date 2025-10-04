@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { FiUser, FiMail, FiPhone, FiCalendar, FiShield, FiTrash2, FiEdit3, FiAward } from 'react-icons/fi';
-import { useUsuarios, Usuario } from '@/hooks/admin/useUsuarios';
-import ConfirmModal from '@/components/ui/ConfirmModal';
+import { useUsuarios, Usuario } from '@/hooks/useUsuarios';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 interface UsuariosListProps {
   filtros?: {
@@ -35,7 +35,7 @@ export default function UsuariosList({ filtros }: UsuariosListProps) {
     }
     
     if (filtros?.corretor !== null) {
-      if (usuario.corretor !== filtros.corretor) return false;
+      if (usuario.corretor !== filtros?.corretor) return false;
     }
     
     return true;
