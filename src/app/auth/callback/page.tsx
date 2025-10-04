@@ -39,6 +39,25 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // Verificar se é um callback de confirmação de email
+        const code = searchParams?.get('code');
+        
+        if (code) {
+          // Trocar o código por uma sessão
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error('Erro na confirmação:', error);
+            setError('Erro na confirmação do email. Link pode estar expirado.');
+            setIsLoading(false);
+            return;
+          }
+          
+          // Redirecionar para página de sucesso
+          router.push('/email-confirmado');
+          return;
+        }
+
         // Verificar se é um callback de reset de senha
         const accessToken = searchParams?.get('access_token');
         const refreshToken = searchParams?.get('refresh_token');
