@@ -248,7 +248,7 @@ export default function LoginPage() {
           } catch (error) {
             console.error(`Tentativa ${attempts} - Erro inesperado:`, error);
             if (attempts === maxAttempts) {
-              setError("Erro de conexão. Redirecionando como usuário comum...");
+              setError("Erro de conexão. Redirecionando como proprietário comum...");
               router.push("/painel-usuario");
               return;
             }

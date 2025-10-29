@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { FiUser, FiMail, FiPhone, FiStar, FiUsers, FiTrendingUp } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiStar, FiUsers } from 'react-icons/fi';
 import { useGerenciamentoUsuarios } from '@/hooks/useGerenciamentoUsuarios';
 
 interface UsuarioElegivel {
@@ -32,17 +32,20 @@ export default function UsuariosPatrocinadores() {
       ordem: 'asc'
     });
     
-    const usuariosProcessados = todosUsuarios.map(usuario => ({
-      id: usuario.id,
-      nome: usuario.nome,
-      sobrenome: usuario.sobrenome,
-      email: usuario.email,
-      telefone: usuario.telefone,
-      categoria: usuario.categoria,
-      total_imoveis: usuario.total_imoveis,
-      created_at: usuario.created_at,
-      pode_ser_patrocinador: usuario.categoria === 'proprietario' && usuario.total_imoveis > 0
-    }));
+    // Filtrar apenas corretores e imobiliárias como possíveis patrocinadores
+    const usuariosProcessados = todosUsuarios
+      .filter(usuario => usuario.categoria === 'corretor' || usuario.categoria === 'imobiliaria')
+      .map(usuario => ({
+        id: usuario.id,
+        nome: usuario.nome,
+        sobrenome: usuario.sobrenome,
+        email: usuario.email,
+        telefone: usuario.telefone,
+        categoria: usuario.categoria,
+        total_imoveis: usuario.total_imoveis,
+        created_at: usuario.created_at,
+        pode_ser_patrocinador: true // Corretores e imobiliárias podem ser patrocinadores
+      }));
 
     setUsuariosElegiveis(usuariosProcessados);
   }, [filtrarUsuarios]);
@@ -61,7 +64,7 @@ export default function UsuariosPatrocinadores() {
   };
 
   const rebaixarPatrocinador = async (usuarioId: string) => {
-    if (confirm('Rebaixar este patrocinador para usuário comum? Ele voltará ao limite de 1 imóvel.')) {
+    if (confirm('Remover este usuário dos patrocinadores? Ele voltará ao status normal de corretor/imobiliária.')) {
       const sucesso = await alterarCategoriaUsuario(usuarioId, 'proprietario');
       if (sucesso) {
         carregarUsuarios();
@@ -72,19 +75,19 @@ export default function UsuariosPatrocinadores() {
   const usuariosFiltrados = usuariosElegiveis.filter(usuario => {
     switch (filtro) {
       case 'elegiveis':
-        return usuario.pode_ser_patrocinador;
+        return usuario.categoria === 'corretor' || usuario.categoria === 'imobiliaria';
       case 'patrocinadores':
         return usuario.categoria === 'proprietario_com_plano';
       default:
-        return usuario.categoria === 'proprietario' || usuario.categoria === 'proprietario_com_plano';
+        return true; // Todos (já filtrados para corretor/imobiliaria)
     }
   });
 
   const estatisticas = {
     total: usuariosElegiveis.length,
-    elegiveis: usuariosElegiveis.filter(u => u.pode_ser_patrocinador).length,
-    patrocinadores: usuariosElegiveis.filter(u => u.categoria === 'proprietario_com_plano').length,
-    proprietarios: usuariosElegiveis.filter(u => u.categoria === 'proprietario').length
+    corretores: usuariosElegiveis.filter(u => u.categoria === 'corretor').length,
+    imobiliarias: usuariosElegiveis.filter(u => u.categoria === 'imobiliaria').length,
+    patrocinadores: usuariosElegiveis.filter(u => u.categoria === 'proprietario_com_plano').length
   };
 
   if (loading) {
@@ -137,7 +140,7 @@ export default function UsuariosPatrocinadores() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Elegíveis ({estatisticas.elegiveis})
+              Corretores & Imobiliárias ({estatisticas.corretores + estatisticas.imobiliarias})
             </button>
             <button
               onClick={() => setFiltro('patrocinadores')}
@@ -157,12 +160,12 @@ export default function UsuariosPatrocinadores() {
       <div className="p-6 bg-gray-50 border-b border-gray-200">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{estatisticas.proprietarios}</div>
-            <div className="text-sm text-gray-600">Usuários Comuns</div>
+            <div className="text-2xl font-bold text-blue-600">{estatisticas.corretores}</div>
+            <div className="text-sm text-gray-600">Corretores</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{estatisticas.elegiveis}</div>
-            <div className="text-sm text-gray-600">Elegíveis</div>
+            <div className="text-2xl font-bold text-green-600">{estatisticas.imobiliarias}</div>
+            <div className="text-sm text-gray-600">Imobiliárias</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">{estatisticas.patrocinadores}</div>
@@ -199,8 +202,16 @@ export default function UsuariosPatrocinadores() {
                   <div className="flex-1">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                          <FiUser className="text-white text-sm" />
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          usuario.categoria === 'corretor' 
+                            ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+                            : usuario.categoria === 'imobiliaria'
+                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                            : 'bg-gradient-to-br from-purple-500 to-pink-600'
+                        }`}>
+                          {usuario.categoria === 'corretor' && <FiUser className="text-white text-sm" />}
+                          {usuario.categoria === 'imobiliaria' && <FiUsers className="text-white text-sm" />}
+                          {usuario.categoria === 'proprietario_com_plano' && <FiStar className="text-white text-sm" />}
                         </div>
                       </div>
                       
@@ -218,10 +229,17 @@ export default function UsuariosPatrocinadores() {
                             </span>
                           )}
                           
-                          {usuario.pode_ser_patrocinador && usuario.categoria === 'proprietario' && (
+                          {usuario.categoria === 'corretor' && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <FiTrendingUp size={10} />
-                              Elegível
+                              <FiUser size={10} />
+                              Corretor
+                            </span>
+                          )}
+                          
+                          {usuario.categoria === 'imobiliaria' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <FiUsers size={10} />
+                              Imobiliária
                             </span>
                           )}
                         </div>

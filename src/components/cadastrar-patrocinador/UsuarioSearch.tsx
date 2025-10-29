@@ -208,7 +208,7 @@ export default function UsuarioSearch({ onSelectUser, selectedUser, disabled }: 
       )}
       
       <p className="text-xs text-gray-500">
-        Você pode vincular este patrocinador a um usuário existente da plataforma (corretor, imobiliária ou usuário comum) 
+        Você pode vincular este patrocinador a um usuário existente da plataforma (corretor, imobiliária ou proprietário) 
         ou deixar em branco para criar um patrocinador independente.
       </p>
     </div>

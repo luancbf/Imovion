@@ -3,13 +3,14 @@
 import { useEffect } from 'react';
 
 // Lista de recursos críticos para preload
-const criticalResources = [
-  // Imagens críticas
-  { href: '/imovion.webp', as: 'image', type: 'image/webp' },
-  { href: '/favicon.ico', as: 'image', type: 'image/x-icon' },
-  
-  // Fonts críticas
-  { href: '/fonts/inter-var.woff2', as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' },
+const criticalResources: Array<{
+  href: string;
+  as: string;
+  type?: string;
+  crossOrigin?: string;
+}> = [
+  // Apenas recursos realmente críticos
+  // Removendo imovion.webp, favicon.ico e fonts para evitar warnings
   
   // Stylesheets críticos
   { href: '/globals.css', as: 'style' },
@@ -36,6 +37,7 @@ export default function ResourcePreloader() {
   useEffect(() => {
     // Desabilitar em desenvolvimento para reduzir logs no console
     if (process.env.NODE_ENV === 'development') {
+      console.log('ResourcePreloader desabilitado em desenvolvimento');
       return;
     }
     // Função para criar link preload/prefetch

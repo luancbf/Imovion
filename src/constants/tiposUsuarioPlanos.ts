@@ -1,6 +1,6 @@
 // Tipos de usuário disponíveis no sistema
 export const TIPOS_USUARIO = {
-  USUARIO: 'usuario',
+  PROPRIETARIO: 'proprietario',
   IMOBILIARIA: 'imobiliaria', 
   CORRETOR: 'corretor'
 } as const;
@@ -69,9 +69,9 @@ export const CONFIGURACAO_PLANOS = {
 
 // Labels para tipos de usuário
 export const LABELS_TIPO_USUARIO = {
-  [TIPOS_USUARIO.USUARIO]: {
-    nome: 'Usuário',
-    descricao: 'Usuário comum',
+  [TIPOS_USUARIO.PROPRIETARIO]: {
+    nome: 'Proprietário',
+    descricao: 'Proprietário de imóveis',
     cor: 'bg-gray-100 text-gray-800',
     icone: '👤'
   },
@@ -95,8 +95,30 @@ export function getConfiguracaoPlano(plano: PlanoUsuario) {
 }
 
 // Função utilitária para obter label do tipo de usuário
-export function getLabelTipoUsuario(tipo: TipoUsuario) {
-  return LABELS_TIPO_USUARIO[tipo];
+export function getLabelTipoUsuario(tipo: TipoUsuario | string | null | undefined) {
+  // Tratar valores nulos ou undefined
+  if (!tipo) {
+    console.warn('getLabelTipoUsuario: tipo é null/undefined, usando proprietario como fallback');
+    return LABELS_TIPO_USUARIO[TIPOS_USUARIO.PROPRIETARIO];
+  }
+  
+  // Mapear valores antigos para novos
+  let tipoNormalizado: TipoUsuario;
+  if (tipo === 'usuario') {
+    console.warn('getLabelTipoUsuario: convertendo "usuario" para "proprietario"');
+    tipoNormalizado = TIPOS_USUARIO.PROPRIETARIO;
+  } else {
+    tipoNormalizado = tipo as TipoUsuario;
+  }
+  
+  // Verificar se o tipo é válido
+  const label = LABELS_TIPO_USUARIO[tipoNormalizado];
+  if (!label) {
+    console.error('getLabelTipoUsuario: tipo inválido encontrado:', tipo, 'usando proprietario como fallback');
+    return LABELS_TIPO_USUARIO[TIPOS_USUARIO.PROPRIETARIO];
+  }
+  
+  return label;
 }
 
 // Função para verificar se usuário pode adicionar mais imóveis

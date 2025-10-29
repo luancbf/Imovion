@@ -119,6 +119,9 @@ export const useGerenciamentoUsuarios = () => {
         telefone?: string;
         role?: string;
         categoria?: string;
+        tipo_usuario?: string; // Novo campo
+        plano_ativo?: string; // Novo campo
+        status_plano?: string; // Novo campo
         creci?: string;
         is_corretor?: boolean;
         corretor?: boolean;
@@ -127,6 +130,9 @@ export const useGerenciamentoUsuarios = () => {
         ultimo_acesso?: string;
         created_at?: string;
         updated_at?: string;
+        data_inicio_plano?: string;
+        data_fim_plano?: string;
+        valor_plano?: number;
       }) => {
         // Determinar categoria (simplificado)
         const categoria: CategoriaUsuario = (profile.categoria as CategoriaUsuario) || 'proprietario';
@@ -142,6 +148,13 @@ export const useGerenciamentoUsuarios = () => {
           telefone: profile.telefone || '',
           role: profile.role || 'user',
           categoria,
+          // Novos campos da migration
+          tipo_usuario: (profile.tipo_usuario as 'proprietario' | 'imobiliaria' | 'corretor' | 'admin') || 'proprietario',
+          plano_ativo: (profile.plano_ativo as 'comum' | '5_imoveis' | '30_imoveis' | '50_imoveis' | '100_imoveis') || 'comum',
+          status_plano: (profile.status_plano as 'ativo' | 'inativo' | 'suspenso' | 'cancelado') || 'ativo',
+          data_inicio_plano: profile.data_inicio_plano,
+          data_fim_plano: profile.data_fim_plano,
+          // Campos existentes
           creci: profile.creci || undefined,
           limite_imoveis,
           created_at: profile.created_at || new Date().toISOString(),
@@ -149,7 +162,7 @@ export const useGerenciamentoUsuarios = () => {
           email_confirmed_at: undefined,
           total_imoveis: profile.total_imoveis || 0,
           imoveis_ativos: profile.total_imoveis || 0,
-          receita_total: 0,
+          receita_total: profile.valor_plano || 0,
           ultimo_acesso: profile.ultimo_acesso || profile.updated_at || new Date().toISOString(),
           // Plano baseado na categoria (simplificado)
           plano_atual: {

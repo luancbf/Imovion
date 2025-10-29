@@ -53,7 +53,6 @@ Plataforma moderna e responsiva para compra, venda e aluguel de imóveis, desenv
 
 ### Backend & Infraestrutura
 - **Supabase** - Backend-as-a-Service (Auth, Database, Storage)
-- **Firebase Data Connect** - Sincronização de dados
 - **Vercel Analytics** - Monitoramento de performance
 - **Service Workers** - Cache e funcionalidades offline
 
@@ -92,10 +91,6 @@ Crie um arquivo `.env.local` na raiz do projeto:
 NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima_supabase
 SUPABASE_SERVICE_ROLE_KEY=sua_chave_service_role
-
-# Firebase (opcional)
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=seu_projeto_firebase
-NEXT_PUBLIC_FIREBASE_APP_ID=seu_app_id_firebase
 
 # Site Configuration
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -170,7 +165,6 @@ imovion/
 │   ├── services/            # Serviços de integração
 │   ├── types/               # Definições TypeScript
 │   └── utils/               # Funções utilitárias
-├── dataconnect/             # Firebase Data Connect
 ├── jest.config.mjs          # Configuração Jest
 └── next.config.ts           # Configuração Next.js
 ```

@@ -16,7 +16,12 @@ import {
 } from 'react-icons/fi';
 import { useGerenciamentoUsuarios } from '@/hooks/useGerenciamentoUsuarios';
 import { FiltrosUsuarios, UsuarioComEstatisticas, CategoriaUsuario } from '@/types/usuarios';
-import { TipoUsuario, PlanoUsuario } from '@/constants/tiposUsuarioPlanos';
+import { 
+  TipoUsuario, 
+  PlanoUsuario,
+  getLabelTipoUsuario,
+  getConfiguracaoPlano
+} from '@/constants/tiposUsuarioPlanos';
 import EditarCategoriaModal from './EditarCategoriaModal';
 import ConfigurarUsuarioModal from './usuarios/ConfigurarUsuarioModal';
 // import GerenciamentoPlanosModal from './GerenciamentoPlanosModal';
@@ -29,7 +34,8 @@ export default function GerenciamentoUsuariosList({ filtros }: GerenciamentoUsua
   const { 
     loading, 
     filtrarUsuarios, 
-    alterarCategoriaUsuario
+    alterarCategoriaUsuario,
+    carregarUsuarios
   } = useGerenciamentoUsuarios();
   
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<UsuarioComEstatisticas | null>(null);
@@ -66,6 +72,8 @@ export default function GerenciamentoUsuariosList({ filtros }: GerenciamentoUsua
   const fecharModalConfiguracao = () => {
     setUsuarioSelecionado(null);
     setModalConfiguracaoAberto(false);
+    // Forçar reload dos dados após alteração
+    carregarUsuarios(true);
   };
 
   const handleAlterarCategoria = async (novaCategoria: CategoriaUsuario): Promise<boolean> => {
@@ -84,6 +92,8 @@ export default function GerenciamentoUsuariosList({ filtros }: GerenciamentoUsua
     dados: { tipo_usuario: TipoUsuario; plano_ativo: PlanoUsuario }
   ): Promise<void> => {
     try {
+      console.log('Enviando dados para API:', { usuarioId, dados });
+      
       // Aqui você chamaria o endpoint da API para atualizar o usuário
       const response = await fetch(`/api/admin/usuarios/${usuarioId}/configurar`, {
         method: 'PUT',
@@ -93,12 +103,17 @@ export default function GerenciamentoUsuariosList({ filtros }: GerenciamentoUsua
         body: JSON.stringify(dados),
       });
 
+      const responseData = await response.json();
+      console.log('Resposta da API:', { status: response.status, data: responseData });
+
       if (!response.ok) {
-        throw new Error('Erro ao salvar configurações');
+        const errorMessage = responseData.error || responseData.message || 'Erro ao salvar configurações';
+        console.error('Erro da API:', errorMessage, responseData);
+        throw new Error(errorMessage);
       }
 
-      // Atualizar a lista de usuários (você pode implementar um refetch aqui)
-      window.location.reload(); // Temporário - idealmente seria um refetch
+      console.log('Configurações salvas com sucesso:', responseData);
+      // Recarregar dados será feito automaticamente quando o modal fechar
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
       throw error;
@@ -130,7 +145,7 @@ export default function GerenciamentoUsuariosList({ filtros }: GerenciamentoUsua
             <div className="flex items-center gap-4 text-sm text-gray-600">
               <span className="flex items-center gap-1">
                 <FiUser className="text-blue-600" />
-                {usuariosFiltrados.filter(u => u.categoria === 'proprietario').length} Comum
+                {usuariosFiltrados.filter(u => u.categoria === 'proprietario').length} Proprietários
               </span>
               <span className="flex items-center gap-1">
                 <FiAward className="text-green-600" />
@@ -246,39 +261,57 @@ export default function GerenciamentoUsuariosList({ filtros }: GerenciamentoUsua
                         </div>
                       </div>
 
-                      {/* Plano atual */}
+                      {/* Tipo e Plano atuais */}
                       <div className="space-y-2">
-                        <h4 className="font-medium text-gray-700">Plano Atual</h4>
+                        <h4 className="font-medium text-gray-700">Tipo e Plano</h4>
                         
-                        {usuario.plano_atual ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <FiCreditCard className="text-purple-500" size={14} />
-                              <span className="font-medium text-purple-700">
-                                {usuario.plano_atual.plano.nome}
+                        <div className="space-y-1">
+                          {/* Tipo de usuário */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{getLabelTipoUsuario(usuario.tipo_usuario || 'proprietario').icone}</span>
+                            <div>
+                              <span className="font-medium text-gray-800">
+                                {getLabelTipoUsuario(usuario.tipo_usuario || 'proprietario').nome}
                               </span>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                usuario.plano_atual.status === 'ativo' 
+                              <span className={`ml-2 px-2 py-1 text-xs rounded-full ${getLabelTipoUsuario(usuario.tipo_usuario || 'proprietario').cor}`}>
+                                {usuario.tipo_usuario || 'proprietario'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Plano ativo */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{getConfiguracaoPlano(usuario.plano_ativo || 'comum').icone}</span>
+                            <div>
+                              <span className="font-medium text-purple-700">
+                                {getConfiguracaoPlano(usuario.plano_ativo || 'comum').nome}
+                              </span>
+                              <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                                usuario.status_plano === 'ativo' 
                                   ? 'bg-green-100 text-green-800' 
                                   : 'bg-red-100 text-red-800'
                               }`}>
-                                {usuario.plano_atual.status}
+                                {usuario.status_plano || 'ativo'}
                               </span>
                             </div>
-                            
-                            <div className="text-sm text-gray-600">
-                              Tipo: {usuario.plano_atual.plano.tipo === 'mensal' ? 'Mensal' : 'Por Anúncio'}
-                            </div>
-                            
-                            <div className="text-sm text-gray-600">
-                              Valor: {formatarValor(usuario.plano_atual.plano.valor)}
-                            </div>
                           </div>
-                        ) : (
-                          <div className="text-sm text-gray-500 italic">
-                            Nenhum plano ativo
+                          
+                          <div className="text-sm text-gray-600 mt-1">
+                            {getConfiguracaoPlano(usuario.plano_ativo || 'comum').descricao}
                           </div>
-                        )}
+                          
+                          {getConfiguracaoPlano(usuario.plano_ativo || 'comum').preco_mensal && (
+                            <div className="text-sm font-semibold text-green-600">
+                              Valor: R$ {getConfiguracaoPlano(usuario.plano_ativo || 'comum').preco_mensal}/mês
+                            </div>
+                          )}
+                          
+                          {getConfiguracaoPlano(usuario.plano_ativo || 'comum').preco_imovel && (
+                            <div className="text-sm font-semibold text-blue-600">
+                              Valor: R$ {getConfiguracaoPlano(usuario.plano_ativo || 'comum').preco_imovel}/imóvel
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 

@@ -33,7 +33,7 @@ export default function StatusPlanoUsuario({
 
   if (!usuario) return null;
 
-  const tipoUsuario = (usuario.tipo_usuario || 'usuario') as TipoUsuario;
+  const tipoUsuario = (usuario.tipo_usuario || 'proprietario') as TipoUsuario;
   const planoAtivo = (usuario.plano_ativo || 'comum') as PlanoUsuario;
   const imoveisAtivos = usuario.imoveis_ativos_count || 0;
   

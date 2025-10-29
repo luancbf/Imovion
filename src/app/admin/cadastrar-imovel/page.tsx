@@ -6,7 +6,6 @@ import { opcoesTipoImovel } from '@/constants/opcoesTipoImovel';
 import { supabase } from '@/lib/supabase';
 import { useGerenciamentoUsuarios } from '@/hooks/useGerenciamentoUsuarios';
 import { useImoveis } from '@/hooks/useImoveis';
-import { sincronizarWhatsAppImoveisExistentes } from '@/utils/sincronizarWhatsApp';
 import logger from '@/utils/logger';
 import type { Imovel } from '@/types/Imovel';
 import type { ImovelEdicao, UsuarioFormulario } from '@/types/formularios';
@@ -181,47 +180,8 @@ export default function CadastrarImovel() {
     setImovelEditando(null);
   }, [recarregar]);
 
-  const handleSincronizarWhatsApp = useCallback(async () => {
-    if (!confirm('Deseja sincronizar o WhatsApp em todos os imóveis que não possuem este campo preenchido? Esta operação pode demorar alguns minutos.')) {
-      return;
-    }
-
-    try {
-      const resultado = await sincronizarWhatsAppImoveisExistentes();
-      
-      if (resultado.sucesso) {
-        alert(`Sincronização concluída!\n\nImóveis atualizados: ${resultado.imoveisAtualizados}\nErros: ${resultado.erros || 0}\nTotal processado: ${resultado.total || 0}`);
-        // Recarregar lista para mostrar os dados atualizados
-        recarregar();
-      } else {
-        alert(`Erro na sincronização: ${resultado.erro}`);
-      }
-    } catch (error) {
-      console.error('Erro ao sincronizar WhatsApp:', error);
-      alert('Erro inesperado durante a sincronização');
-    }
-  }, [recarregar]);
-
   return (
     <div className="space-y-4">
-      {/* Botão de sincronização WhatsApp */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-yellow-800">Sincronização de WhatsApp</h3>
-            <p className="text-sm text-yellow-700 mt-1">
-              Atualiza o campo WhatsApp em imóveis existentes com o telefone dos usuários
-            </p>
-          </div>
-          <button
-            onClick={handleSincronizarWhatsApp}
-            className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            Sincronizar WhatsApp
-          </button>
-        </div>
-      </div>
-
       <FormularioImovel
         usuarios={usuarios}
         opcoesTipoImovel={opcoesTipoImovel}
@@ -238,6 +198,7 @@ export default function CadastrarImovel() {
         usuarios={usuarios}
         filtros={filtrosComponente}
         onFiltroChange={handleFiltroChange}
+        isAdminPage={true}
       />
     </div>
   );

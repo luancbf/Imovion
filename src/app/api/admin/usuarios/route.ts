@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // 4. CARREGAR USUÁRIOS
+    // 4. CARREGAR USUÁRIOS (COM NOVOS CAMPOS DA MIGRATION)
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
       .select(`
@@ -77,9 +77,19 @@ export async function GET(request: NextRequest) {
         ativo,
         ultimo_acesso,
         created_at,
-        updated_at
+        updated_at,
+        tipo_usuario,
+        plano_ativo,
+        status_plano,
+        data_inicio_plano,
+        data_fim_plano,
+        data_ultimo_pagamento,
+        valor_plano,
+        metodo_pagamento,
+        observacoes
       `)
       .eq('ativo', true)
+      .neq('role', 'admin')  // Excluir administradores da listagem
       .order('created_at', { ascending: false });
 
     if (profilesError) {

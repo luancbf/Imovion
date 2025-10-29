@@ -35,6 +35,7 @@ interface ImovelCardProps {
   onDelete: (id: string) => void;
   onEdit: (imovel: ImovelComItens) => void;
   usuarios: UsuarioFormulario[];
+  isAdminPage?: boolean; // Nova prop para identificar se está na área admin
 }
 
 function formatarData(data?: Date | string): string {
@@ -72,6 +73,7 @@ function ImovelCardCadastro({
   onDelete,
   onEdit,
   usuarios,
+  isAdminPage = false,
 }: ImovelCardProps) {
   const { user } = useAuth();
   const [exibirMais, setExibirMais] = useState(false);
@@ -267,8 +269,8 @@ function ImovelCardCadastro({
           </div>
         </div>
 
-        {/* Usuário Vinculado - Card Destacado - Oculto para proprietários */}
-        {usuario && usuario.categoria !== 'proprietario' && usuario.categoria !== 'proprietario_com_plano' && (
+        {/* Usuário Vinculado - Card Destacado - Sempre visível para admin */}
+        {usuario && (isAdminPage || (usuario.categoria !== 'proprietario' && usuario.categoria !== 'proprietario_com_plano')) && (
           <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-white text-lg font-bold shadow-md ${

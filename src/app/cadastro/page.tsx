@@ -358,7 +358,7 @@ export default function CadastroPage() {
               Tipo de usuário:
             </label>
             
-            {/* Usuário Comum */}
+            {/* Proprietário */}
             <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
               categoria === 'proprietario' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
             }`}>
@@ -375,7 +375,7 @@ export default function CadastroPage() {
                 <FiUser className="text-gray-600" size={16} />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-gray-900">Usuário Comum</p>
+                <p className="font-semibold text-gray-900">Proprietário</p>
                 <p className="text-sm text-gray-600">Até 1 imóvel gratuito</p>
               </div>
               {categoria === 'proprietario' && (

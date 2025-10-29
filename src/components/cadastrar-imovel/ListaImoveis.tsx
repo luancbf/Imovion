@@ -26,6 +26,7 @@ interface ListaImoveisProps {
     usuario: string;
     codigoImovel: string;
   }) => void;
+  isAdminPage?: boolean; // Nova prop para identificar se está na área admin
 }
 
 function ListaImoveis({
@@ -36,6 +37,7 @@ function ListaImoveis({
   usuarios,
   filtros,
   onFiltroChange,
+  isAdminPage = false,
 }: ListaImoveisProps) {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   
@@ -161,6 +163,7 @@ function ListaImoveis({
                 onDelete={handleDeleteImovel}
                 onEdit={onEdit}
                 usuarios={usuarios}
+                isAdminPage={isAdminPage}
               />
             </div>
           ))}

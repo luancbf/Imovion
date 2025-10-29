@@ -1,31 +1,11 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import dynamic from 'next/dynamic';
-import CriticalCSS from '@/components/common/CriticalCSS';
 
-// Carregamento assíncrono de componentes não críticos
-const CookieConsent = dynamic(() => import('@/components/CookieConsent'), {
-  loading: () => null
-});
-
-const AnalyticsTracker = dynamic(() => import('@/components/AnalyticsTracker'), {
-  loading: () => null
-});
-
-const ServiceWorkerRegistration = dynamic(() => import('@/components/ServiceWorkerRegistration'), {
-  loading: () => null
-});
-
-const ResourcePreloader = dynamic(() => import('@/components/common/ResourcePreloader'), {
-  loading: () => null
-});
-
-// Otimização de fonte com display swap para FCP mais rápido
+// Fonte simples
 const inter = Inter({ 
   subsets: ['latin'],
-  display: 'swap',
-  preload: true
+  display: 'swap'
 });
 
 export const metadata: Metadata = {
@@ -62,29 +42,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
-        {/* Preload de recursos críticos */}
-        {/* Font já é otimizada pelo Next.js Google Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        
-        {/* DNS prefetch para recursos externos */}
-        <link rel="dns-prefetch" href="//supabase.co" />
-        <link rel="dns-prefetch" href="//vercel.com" />
-        
-        {/* Meta tags de performance */}
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta httpEquiv="x-ua-compatible" content="ie=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className={inter.className}>
-        <CriticalCSS>
-          {children}
-        </CriticalCSS>
-        {/* Componentes condicionais por ambiente */}
-        {process.env.NODE_ENV === 'production' && <ResourcePreloader />}
-        <CookieConsent />
-        {process.env.NODE_ENV === 'production' && <AnalyticsTracker />}
-        {process.env.NODE_ENV === 'production' && <ServiceWorkerRegistration />}
-        {/* <PerformanceDebugger /> */}
+        {children}
       </body>
     </html>
   );

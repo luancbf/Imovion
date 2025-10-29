@@ -26,7 +26,7 @@ export default function ConfigurarUsuarioModal({
   onSave
 }: ConfigurarUsuarioModalProps) {
   const [tipoUsuario, setTipoUsuario] = useState<TipoUsuario>(
-    usuario.tipo_usuario || TIPOS_USUARIO.USUARIO
+    usuario.tipo_usuario || TIPOS_USUARIO.PROPRIETARIO
   );
   const [planoAtivo, setPlanoAtivo] = useState<PlanoUsuario>(
     usuario.plano_ativo || PLANOS.COMUM

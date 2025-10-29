@@ -30,7 +30,7 @@ export default function AdminHeader({
                   Gerenciar Patrocinadores
                 </h1>
                 <p className="text-xs text-blue-600 hidden sm:block">
-                  Promover usuários e configurar exibição
+                  Promover corretores e imobiliárias para patrocinadores
                 </p>
               </div>
             </div>

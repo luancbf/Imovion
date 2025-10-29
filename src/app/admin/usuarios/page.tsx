@@ -83,7 +83,7 @@ export default function UsuariosPage() {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Usuarios Comum</p>
+              <p className="text-sm font-medium text-gray-500">Proprietários</p>
               <p className="text-2xl font-bold text-emerald-600">{stats.proprietarios || 0}</p>
             </div>
             <FiUsers className="text-emerald-600" size={24} />

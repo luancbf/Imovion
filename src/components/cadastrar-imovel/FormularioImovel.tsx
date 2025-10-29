@@ -247,10 +247,12 @@ function useItens(dadosIniciais: ImovelEdicao | null | undefined, formulario: Fo
 
 // COMPONENTE PRINCIPAL
 export default function FormularioImovel({
+  usuarios,
   opcoesTipoImovel,
   onSuccess,
   dadosIniciais,
   onLimpar,
+  isUserPanel,
 }: FormularioImovelProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -565,7 +567,9 @@ export default function FormularioImovel({
           {etapaAtual === 3 && (
             <Etapa3Detalhes
               formulario={formulario}
+              usuarios={usuarios}
               onChange={handleChange}
+              isAdmin={!isUserPanel}
             />
           )}
 
